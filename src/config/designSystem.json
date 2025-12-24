@@ -1,0 +1,194 @@
+{
+  "designSystem": {
+    "name": "MentorAI Design System",
+    "version": "1.0.0",
+    "description": "Discord-native AI learning platform design language optimized for gamified education",
+    "platform": "Discord + Web Dashboard",
+    
+    "designPrinciples": {
+      "primary": "Gaming-inspired learning with clear visual feedback",
+      "secondary": "High contrast for Discord dark mode compatibility",
+      "tertiary": "Progress-focused UI with celebration moments"
+    }
+  },
+
+  "colorSystem": {
+    "brand": {
+      "primary": {
+        "hex": "#5865F2",
+        "rgb": "88, 101, 242",
+        "usage": "Discord blurple - main brand color, primary actions, links",
+        "applyTo": ["primaryButtons.background", "links.text", "activeTabs.indicator", "progressBars.fill"]
+      },
+      "primaryLight": {
+        "hex": "#7289DA",
+        "rgb": "114, 137, 218",
+        "usage": "Lighter brand variant for hover states and secondary emphasis",
+        "applyTo": ["primaryButtons.hoverBackground", "selectedItems.border"]
+      },
+      "primaryDark": {
+        "hex": "#4752C4",
+        "rgb": "71, 82, 196",
+        "usage": "Darker brand for pressed states and depth",
+        "applyTo": ["primaryButtons.activeBackground", "focusRings.color"]
+      }
+    },
+
+    "semantic": {
+      "success": {
+        "hex": "#00FF88",
+        "rgb": "0, 255, 136",
+        "usage": "Correct answers, completed lessons, positive feedback",
+        "applyTo": ["successEmbeds.accentBar", "correctAnswerButtons.background", "completionBadges.fill", "streakIndicators.active"],
+        "variants": {
+          "light": "#33FF9F",
+          "dark": "#00CC6A",
+          "muted": "rgba(0, 255, 136, 0.15)"
+        }
+      },
+      "warning": {
+        "hex": "#FFD700",
+        "rgb": "255, 215, 0",
+        "usage": "XP rewards, achievements, quiz mode, attention states",
+        "applyTo": ["xpBadges.background", "quizEmbeds.accentBar", "achievementGlow.color", "warningMessages.border"],
+        "variants": {
+          "light": "#FFE033",
+          "dark": "#CCB000",
+          "muted": "rgba(255, 215, 0, 0.15)"
+        }
+      },
+      "error": {
+        "hex": "#FF4444",
+        "rgb": "255, 68, 68",
+        "usage": "Wrong answers, errors, destructive actions",
+        "applyTo": ["errorEmbeds.accentBar", "incorrectAnswerButtons.background", "deleteButtons.background", "errorMessages.border"],
+        "variants": {
+          "light": "#FF6666",
+          "dark": "#CC3636",
+          "muted": "rgba(255, 68, 68, 0.15)"
+        }
+      },
+      "info": {
+        "hex": "#00D4FF",
+        "rgb": "0, 212, 255",
+        "usage": "Tips, help content, informational embeds",
+        "applyTo": ["infoEmbeds.accentBar", "tipIcons.fill", "helpButtons.border"],
+        "variants": {
+          "light": "#33DDFF",
+          "dark": "#00A8CC",
+          "muted": "rgba(0, 212, 255, 0.15)"
+        }
+      }
+    },
+
+    "accent": {
+      "purple": {
+        "hex": "#9B59B6",
+        "rgb": "155, 89, 182",
+        "usage": "Progress tracking, stats, analytics",
+        "applyTo": ["progressEmbeds.accentBar", "statsCards.iconBackground", "levelBadges.border"]
+      },
+      "pink": {
+        "hex": "#FF6B6B",
+        "rgb": "255, 107, 107",
+        "usage": "Social features, study parties, community",
+        "applyTo": ["studyPartyEmbeds.accentBar", "socialIcons.fill", "partyInvites.background"]
+      },
+      "teal": {
+        "hex": "#4ECDC4",
+        "rgb": "78, 205, 196",
+        "usage": "Learning paths, course navigation",
+        "applyTo": ["pathwayCards.accent", "navigationIcons.fill", "lessonProgress.track"]
+      },
+      "orange": {
+        "hex": "#FF9800",
+        "rgb": "255, 152, 0",
+        "usage": "Streaks, fire indicators, urgency",
+        "applyTo": ["streakBadges.fill", "fireEmoji.color", "urgentNotifications.border"]
+      }
+    },
+
+    "neutral": {
+      "background": {
+        "darkest": {
+          "hex": "#1E1E1E",
+          "usage": "Main app background, modal overlays"
+        },
+        "dark": {
+          "hex": "#2F3136",
+          "usage": "Discord embed background, card containers"
+        },
+        "medium": {
+          "hex": "#36393F",
+          "usage": "Secondary containers, input fields"
+        },
+        "light": {
+          "hex": "#40444B",
+          "usage": "Hover states, borders, dividers"
+        }
+      },
+      "text": {
+        "primary": {
+          "hex": "#FFFFFF",
+          "usage": "Main headings, primary content"
+        },
+        "secondary": {
+          "hex": "#B9BBBE",
+          "usage": "Body text, descriptions"
+        },
+        "muted": {
+          "hex": "#72767D",
+          "usage": "Timestamps, hints, disabled text"
+        },
+        "link": {
+          "hex": "#00AFF4",
+          "usage": "Clickable links, interactive text"
+        }
+      }
+    },
+
+    "gamification": {
+      "rarity": {
+        "common": {
+          "hex": "#9E9E9E",
+          "gradient": null,
+          "glow": null
+        },
+        "uncommon": {
+          "hex": "#4CAF50",
+          "gradient": "linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%)",
+          "glow": "0 0 10px rgba(76, 175, 80, 0.3)"
+        },
+        "rare": {
+          "hex": "#2196F3",
+          "gradient": "linear-gradient(135deg, #2196F3 0%, #42A5F5 100%)",
+          "glow": "0 0 15px rgba(33, 150, 243, 0.4)"
+        },
+        "epic": {
+          "hex": "#9C27B0",
+          "gradient": "linear-gradient(135deg, #9C27B0 0%, #BA68C8 100%)",
+          "glow": "0 0 20px rgba(156, 39, 176, 0.5)"
+        },
+        "legendary": {
+          "hex": "#FF9800",
+          "gradient": "linear-gradient(135deg, #FF9800 0%, #FFB74D 50%, #FF9800 100%)",
+          "glow": "0 0 25px rgba(255, 152, 0, 0.6)",
+          "animation": "legendaryPulse 2s ease-in-out infinite"
+        }
+      }
+    }
+  },
+
+  "doNotRules": {
+    "critical": [
+      "DO NOT apply gradients to icon fills - Icons use solid colors only",
+      "DO NOT apply card shadows to text elements - Shadows only on containers",
+      "DO NOT use rarity glow effects on non-achievement elements",
+      "DO NOT mix embed accent colors - Each embed type has ONE accent color",
+      "DO NOT apply hover animations to non-interactive elements",
+      "DO NOT use primary button color for destructive actions - Use danger red",
+      "DO NOT apply XP color (#FFD700) to error states - Errors use #FF4444",
+      "DO NOT use body text color for headings - Headings use #FFFFFF"
+    ]
+  }
+}

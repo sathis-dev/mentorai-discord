@@ -1,0 +1,344 @@
+.dashboard-container {
+  min-height: 100vh;
+  padding: 24px;
+  position: relative;
+}
+
+.dashboard-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
+}
+
+/* Header */
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 48px;
+  padding-top: 60px;
+}
+
+.user-avatar-large {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 40px rgba(139, 92, 246, 0.6);
+  animation: float 3s ease-in-out infinite;
+}
+
+.user-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dashboard-title {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 12px;
+  line-height: 1.2;
+}
+
+.dashboard-subtitle {
+  font-size: 20px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 48px;
+}
+
+/* Large Stat Cards */
+.stat-card-large {
+  padding: 32px;
+  grid-column: span 2;
+}
+
+.stat-card-header {
+  margin-bottom: 24px;
+}
+
+.stat-card-header h3 {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Level Progress */
+.level-progress-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 40px;
+}
+
+.level-info {
+  text-align: left;
+}
+
+.current-level {
+  font-size: 42px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #8b5cf6, #ec4899);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.next-level {
+  font-size: 18px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.xp-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Streak */
+.streak-content {
+  text-align: center;
+}
+
+.streak-flames {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.flame-icon {
+  font-size: 48px;
+  display: inline-block;
+}
+
+.streak-number {
+  font-size: 56px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.streak-best {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.streak-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #f59e0b, #eab308);
+  border-radius: 12px;
+  font-weight: 700;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.badge-icon {
+  font-size: 20px;
+}
+
+/* Regular Stat Cards */
+.stat-card {
+  padding: 32px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-8px);
+}
+
+.stat-icon-large {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: inline-block;
+  animation: float 3s ease-in-out infinite;
+}
+
+.stat-value-large {
+  font-size: 48px;
+  font-weight: 900;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Achievements Section */
+.achievements-section {
+  margin-bottom: 48px;
+}
+
+.section-title {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.achievement-card {
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+  animation: slideInLeft 0.6s ease;
+}
+
+.achievement-card:hover {
+  transform: translateX(8px);
+  border-color: rgba(139, 92, 246, 0.5);
+}
+
+.achievement-icon {
+  font-size: 48px;
+  flex-shrink: 0;
+}
+
+.achievement-info {
+  flex: 1;
+}
+
+.achievement-name {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.achievement-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.achievement-xp {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 6px 12px;
+  background: rgba(245, 158, 11, 0.2);
+  border-radius: 8px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+/* Rewards Section */
+.rewards-section {
+  margin-bottom: 48px;
+}
+
+.rewards-card {
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(236, 72, 153, 0.1));
+}
+
+.reward-level {
+  font-size: 36px;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f59e0b, #eab308);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 24px;
+}
+
+.rewards-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.reward-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.reward-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+}
+
+.reward-icon {
+  font-size: 20px;
+}
+
+.reward-text {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.xp-needed {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stat-card-large {
+    grid-column: span 1;
+  }
+
+  .level-progress-content {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-title {
+    font-size: 32px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .achievements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .rewards-list {
+    grid-template-columns: 1fr;
+  }
+}

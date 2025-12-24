@@ -1,0 +1,323 @@
+export const javascriptCurriculum = {
+  subject: 'javascript',
+  title: 'Modern JavaScript Mastery',
+  description: 'From vanilla JS to React - become a JavaScript expert',
+  category: 'Programming',
+  icon: '⚡',
+  difficulty: 'beginner',
+  totalLessons: 28,
+  estimatedHours: 38,
+  skills: ['variables', 'functions', 'dom', 'async', 'es6', 'react'],
+  lessons: [
+    {
+      id: 'js-1',
+      title: 'JavaScript Fundamentals',
+      description: 'Variables, data types, console.log, basic syntax',
+      difficulty: 'beginner',
+      estimatedMinutes: 20,
+      xpReward: 60,
+      prerequisites: [],
+      locked: false,
+      order: 1
+    },
+    {
+      id: 'js-2',
+      title: 'Functions & Scope',
+      description: 'Function declarations, expressions, arrow functions, scope',
+      difficulty: 'beginner',
+      estimatedMinutes: 30,
+      xpReward: 90,
+      prerequisites: ['js-1'],
+      locked: true,
+      order: 2
+    },
+    {
+      id: 'js-3',
+      title: 'Arrays & Objects',
+      description: 'Creating and manipulating arrays and objects',
+      difficulty: 'beginner',
+      estimatedMinutes: 35,
+      xpReward: 100,
+      prerequisites: ['js-1'],
+      locked: true,
+      order: 3
+    },
+    {
+      id: 'js-4',
+      title: 'DOM Manipulation',
+      description: 'Selecting elements, modifying HTML/CSS with JavaScript',
+      difficulty: 'intermediate',
+      estimatedMinutes: 40,
+      xpReward: 120,
+      prerequisites: ['js-2', 'js-3'],
+      locked: true,
+      order: 4
+    },
+    {
+      id: 'js-5',
+      title: 'Event Handling',
+      description: 'Click events, event listeners, event object',
+      difficulty: 'intermediate',
+      estimatedMinutes: 35,
+      xpReward: 110,
+      prerequisites: ['js-4'],
+      locked: true,
+      order: 5
+    },
+    {
+      id: 'js-6',
+      title: 'ES6+ Features',
+      description: 'let/const, template literals, destructuring, spread/rest',
+      difficulty: 'intermediate',
+      estimatedMinutes: 45,
+      xpReward: 140,
+      prerequisites: ['js-3'],
+      locked: true,
+      order: 6
+    },
+    {
+      id: 'js-7',
+      title: 'Array Methods',
+      description: 'map, filter, reduce, forEach, find, some, every',
+      difficulty: 'intermediate',
+      estimatedMinutes: 50,
+      xpReward: 150,
+      prerequisites: ['js-6'],
+      locked: true,
+      order: 7
+    },
+    {
+      id: 'js-8',
+      title: 'Async JavaScript: Promises',
+      description: 'Understanding promises, .then(), .catch(), Promise.all()',
+      difficulty: 'intermediate',
+      estimatedMinutes: 40,
+      xpReward: 160,
+      prerequisites: ['js-2'],
+      locked: true,
+      order: 8
+    },
+    {
+      id: 'js-9',
+      title: 'Async/Await',
+      description: 'Modern async syntax, error handling with try/catch',
+      difficulty: 'intermediate',
+      estimatedMinutes: 35,
+      xpReward: 140,
+      prerequisites: ['js-8'],
+      locked: true,
+      order: 9
+    },
+    {
+      id: 'js-10',
+      title: 'Fetch API & HTTP Requests',
+      description: 'Making API calls, handling responses, REST basics',
+      difficulty: 'intermediate',
+      estimatedMinutes: 45,
+      xpReward: 170,
+      prerequisites: ['js-9'],
+      locked: true,
+      order: 10
+    },
+    {
+      id: 'js-11',
+      title: 'JSON & Data Parsing',
+      description: 'Working with JSON, JSON.parse(), JSON.stringify()',
+      difficulty: 'beginner',
+      estimatedMinutes: 25,
+      xpReward: 80,
+      prerequisites: ['js-3'],
+      locked: true,
+      order: 11
+    },
+    {
+      id: 'js-12',
+      title: 'LocalStorage & SessionStorage',
+      description: 'Browser storage, persisting data, storage API',
+      difficulty: 'intermediate',
+      estimatedMinutes: 30,
+      xpReward: 100,
+      prerequisites: ['js-11'],
+      locked: true,
+      order: 12
+    },
+    {
+      id: 'js-13',
+      title: 'Classes & OOP in JavaScript',
+      description: 'ES6 classes, constructors, methods, inheritance',
+      difficulty: 'advanced',
+      estimatedMinutes: 45,
+      xpReward: 180,
+      prerequisites: ['js-6'],
+      locked: true,
+      order: 13
+    },
+    {
+      id: 'js-14',
+      title: 'Modules: Import/Export',
+      description: 'ES6 modules, default exports, named exports',
+      difficulty: 'intermediate',
+      estimatedMinutes: 30,
+      xpReward: 110,
+      prerequisites: ['js-6'],
+      locked: true,
+      order: 14
+    },
+    {
+      id: 'js-15',
+      title: 'Error Handling',
+      description: 'try/catch, throwing errors, custom error types',
+      difficulty: 'intermediate',
+      estimatedMinutes: 30,
+      xpReward: 100,
+      prerequisites: ['js-2'],
+      locked: true,
+      order: 15
+    },
+    {
+      id: 'js-16',
+      title: 'Regular Expressions',
+      description: 'Pattern matching, regex syntax, common use cases',
+      difficulty: 'advanced',
+      estimatedMinutes: 40,
+      xpReward: 150,
+      prerequisites: ['js-1'],
+      locked: true,
+      order: 16
+    },
+    {
+      id: 'js-17',
+      title: 'Form Validation',
+      description: 'Client-side validation, preventing submission, UX',
+      difficulty: 'intermediate',
+      estimatedMinutes: 40,
+      xpReward: 130,
+      prerequisites: ['js-5', 'js-16'],
+      locked: true,
+      order: 17
+    },
+    {
+      id: 'js-18',
+      title: 'Timers & Intervals',
+      description: 'setTimeout, setInterval, clearTimeout, clearInterval',
+      difficulty: 'beginner',
+      estimatedMinutes: 25,
+      xpReward: 80,
+      prerequisites: ['js-2'],
+      locked: true,
+      order: 18
+    },
+    {
+      id: 'js-19',
+      title: 'Animation with JavaScript',
+      description: 'requestAnimationFrame, CSS transitions via JS',
+      difficulty: 'intermediate',
+      estimatedMinutes: 45,
+      xpReward: 140,
+      prerequisites: ['js-4', 'js-18'],
+      locked: true,
+      order: 19
+    },
+    {
+      id: 'js-20',
+      title: 'Build a Project: To-Do App',
+      description: 'Apply DOM, events, localStorage - complete app',
+      difficulty: 'intermediate',
+      estimatedMinutes: 90,
+      xpReward: 250,
+      prerequisites: ['js-5', 'js-12'],
+      locked: true,
+      order: 20
+    },
+    {
+      id: 'js-21',
+      title: 'Introduction to React',
+      description: 'What is React, JSX, components, create-react-app',
+      difficulty: 'intermediate',
+      estimatedMinutes: 40,
+      xpReward: 160,
+      prerequisites: ['js-14'],
+      locked: true,
+      order: 21
+    },
+    {
+      id: 'js-22',
+      title: 'React State & Props',
+      description: 'useState hook, passing props, component communication',
+      difficulty: 'intermediate',
+      estimatedMinutes: 50,
+      xpReward: 180,
+      prerequisites: ['js-21'],
+      locked: true,
+      order: 22
+    },
+    {
+      id: 'js-23',
+      title: 'React Events & Forms',
+      description: 'Event handling in React, controlled components',
+      difficulty: 'intermediate',
+      estimatedMinutes: 45,
+      xpReward: 170,
+      prerequisites: ['js-22'],
+      locked: true,
+      order: 23
+    },
+    {
+      id: 'js-24',
+      title: 'React useEffect Hook',
+      description: 'Side effects, API calls, cleanup, dependencies',
+      difficulty: 'advanced',
+      estimatedMinutes: 50,
+      xpReward: 200,
+      prerequisites: ['js-22', 'js-10'],
+      locked: true,
+      order: 24
+    },
+    {
+      id: 'js-25',
+      title: 'React Router',
+      description: 'Multi-page apps, routing, navigation, params',
+      difficulty: 'advanced',
+      estimatedMinutes: 45,
+      xpReward: 180,
+      prerequisites: ['js-23'],
+      locked: true,
+      order: 25
+    },
+    {
+      id: 'js-26',
+      title: 'React Context API',
+      description: 'Global state management, avoiding prop drilling',
+      difficulty: 'advanced',
+      estimatedMinutes: 50,
+      xpReward: 190,
+      prerequisites: ['js-24'],
+      locked: true,
+      order: 26
+    },
+    {
+      id: 'js-27',
+      title: 'React + API Project',
+      description: 'Build a real app fetching data from an API',
+      difficulty: 'advanced',
+      estimatedMinutes: 120,
+      xpReward: 350,
+      prerequisites: ['js-24', 'js-25'],
+      locked: true,
+      order: 27
+    },
+    {
+      id: 'js-28',
+      title: 'Deployment & Production',
+      description: 'Build process, deployment to Vercel/Netlify, optimization',
+      difficulty: 'advanced',
+      estimatedMinutes: 40,
+      xpReward: 180,
+      prerequisites: ['js-27'],
+      locked: true,
+      order: 28
+    }
+  ]
+};
+
+export default javascriptCurriculum;

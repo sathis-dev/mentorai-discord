@@ -1,0 +1,27 @@
+{
+  "name": "mentorai-activity",
+  "version": "1.0.0",
+  "description": "MentorAI Discord Activity - Premium Interactive Learning Experience",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "@discord/embedded-app-sdk": "^1.1.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "canvas-confetti": "^1.9.2",
+    "framer-motion": "^10.16.16",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "particles.js": "^2.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "vite": "^5.0.8"
+  }
+}

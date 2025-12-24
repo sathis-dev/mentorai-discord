@@ -1,0 +1,169 @@
+{
+  "designSystem": {
+    "name": "MentorAI Design System v2.0",
+    "version": "2.0.0",
+    "description": "Pixel-accurate design system extracted from live MentorAI Discord bot implementation",
+    "platform": "Discord Bot Embeds + Buttons",
+    "lastUpdated": "2024-12-19",
+    "sourceAnalysis": "Production implementation screenshots analyzed"
+  },
+
+  "colorSystem": {
+    "embedAccents": {
+      "quiz": {
+        "hex": "#F59E0B",
+        "rgb": "245, 158, 11",
+        "usage": "Quiz embed left border accent",
+        "icon": "🧠"
+      },
+      "lesson": {
+        "hex": "#8B5CF6",
+        "rgb": "139, 92, 246",
+        "usage": "Lesson/learning embed accent",
+        "icon": "📖"
+      },
+      "help": {
+        "hex": "#A855F7",
+        "rgb": "168, 85, 247",
+        "usage": "Help guide embed accent",
+        "icon": "🎓"
+      },
+      "progress": {
+        "hex": "#8B5CF6",
+        "rgb": "139, 92, 246",
+        "usage": "Progress/stats embed accent",
+        "icon": "📊"
+      },
+      "studyParty": {
+        "hex": "#EAB308",
+        "rgb": "234, 179, 8",
+        "usage": "Study party/social embed accent",
+        "icon": "🎉"
+      },
+      "error": {
+        "hex": "#EF4444",
+        "rgb": "239, 68, 68",
+        "usage": "Error/incorrect answer embed accent",
+        "icon": "❌"
+      },
+      "success": {
+        "hex": "#22C55E",
+        "rgb": "34, 197, 94",
+        "usage": "Success/correct answer accent",
+        "icon": "✅"
+      }
+    },
+
+    "buttons": {
+      "primary": {
+        "background": "#5865F2",
+        "backgroundHover": "#4752C4",
+        "text": "#FFFFFF",
+        "usage": "Main action buttons (Next, Start, Submit)"
+      },
+      "secondary": {
+        "background": "#4E5058",
+        "backgroundHover": "#6D6F78",
+        "text": "#FFFFFF",
+        "usage": "Navigation, quiz options A/B/C/D"
+      },
+      "success": {
+        "background": "#248046",
+        "backgroundHover": "#1A6334",
+        "text": "#FFFFFF",
+        "usage": "Positive actions (Join Party, Quiz Me, Confirm)"
+      },
+      "danger": {
+        "background": "#DA373C",
+        "backgroundHover": "#A12D31",
+        "text": "#FFFFFF",
+        "usage": "Destructive actions (Cancel, Leave, Delete)"
+      }
+    },
+
+    "semantic": {
+      "xp": { "hex": "#FBBF24", "icon": "⭐" },
+      "level": { "hex": "#8B5CF6", "icon": "🏆" },
+      "streak": { "hex": "#F97316", "icon": "🔥" },
+      "accuracy": { "hex": "#22C55E", "icon": "🎯" }
+    }
+  },
+
+  "criticalRules": {
+    "doNot": [
+      "❌ DO NOT apply embed accent colors to button backgrounds",
+      "❌ DO NOT use gradients on embed backgrounds (always solid #2B2D31)",
+      "❌ DO NOT make quiz answer buttons match the orange theme (use Secondary)",
+      "❌ DO NOT add shadows to Discord embeds",
+      "❌ DO NOT round embed corners beyond 4px",
+      "❌ DO NOT use accent colors for body text (always #DBDEE1)"
+    ],
+    "mustDo": [
+      "✅ Quiz A/B/C/D buttons MUST use Secondary style (#4E5058)",
+      "✅ Left accent bar is the ONLY colored element on embeds",
+      "✅ Action buttons follow semantic meaning: green=positive, red=negative, blue=primary",
+      "✅ Embed backgrounds are ALWAYS #2B2D31"
+    ]
+  },
+
+  "components": {
+    "discordEmbed": {
+      "container": {
+        "background": "#2B2D31",
+        "borderRadius": "4px",
+        "borderLeft": "4px solid var(--accent-color)",
+        "maxWidth": "520px",
+        "padding": "16px"
+      },
+      "title": {
+        "fontSize": "16px",
+        "fontWeight": "600",
+        "color": "#FFFFFF"
+      },
+      "description": {
+        "fontSize": "14px",
+        "fontWeight": "400",
+        "color": "#DBDEE1",
+        "lineHeight": "1.375"
+      },
+      "footer": {
+        "fontSize": "12px",
+        "color": "#949BA4"
+      }
+    },
+    "buttons": {
+      "base": {
+        "fontSize": "14px",
+        "fontWeight": "500",
+        "padding": "2px 16px",
+        "minHeight": "32px",
+        "borderRadius": "3px"
+      }
+    }
+  },
+
+  "upgradeTiers": {
+    "tier1_quickWins": [
+      "Animated XP gain feedback",
+      "Streak multipliers (up to 2x)",
+      "Daily challenges"
+    ],
+    "tier2_highImpact": [
+      "Visual skill trees",
+      "Spaced repetition system",
+      "Code playground with execution",
+      "AI personalization"
+    ],
+    "tier3_legendary": [
+      "Voice learning mode",
+      "Achievement badge generation",
+      "Learning analytics charts",
+      "Collaborative whiteboard"
+    ],
+    "tier4_ultimate": [
+      "AI tutor conversations",
+      "PDF certification system",
+      "Verified credentials"
+    ]
+  }
+}
