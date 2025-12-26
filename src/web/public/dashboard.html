@@ -21,6 +21,9 @@
       <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
       <div class="nav-item" data-page="users"><i class="fas fa-users"></i> Users</div>
       <div class="nav-item" data-page="leaderboard"><i class="fas fa-trophy"></i> Leaderboard</div>
+      <div class="nav-section">Beta Access</div>
+      <div class="nav-item" data-page="access-keys"><i class="fas fa-key"></i> Access Keys</div>
+      <div class="nav-item" data-page="beta-users"><i class="fas fa-user-check"></i> Beta Testers</div>
       <div class="nav-section">Analytics</div>
       <div class="nav-item" data-page="analytics"><i class="fas fa-chart-line"></i> Analytics</div>
       <div class="nav-item" data-page="viral"><i class="fas fa-rocket"></i> Viral Features</div>
@@ -347,6 +350,98 @@
           <div class="card-header"><span class="card-title"><i class="fas fa-history"></i> Broadcast History</span></div>
           <div class="card-body">
             <div class="broadcast-history" id="broadcastHistory"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Access Keys -->
+      <div class="page" id="page-access-keys">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon blue"><i class="fas fa-key"></i></div></div><div class="stat-value" id="keysTotal">0</div><div class="stat-label">Total Keys</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div></div><div class="stat-value" id="keysActive">0</div><div class="stat-label">Available</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon yellow"><i class="fas fa-user-check"></i></div></div><div class="stat-value" id="keysUsed">0</div><div class="stat-label">Activated</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon pink"><i class="fas fa-ban"></i></div></div><div class="stat-value" id="keysRevoked">0</div><div class="stat-label">Revoked</div></div>
+        </div>
+        
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-plus-circle"></i> Generate Access Keys</span>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:15px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Number of Keys</label>
+                <input type="number" class="form-input" id="keyCount" min="1" max="50" value="1" style="width:100px;">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Key Type</label>
+                <select class="form-select" id="keyType" style="width:150px;">
+                  <option value="beta">Beta Access</option>
+                  <option value="trial">Trial (30 days)</option>
+                  <option value="premium">Premium</option>
+                  <option value="lifetime">Lifetime</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;flex:1;min-width:200px;">
+                <label class="form-label">Note (optional)</label>
+                <input type="text" class="form-input" id="keyNote" placeholder="e.g., For John's testing">
+              </div>
+              <button class="btn btn-primary" id="generateKeysBtn"><i class="fas fa-magic"></i> Generate Keys</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-list"></i> Generated Keys</span>
+            <select class="form-select" id="keyFilter" style="width:150px;">
+              <option value="all">All Keys</option>
+              <option value="active">Available</option>
+              <option value="used">Activated</option>
+              <option value="revoked">Revoked</option>
+            </select>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Activated By</th>
+                  <th>Note</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="accessKeysTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Beta Users -->
+      <div class="page" id="page-beta-users">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-user-check"></i> Beta Testers</span>
+            <span class="badge badge-green" id="betaUsersCount">0 users</span>
+          </div>
+          <div class="card-body">
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Access Key</th>
+                  <th>Access Type</th>
+                  <th>Granted</th>
+                  <th>Expires</th>
+                  <th>Level</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="betaUsersTable"></tbody>
+            </table>
           </div>
         </div>
       </div>

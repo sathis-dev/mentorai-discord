@@ -50,6 +50,13 @@ const userSchema = new mongoose.Schema({
   bannedAt: { type: Date },
   bannedReason: { type: String },
   bannedBy: { type: String },
+  
+  // Beta Access System
+  hasAccess: { type: Boolean, default: false },
+  accessKey: { type: String },
+  accessGrantedAt: { type: Date },
+  accessExpiresAt: { type: Date },
+  accessType: { type: String, default: 'none' }, // none, beta, premium, lifetime
 });
 
 // Calculate XP needed for next level

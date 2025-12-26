@@ -1,4 +1,4 @@
-import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
+import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { submitAnswer, getCurrentQuestion, cancelSession } from '../../services/quizService.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { ServerSettings } from '../../database/models/ServerSettings.js';
@@ -39,26 +39,52 @@ import {
   getBotHealth,
   isUserBanned
 } from '../../services/adminService.js';
+import { 
+  checkUserAccess, 
+  activateAccessKey,
+  BOT_OWNER_IDS,
+  BETA_MODE
+} from '../../services/accessService.js';
 
 export const name = Events.InteractionCreate;
 
 export async function execute(interaction) {
   try {
-    // Check if user is banned (skip for autocomplete)
-    if (!interaction.isAutocomplete()) {
-      const isBanned = await isUserBanned(interaction.user.id);
-      if (isBanned) {
-        const bannedEmbed = new EmbedBuilder()
-          .setTitle('🚫 Access Denied')
-          .setColor(0xED4245)
-          .setDescription('You have been banned from using MentorAI.\n\nIf you believe this is a mistake, please contact the bot owner.')
-          .setFooter({ text: 'Ban ID: ' + interaction.user.id })
-          .setTimestamp();
-        
-        if (interaction.replied || interaction.deferred) {
-          return interaction.followUp({ embeds: [bannedEmbed], ephemeral: true });
-        }
-        return interaction.reply({ embeds: [bannedEmbed], ephemeral: true });
+    // Skip checks for autocomplete
+    if (interaction.isAutocomplete()) {
+      await handleAutocomplete(interaction);
+      return;
+    }
+    
+    // Check if user is banned
+    const isBanned = await isUserBanned(interaction.user.id);
+    if (isBanned) {
+      const bannedEmbed = new EmbedBuilder()
+        .setTitle('🚫 Access Denied')
+        .setColor(0xED4245)
+        .setDescription('You have been banned from using MentorAI.\n\nIf you believe this is a mistake, please contact the bot owner.')
+        .setFooter({ text: 'Ban ID: ' + interaction.user.id })
+        .setTimestamp();
+      
+      if (interaction.replied || interaction.deferred) {
+        return interaction.followUp({ embeds: [bannedEmbed], ephemeral: true });
+      }
+      return interaction.reply({ embeds: [bannedEmbed], ephemeral: true });
+    }
+    
+    // Handle access key modal submission first (before access check)
+    if (interaction.isModalSubmit() && interaction.customId === 'access_key_modal') {
+      await handleAccessKeySubmit(interaction);
+      return;
+    }
+    
+    // Check beta access (skip for access key activation button)
+    if (BETA_MODE && !interaction.customId?.startsWith('access_')) {
+      const accessCheck = await checkUserAccess(interaction.user.id, interaction.user.username);
+      
+      if (!accessCheck.hasAccess) {
+        await showAccessKeyPrompt(interaction, accessCheck.reason);
+        return;
       }
     }
     
@@ -70,8 +96,6 @@ export async function execute(interaction) {
       await handleSelectMenu(interaction);
     } else if (interaction.isChannelSelectMenu()) {
       await handleChannelSelect(interaction);
-    } else if (interaction.isAutocomplete()) {
-      await handleAutocomplete(interaction);
     } else if (interaction.isModalSubmit()) {
       await handleModal(interaction);
     }
@@ -97,6 +121,12 @@ async function handleButton(interaction) {
   const [category, action, ...params] = interaction.customId.split('_');
 
   try {
+    // Handle access buttons first (before access check)
+    if (category === 'access') {
+      await handleAccessButton(interaction, action);
+      return;
+    }
+    
     if (category === 'quiz') {
       await handleQuizButton(interaction, action, params);
     } else if (category === 'help') {
@@ -1445,4 +1475,210 @@ async function handleReferralButton(interaction, action, params) {
     };
     await command.execute(interaction);
   }
+}
+
+// ============================================================
+// BETA ACCESS KEY SYSTEM - Premium UI
+// ============================================================
+
+/**
+ * Show beautiful access key prompt to user
+ */
+async function showAccessKeyPrompt(interaction, reason) {
+  const reasonMessages = {
+    'no_key': 'You need an **Access Key** to use MentorAI during the beta phase.',
+    'expired': 'Your **beta access has expired**. Please contact the bot owner for a new key.',
+    'revoked': 'Your **access has been revoked**. Please contact the bot owner if you believe this is an error.'
+  };
+  
+  const accessEmbed = new EmbedBuilder()
+    .setTitle('🔐 MentorAI Beta Access Required')
+    .setColor(0x5865F2)
+    .setDescription(
+      '```ansi\n' +
+      '\u001b[1;36m╔══════════════════════════════════════════╗\u001b[0m\n' +
+      '\u001b[1;36m║\u001b[0m    \u001b[1;33m⚡ EXCLUSIVE BETA ACCESS ⚡\u001b[0m           \u001b[1;36m║\u001b[0m\n' +
+      '\u001b[1;36m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n\n' +
+      (reasonMessages[reason] || reasonMessages['no_key']) +
+      '\n\n' +
+      '**How to get access:**\n' +
+      '> 🎫 Request an access key from the bot owner\n' +
+      '> 🔑 Click the button below to enter your key\n' +
+      '> ✨ Enjoy full access to MentorAI!'
+    )
+    .addFields(
+      {
+        name: '🎁 Beta Testers Get',
+        value: '```diff\n+ Early access to all features\n+ Exclusive beta tester badge\n+ Direct feedback channel\n+ Priority support\n```',
+        inline: false
+      }
+    )
+    .setFooter({ text: '🔒 Access keys are one-time use and bound to your account' })
+    .setTimestamp();
+  
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('access_enter_key')
+      .setLabel('🔑 Enter Access Key')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('access_request_info')
+      .setLabel('ℹ️ How to Get a Key')
+      .setStyle(ButtonStyle.Secondary)
+  );
+  
+  if (interaction.replied || interaction.deferred) {
+    await interaction.followUp({ embeds: [accessEmbed], components: [buttons], ephemeral: true });
+  } else {
+    await interaction.reply({ embeds: [accessEmbed], components: [buttons], ephemeral: true });
+  }
+}
+
+/**
+ * Handle access key button clicks
+ */
+async function handleAccessButton(interaction, action) {
+  if (action === 'enter' && interaction.customId === 'access_enter_key') {
+    // Show modal for key entry
+    const modal = new ModalBuilder()
+      .setCustomId('access_key_modal')
+      .setTitle('🔑 Enter Your Access Key');
+    
+    const keyInput = new TextInputBuilder()
+      .setCustomId('access_key_input')
+      .setLabel('Access Key')
+      .setPlaceholder('MENTOR-XXXX-XXXX-XXXX')
+      .setStyle(TextInputStyle.Short)
+      .setMinLength(19)
+      .setMaxLength(25)
+      .setRequired(true);
+    
+    const row = new ActionRowBuilder().addComponents(keyInput);
+    modal.addComponents(row);
+    
+    await interaction.showModal(modal);
+  } else if (action === 'request' && interaction.customId === 'access_request_info') {
+    const infoEmbed = new EmbedBuilder()
+      .setTitle('ℹ️ How to Get an Access Key')
+      .setColor(0x5865F2)
+      .setDescription(
+        '```ansi\n' +
+        '\u001b[1;32m📋 GETTING YOUR ACCESS KEY\u001b[0m\n' +
+        '```\n\n' +
+        '**MentorAI is currently in private beta.**\n\n' +
+        '**To get an access key:**\n\n' +
+        '1️⃣ **Join our community** - Contact the bot owner\n' +
+        '2️⃣ **Request access** - Explain why you want to test\n' +
+        '3️⃣ **Receive your key** - It will look like `MENTOR-XXXX-XXXX-XXXX`\n' +
+        '4️⃣ **Activate it here** - Click "Enter Access Key"\n\n' +
+        '**Bot Owner:** <@1116096965755813968>\n\n' +
+        '> ⚠️ Each key is **one-time use** and bound to your account!'
+      )
+      .setFooter({ text: '🎓 MentorAI Beta Program' })
+      .setTimestamp();
+    
+    await interaction.reply({ embeds: [infoEmbed], ephemeral: true });
+  }
+}
+
+/**
+ * Handle access key modal submission
+ */
+async function handleAccessKeySubmit(interaction) {
+  const key = interaction.fields.getTextInputValue('access_key_input').trim().toUpperCase();
+  
+  // Show processing message
+  await interaction.deferReply({ ephemeral: true });
+  
+  // Import here to avoid circular dependency
+  const { activateAccessKey } = await import('../../services/accessService.js');
+  
+  const result = await activateAccessKey(key, interaction.user.id, interaction.user.username);
+  
+  if (!result.success) {
+    const errorMessages = {
+      'INVALID_KEY': { emoji: '❌', title: 'Invalid Key', desc: 'This access key does not exist. Please check and try again.' },
+      'ALREADY_USED': { emoji: '🚫', title: 'Key Already Used', desc: 'This key has already been activated by another user.' },
+      'REVOKED': { emoji: '⛔', title: 'Key Revoked', desc: 'This key has been revoked by an administrator.' },
+      'EXPIRED': { emoji: '⏰', title: 'Key Expired', desc: 'This access key has expired.' }
+    };
+    
+    const err = errorMessages[result.error] || errorMessages['INVALID_KEY'];
+    
+    const errorEmbed = new EmbedBuilder()
+      .setTitle(`${err.emoji} ${err.title}`)
+      .setColor(0xED4245)
+      .setDescription(
+        '```ansi\n\u001b[1;31m' + err.desc + '\u001b[0m\n```\n\n' +
+        '**What to do:**\n' +
+        '• Double-check your key for typos\n' +
+        '• Request a new key from the bot owner\n' +
+        '• Contact support if you believe this is an error'
+      )
+      .setFooter({ text: '🔑 Key entered: ' + key })
+      .setTimestamp();
+    
+    await interaction.editReply({ embeds: [errorEmbed] });
+    return;
+  }
+  
+  // Success! Show beautiful welcome
+  const successEmbed = new EmbedBuilder()
+    .setTitle('🎉 Welcome to MentorAI Beta!')
+    .setColor(0x57F287)
+    .setDescription(
+      '```ansi\n' +
+      '\u001b[1;32m╔══════════════════════════════════════════╗\u001b[0m\n' +
+      '\u001b[1;32m║\u001b[0m      \u001b[1;33m✨ ACCESS GRANTED ✨\u001b[0m                \u001b[1;32m║\u001b[0m\n' +
+      '\u001b[1;32m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n\n' +
+      `Welcome, **${interaction.user.username}**! 🎊\n\n` +
+      'Your access key has been activated. You now have **full access** to all MentorAI features!'
+    )
+    .addFields(
+      {
+        name: '🔑 Key Activated',
+        value: '```\n' + key + '\n```',
+        inline: true
+      },
+      {
+        name: '📅 Access Type',
+        value: '```\n' + (result.key.keyType || 'Beta').toUpperCase() + ' ACCESS\n```',
+        inline: true
+      },
+      {
+        name: '🚀 Get Started',
+        value: 
+          '> `/help` - See all commands\n' +
+          '> `/learn` - Start learning\n' +
+          '> `/quiz` - Take a quiz\n' +
+          '> `/daily` - Claim daily bonus',
+        inline: false
+      }
+    );
+  
+  if (result.expiresAt) {
+    successEmbed.addFields({
+      name: '⏰ Access Expires',
+      value: `<t:${Math.floor(result.expiresAt.getTime() / 1000)}:F>`,
+      inline: true
+    });
+  }
+  
+  successEmbed.setFooter({ text: '🎓 Thank you for being a beta tester!' })
+    .setTimestamp();
+  
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('📚 View Commands')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('execute_learn')
+      .setLabel('🎯 Start Learning')
+      .setStyle(ButtonStyle.Success)
+  );
+  
+  await interaction.editReply({ embeds: [successEmbed], components: [buttons] });
 }

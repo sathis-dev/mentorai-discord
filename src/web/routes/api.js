@@ -910,6 +910,114 @@ router.get('/analytics/quickquiz', async (req, res) => {
   }
 });
 
+// ============================================================
+// BETA ACCESS KEY MANAGEMENT
+// ============================================================
+import { AccessKey } from '../../database/models/AccessKey.js';
+
+// Get all access keys with stats
+router.get('/access-keys', async (req, res) => {
+  try {
+    const stats = await AccessKey.getStats();
+    const keys = await AccessKey.getAllKeys();
+    res.json({ stats, keys });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch access keys' });
+  }
+});
+
+// Generate new access key(s)
+router.post('/access-keys/generate', async (req, res) => {
+  try {
+    const { count = 1, note, keyType = 'beta', trialDays = 30 } = req.body;
+    const createdBy = req.user?.username || 'Admin';
+    
+    const keys = [];
+    for (let i = 0; i < Math.min(count, 50); i++) { // Max 50 at once
+      const key = await AccessKey.createKey(createdBy, { note, keyType, trialDays });
+      keys.push(key);
+    }
+    
+    addLog('ACCESS', `Generated ${keys.length} access key(s)`, createdBy);
+    req.app.get('io')?.emit('accessKeyGenerated', { count: keys.length });
+    
+    res.json({ success: true, keys });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to generate access keys' });
+  }
+});
+
+// Revoke an access key
+router.post('/access-keys/:key/revoke', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const revokedBy = req.user?.username || 'Admin';
+    
+    const result = await AccessKey.revokeKey(req.params.key, revokedBy, reason);
+    
+    if (!result.success) {
+      return res.status(404).json({ error: 'Key not found' });
+    }
+    
+    // Also revoke user's access if key was used
+    if (result.key.activatedBy) {
+      await User.findOneAndUpdate(
+        { discordId: result.key.activatedBy },
+        { hasAccess: false, accessType: 'revoked' }
+      );
+    }
+    
+    addLog('ACCESS', `Revoked access key ${req.params.key}`, revokedBy);
+    req.app.get('io')?.emit('accessKeyRevoked', { key: req.params.key });
+    
+    res.json({ success: true, key: result.key });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to revoke access key' });
+  }
+});
+
+// Get beta users list
+router.get('/access-keys/users', async (req, res) => {
+  try {
+    const users = await User.find({ hasAccess: true })
+      .select('discordId username accessKey accessGrantedAt accessExpiresAt accessType level xp')
+      .sort({ accessGrantedAt: -1 })
+      .lean();
+    res.json(users);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch beta users' });
+  }
+});
+
+// Revoke user's access directly
+router.post('/users/:id/revoke-access', async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const user = await User.findOneAndUpdate(
+      { discordId: req.params.id },
+      { 
+        hasAccess: false, 
+        accessType: 'revoked' 
+      },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Revoke their key too
+    if (user.accessKey) {
+      await AccessKey.revokeKey(user.accessKey, req.user?.username || 'Admin', reason);
+    }
+    
+    addLog('ACCESS', `Revoked access for user ${user.username}`, req.user?.username || 'Admin');
+    res.json({ success: true, user });
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to revoke user access' });
+  }
+});
+
 // Initialize with startup log
 addLog('SYSTEM', 'Admin panel started');
 
