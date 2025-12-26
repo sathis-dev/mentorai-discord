@@ -24,6 +24,7 @@ const BOT_OWNER_IDS = process.env.BOT_OWNER_IDS
 export const data = new SlashCommandBuilder()
   .setName('admin')
   .setDescription('🔐 Admin control panel (Bot owners only)')
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Only server admins can see
   .setDMPermission(true) // Allow in DMs for owners
   .addSubcommand(sub =>
     sub.setName('dashboard')
