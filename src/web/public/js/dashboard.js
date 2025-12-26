@@ -1046,3 +1046,12 @@ function initAccessKeysListeners() {
     if (e.key === 'Enter') generateAccessKeys();
   });
 }
+
+// Expose functions to global scope for onclick handlers
+window.generateAccessKeys = generateAccessKeys;
+window.copyToClipboard = copyToClipboard;
+window.copyAllKeys = copyAllKeys;
+window.closeGeneratedKeysModal = closeGeneratedKeysModal;
+window.revokeAccessKey = revokeAccessKey;
+window.revokeUserAccessByKey = revokeUserAccessByKey;
+window.revokeUserAccess = revokeUserAccess;
