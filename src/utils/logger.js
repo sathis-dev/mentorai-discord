@@ -1,40 +1,41 @@
-import winston from 'winston';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+// Simple logger utility - no external dependencies
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const logsDir = join(__dirname, '..', '..', 'logs');
+const colors = {
+  reset: '\x1b[0m',
+  red: '\x1b[31m',
+  green: '\x1b[32m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+  magenta: '\x1b[35m',
+  cyan: '\x1b[36m',
+};
 
-if (!existsSync(logsDir)) {
-  mkdirSync(logsDir, { recursive: true });
+function formatDate() {
+  return new Date().toISOString();
 }
 
-export const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.errors({ stack: true }),
-    winston.format.printf(({ timestamp, level, message, stack }) => {
-      return `[${timestamp}] ${level.toUpperCase()}: ${message}${stack ? '\n' + stack : ''}`;
-    })
-  ),
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      )
-    }),
-    new winston.transports.File({ 
-      filename: join(logsDir, 'error.log'), 
-      level: 'error' 
-    }),
-    new winston.transports.File({ 
-      filename: join(logsDir, 'combined.log') 
-    })
-  ]
-});
+export const logger = {
+  info: (message, ...args) => {
+    console.log(`${colors.blue}[INFO]${colors.reset} ${formatDate()} - ${message}`, ...args);
+  },
+  
+  warn: (message, ...args) => {
+    console.warn(`${colors.yellow}[WARN]${colors.reset} ${formatDate()} - ${message}`, ...args);
+  },
+  
+  error: (message, ...args) => {
+    console.error(`${colors.red}[ERROR]${colors.reset} ${formatDate()} - ${message}`, ...args);
+  },
+  
+  debug: (message, ...args) => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`${colors.magenta}[DEBUG]${colors.reset} ${formatDate()} - ${message}`, ...args);
+    }
+  },
+  
+  success: (message, ...args) => {
+    console.log(`${colors.green}[SUCCESS]${colors.reset} ${formatDate()} - ${message}`, ...args);
+  },
+};
 
 export default logger;

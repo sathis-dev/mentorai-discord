@@ -8,30 +8,16 @@
  * Use with embed.setColor() - controls the LEFT colored bar only
  */
 export const COLORS = {
-  // Embed Accents (use with .setColor())
-  HELP: 0x8B5CF6,
-  LESSON: 0x8B5CF6,
-  QUIZ: 0xF59E0B,
-  QUIZ_CORRECT: 0x22C55E,
-  QUIZ_INCORRECT: 0xEF4444,
-  PROGRESS: 0x6366F1,
-  STUDY_PARTY: 0xEC4899,
-  LEADERBOARD: 0xF59E0B,
-  ACHIEVEMENT: 0xF59E0B,
-  LEVEL_UP: 0xA855F7,
-  STREAK: 0xF97316,
-  XP: 0xEAB308,
-  ERROR: 0xEF4444,
-  INFO: 0x3B82F6,
-  SUCCESS: 0x22C55E,
-  
-  // Rarity Colors
-  COMMON: 0x9CA3AF,
-  UNCOMMON: 0x22C55E,
-  RARE: 0x3B82F6,
-  EPIC: 0xA855F7,
-  LEGENDARY: 0xF59E0B,
-  MYTHIC: 0xEC4899
+  PRIMARY: 0x5865F2,      // Discord Blurple
+  SUCCESS: 0x57F287,      // Green
+  WARNING: 0xFEE75C,      // Yellow
+  ERROR: 0xED4245,        // Red
+  INFO: 0x5865F2,         // Blue
+  XP: 0xFFD700,           // Gold
+  STREAK: 0xFF6B35,       // Orange
+  ACHIEVEMENT: 0x9B59B6,  // Purple
+  LESSON: 0x3498DB,       // Light Blue
+  QUIZ: 0xE91E63,         // Pink
 };
 
 /**

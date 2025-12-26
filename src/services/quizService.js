@@ -1,120 +1,202 @@
-import { generateQuizQuestions } from '../ai/openai.js';
-import { User } from '../database/models/User.js';
-import { Progress } from '../database/models/Progress.js';
-import { checkAchievements } from './gamificationService.js';
-import { logger } from '../utils/logger.js';
+import { generateQuiz } from '../ai/index.js';
+import { XP_REWARDS, checkAchievements, ACHIEVEMENTS } from './gamificationService.js';
 
-const activeQuizzes = new Map();
+// In-memory quiz sessions
+const activeSessions = new Map();
 
-export async function generateQuiz({ topic, numQuestions, userId }) {
-  const questions = await generateQuizQuestions(topic, numQuestions);
+/**
+ * Create a new quiz session with AI-generated questions
+ */
+export async function createQuizSession(userId, topic, numQuestions = 5, difficulty = 'medium') {
+  // Get user context for personalization (can be enhanced with DB data later)
+  const userContext = {
+    weakAreas: [],
+    recentlyLearned: topic
+  };
 
-  const quiz = {
-    id: `quiz_${Date.now()}_${userId}`,
-    topic,
-    questions,
+  // Generate quiz using AI
+  const quizData = await generateQuiz(topic, numQuestions, difficulty, userContext);
+
+  if (!quizData || !quizData.questions || quizData.questions.length === 0) {
+    console.error('Failed to generate quiz');
+    return null;
+  }
+
+  // Create session
+  const session = {
+    quizId: 'quiz_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 9),
+    topic: quizData.topic || topic,
+    difficulty: quizData.difficulty || difficulty,
+    quizTitle: quizData.quizTitle || topic + ' Quiz',
+    questions: quizData.questions,
     currentQuestion: 0,
     score: 0,
     answers: [],
-    startedAt: new Date(),
-    userId
+    startedAt: Date.now(),
+    encouragement: quizData.encouragement || 'Great job completing the quiz!'
   };
 
-  activeQuizzes.set(quiz.id, quiz);
-
-  return quiz;
+  activeSessions.set(userId, session);
+  
+  console.log('Quiz session created for user ' + userId + ' with ' + session.questions.length + ' questions');
+  
+  return session;
 }
 
-export async function answerQuestion(quizId, answerIndex) {
-  const quiz = activeQuizzes.get(quizId);
-  if (!quiz) throw new Error('Quiz not found or expired');
+/**
+ * Get current session for a user
+ */
+export function getSession(userId) {
+  return activeSessions.get(userId);
+}
 
-  const question = quiz.questions[quiz.currentQuestion];
-  const isCorrect = answerIndex === question.correctIndex;
+/**
+ * Get current question data
+ */
+export function getCurrentQuestion(userId) {
+  const session = activeSessions.get(userId);
+  if (!session) return null;
 
-  quiz.answers.push({
-    questionIndex: quiz.currentQuestion,
-    selectedAnswer: answerIndex,
+  const currentQ = session.questions[session.currentQuestion];
+  if (!currentQ) return null;
+
+  return {
+    question: currentQ,
+    questionNum: session.currentQuestion + 1,
+    totalQuestions: session.questions.length,
+    topic: session.topic,
+    difficulty: session.difficulty
+  };
+}
+
+/**
+ * Submit an answer and get result
+ */
+export async function submitAnswer(userId, answerIndex, user) {
+  const session = activeSessions.get(userId);
+  if (!session) return null;
+
+  const currentQ = session.questions[session.currentQuestion];
+  if (!currentQ) return null;
+
+  const isCorrect = answerIndex === currentQ.correctIndex;
+
+  // Record answer
+  session.answers.push({
+    questionIndex: session.currentQuestion,
+    questionId: currentQ.id,
+    selected: answerIndex,
+    correct: currentQ.correctIndex,
     isCorrect,
-    timeSpent: 0
+    conceptTested: currentQ.conceptTested
   });
 
   if (isCorrect) {
-    quiz.score += question.xp || 10;
+    session.score++;
   }
 
-  quiz.currentQuestion += 1;
+  session.currentQuestion++;
 
-  const isComplete = quiz.currentQuestion >= quiz.questions.length;
-
-  if (isComplete) {
-    await completeQuiz(quiz);
+  // Check if quiz is complete
+  if (session.currentQuestion >= session.questions.length) {
+    return await completeQuiz(userId, user);
   }
 
+  // Return result with next question
   return {
     isCorrect,
-    correctAnswer: question.options[question.correctIndex],
-    explanation: question.explanation,
-    score: quiz.score,
-    isComplete,
-    nextQuestion: isComplete ? null : quiz.questions[quiz.currentQuestion]
+    explanation: currentQ.explanation,
+    isComplete: false,
+    currentQuestion: session.currentQuestion,
+    totalQuestions: session.questions.length,
+    nextQuestion: getCurrentQuestion(userId)
   };
 }
 
-async function completeQuiz(quiz) {
-  const user = await User.findOne({ discordId: quiz.userId });
-  if (!user) return;
+/**
+ * Complete quiz and calculate rewards
+ */
+async function completeQuiz(userId, user) {
+  const session = activeSessions.get(userId);
+  if (!session) return null;
 
-  const correctCount = quiz.answers.filter(a => a.isCorrect).length;
-  const totalQuestions = quiz.questions.length;
-  const percentage = (correctCount / totalQuestions) * 100;
+  const totalQuestions = session.questions.length;
+  const score = session.score;
+  const percentage = Math.round((score / totalQuestions) * 100);
+  const isPerfect = score === totalQuestions;
+  const duration = Date.now() - session.startedAt;
 
-  await user.addXp(quiz.score);
+  // Calculate XP
+  let xpEarned = XP_REWARDS.QUIZ_COMPLETE;
+  xpEarned += score * XP_REWARDS.QUIZ_CORRECT;
 
-  user.quizzesCompleted += 1;
-  user.totalQuestions += totalQuestions;
-  user.correctAnswers += correctCount;
-
-  if (percentage >= 70) {
-    user.quizzesPassed += 1;
+  // Bonus for perfect score
+  if (isPerfect) {
+    xpEarned += XP_REWARDS.QUIZ_PERFECT;
   }
 
-  await user.save();
+  // Difficulty multiplier
+  const difficultyMultiplier = { easy: 0.8, medium: 1, hard: 1.5 };
+  xpEarned = Math.floor(xpEarned * (difficultyMultiplier[session.difficulty] || 1));
 
-  await Progress.updateOne(
-    { discordId: quiz.userId },
-    {
-      $push: {
-        quizResults: {
-          quizId: quiz.id,
-          score: quiz.score,
-          totalQuestions,
-          completedAt: new Date()
-        }
-      }
-    },
-    { upsert: true }
-  );
+  // Determine achievements
+  const achievements = [];
+  
+  if (isPerfect) {
+    achievements.push(ACHIEVEMENTS.PERFECT_QUIZ.name);
+  }
+  
+  // First quiz achievement (check if user has taken quizzes before)
+  if (!user?.quizzesTaken || user.quizzesTaken === 0) {
+    achievements.push(ACHIEVEMENTS.FIRST_QUIZ.name);
+    xpEarned += XP_REWARDS.FIRST_QUIZ;
+  }
 
-  await checkAchievements(user);
-
-  activeQuizzes.delete(quiz.id);
-
-  return {
-    finalScore: quiz.score,
-    correctAnswers: correctCount,
+  // Prepare result
+  const result = {
+    isComplete: true,
+    score,
     totalQuestions,
     percentage,
-    passed: percentage >= 70
+    xpEarned,
+    isPerfect,
+    duration,
+    leveledUp: false,
+    newLevel: user?.level || 1,
+    achievements,
+    answers: session.answers,
+    topic: session.topic,
+    difficulty: session.difficulty,
+    encouragement: session.encouragement,
+    conceptsToReview: session.answers
+      .filter(a => !a.isCorrect)
+      .map(a => a.conceptTested)
+      .filter(Boolean)
+  };
+
+  // Clean up session
+  activeSessions.delete(userId);
+
+  return result;
+}
+
+/**
+ * Cancel a quiz session
+ */
+export function cancelSession(userId) {
+  activeSessions.delete(userId);
+}
+
+/**
+ * Get quiz statistics for a user
+ */
+export function getQuizStats(userId) {
+  // This would normally come from the database
+  return {
+    totalQuizzes: 0,
+    averageScore: 0,
+    bestScore: 0,
+    topicsQuizzed: [],
+    recentQuizzes: []
   };
 }
-
-export function getQuiz(quizId) {
-  return activeQuizzes.get(quizId);
-}
-
-export default {
-  generateQuiz,
-  answerQuestion,
-  getQuiz
-};

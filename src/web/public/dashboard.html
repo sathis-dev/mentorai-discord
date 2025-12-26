@@ -1,0 +1,2146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MentorAI Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+      <div class="logo-text"><h2>MentorAI</h2><span>Admin v2.0</span></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebarNav">
+      <div class="nav-section">Main</div>
+      <div class="nav-item active" data-page="dashboard"><i class="fas fa-chart-pie"></i> Dashboard</div>
+      <div class="nav-item" data-page="users"><i class="fas fa-users"></i> Users</div>
+      <div class="nav-item" data-page="leaderboard"><i class="fas fa-trophy"></i> Leaderboard</div>
+      <div class="nav-section">Analytics</div>
+      <div class="nav-item" data-page="analytics"><i class="fas fa-chart-line"></i> Analytics</div>
+      <div class="nav-item" data-page="viral"><i class="fas fa-rocket"></i> Viral Features</div>
+      <div class="nav-item" data-page="logs"><i class="fas fa-list-alt"></i> Activity Logs</div>
+      <div class="nav-section">Actions</div>
+      <div class="nav-item" data-page="broadcast"><i class="fas fa-bullhorn"></i> Broadcast</div>
+      <div class="nav-item" data-page="banned"><i class="fas fa-ban"></i> Banned Users</div>
+      <div class="nav-section">System</div>
+      <div class="nav-item" data-page="config"><i class="fas fa-cog"></i> Configuration</div>
+      <div class="nav-item" data-page="system"><i class="fas fa-server"></i> System Health</div>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="header">
+      <div class="header-left"><h1 id="pageTitle">Dashboard</h1><p id="pageSubtitle">Real-time overview</p></div>
+      <div class="header-right">
+        <div class="live-badge"><div class="live-dot"></div> Live</div>
+        <button class="header-btn" id="refreshBtn"><i class="fas fa-sync-alt"></i></button>
+        <div class="user-badge"><div class="user-avatar"><i class="fas fa-user-shield"></i></div><span>Admin</span></div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Dashboard -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon blue"><i class="fas fa-users"></i></div><span class="stat-trend" id="userTrend">+0</span></div><div class="stat-value" id="statUsers">0</div><div class="stat-label">Total Users</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon green"><i class="fas fa-bolt"></i></div></div><div class="stat-value" id="statActive">0</div><div class="stat-label">Active Today</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon yellow"><i class="fas fa-star"></i></div></div><div class="stat-value" id="statXP">0</div><div class="stat-label">Total XP</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon pink"><i class="fas fa-question-circle"></i></div></div><div class="stat-value" id="statQuizzes">0</div><div class="stat-label">Quizzes</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-chart-area"></i> User Growth</span><select class="form-select" id="chartPeriod"><option value="7">7 days</option><option value="14">14 days</option><option value="30">30 days</option></select></div><div class="card-body"><div class="chart-box"><canvas id="growthChart"></canvas></div></div></div>
+          <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-chart-pie"></i> Activity</span></div><div class="card-body"><div class="chart-box"><canvas id="activityChart"></canvas></div></div></div>
+        </div>
+        <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-clock"></i> Recent Users</span><button class="btn btn-ghost btn-sm" id="viewAllUsersBtn">View All</button></div><div class="card-body"><table><thead><tr><th>User</th><th>Level</th><th>XP</th><th>Streak</th><th>Joined</th></tr></thead><tbody id="recentUsersTable"></tbody></table></div></div>
+      </div>
+
+      <!-- Users -->
+      <div class="page" id="page-users">
+        <div class="user-stats-grid">
+          <div class="user-stat-card">
+            <div class="user-stat-icon blue"><i class="fas fa-users"></i></div>
+            <div class="user-stat-value" id="usersTotalCount">0</div>
+            <div class="user-stat-label">Total Users</div>
+          </div>
+          <div class="user-stat-card green">
+            <div class="user-stat-icon green"><i class="fas fa-user-check"></i></div>
+            <div class="user-stat-value" id="usersActiveCount">0</div>
+            <div class="user-stat-label">Active Today</div>
+          </div>
+          <div class="user-stat-card yellow">
+            <div class="user-stat-icon yellow"><i class="fas fa-crown"></i></div>
+            <div class="user-stat-value" id="usersTopLevel">0</div>
+            <div class="user-stat-label">Highest Level</div>
+          </div>
+          <div class="user-stat-card pink">
+            <div class="user-stat-icon pink"><i class="fas fa-fire"></i></div>
+            <div class="user-stat-value" id="usersTopStreak">0</div>
+            <div class="user-stat-label">Best Streak</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fas fa-users"></i> User Management</span>
+            <div style="display:flex;gap:10px;align-items:center">
+              <input type="text" class="form-input" id="userSearch" placeholder="Search username or ID..." style="width:220px">
+              <select class="form-select" id="userSort">
+                <option value="level">By Level</option>
+                <option value="xp">By XP</option>
+                <option value="streak">By Streak</option>
+                <option value="createdAt">By Join Date</option>
+                <option value="lastActive">By Last Active</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="window.loadUsers()" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div class="users-table-wrapper">
+              <table class="users-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Level</th>
+                    <th>XP</th>
+                    <th>Progress</th>
+                    <th>Streak</th>
+                    <th>Quizzes</th>
+                    <th>Last Active</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTable"></tbody>
+              </table>
+            </div>
+            <div id="usersPagination" style="margin-top:16px;display:flex;justify-content:center;gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leaderboard -->
+      <div class="page" id="page-leaderboard">
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-primary" id="lbXpBtn"><i class="fas fa-star"></i> XP</button>
+          <button class="btn btn-ghost" id="lbLevelBtn"><i class="fas fa-layer-group"></i> Level</button>
+          <button class="btn btn-ghost" id="lbStreakBtn"><i class="fas fa-fire"></i> Streak</button>
+        </div>
+        <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-trophy"></i> Top Learners</span></div><div class="card-body" id="leaderboardContainer"></div></div>
+      </div>
+
+      <!-- Analytics -->
+      <div class="page" id="page-analytics">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon cyan"><i class="fas fa-user-plus"></i></div></div><div class="stat-value" id="ana1d">0</div><div class="stat-label">New (24h)</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon blue"><i class="fas fa-calendar-week"></i></div></div><div class="stat-value" id="ana7d">0</div><div class="stat-label">New (7d)</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon purple"><i class="fas fa-calendar"></i></div></div><div class="stat-value" id="ana30d">0</div><div class="stat-label">New (30d)</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon green"><i class="fas fa-percentage"></i></div></div><div class="stat-value" id="anaAccuracy">0%</div><div class="stat-label">Accuracy</div></div>
+        </div>
+        <div class="charts-row">
+          <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-book"></i> Popular Topics</span></div><div class="card-body" id="topicsContainer"><div class="empty"><i class="fas fa-chart-bar"></i><p>No data yet</p></div></div></div>
+          <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-medal"></i> Achievements</span></div><div class="card-body" id="achievementsContainer"><div class="empty"><i class="fas fa-trophy"></i><p>No data yet</p></div></div></div>
+        </div>
+      </div>
+
+      <!-- Logs -->
+      <div class="page" id="page-logs">
+        <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-list-alt"></i> Activity Logs</span><div style="display:flex;gap:8px;"><select class="form-select" id="logFilter"><option value="all">All</option><option value="SYSTEM">System</option><option value="USER">User</option><option value="MODERATION">Moderation</option><option value="BROADCAST">Broadcast</option></select><button class="btn btn-danger btn-sm" id="clearLogsBtn"><i class="fas fa-trash"></i></button></div></div><div class="card-body" id="logsContainer"></div></div>
+      </div>
+
+      <!-- ULTRA ADVANCED BROADCAST SYSTEM -->
+      <div class="page" id="page-broadcast">
+        <div class="broadcast-grid">
+          <!-- Left: Compose -->
+          <div class="broadcast-compose">
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title"><i class="fas fa-edit"></i> Compose Broadcast</span>
+                <button class="btn btn-ghost btn-sm" onclick="window.loadTemplates()"><i class="fas fa-magic"></i> Templates</button>
+              </div>
+              <div class="card-body">
+                <form id="broadcastForm">
+                  <!-- Type Selection -->
+                  <div class="form-group">
+                    <label class="form-label">Type</label>
+                    <div class="broadcast-types" id="broadcastTypes"></div>
+                  </div>
+                  
+                  <!-- Title -->
+                  <div class="form-group">
+                    <label class="form-label">Title</label>
+                    <input type="text" class="form-input" id="bcTitle" placeholder="Enter broadcast title..." required>
+                  </div>
+                  
+                  <!-- Message -->
+                  <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-input" id="bcMessage" rows="5" placeholder="Hey everyone! 🎉&#10;&#10;Your message here..." required></textarea>
+                  </div>
+                  
+                  <!-- Delivery Method -->
+                  <div class="form-group">
+                    <label class="form-label">📡 Delivery Method</label>
+                    <select class="form-select" id="bcMethod" onchange="window.updateDeliveryOptions()">
+                      <option value="configured" selected>⭐ Configured Channels (Best - Server Admin Chosen)</option>
+                      <option value="channel">📢 Specific Channel (Pick one channel)</option>
+                      <option value="global">🌐 All Servers (Broadcast to every server)</option>
+                      <option value="dm">💬 Direct Messages (Slow, Personal)</option>
+                    </select>
+                    <div class="method-hint" id="methodHint" style="font-size:11px;color:var(--text3);margin-top:4px;">
+                      ⭐ Sends to announcement channels configured by server admins via /setup
+                    </div>
+                  </div>
+                  
+                  <!-- Configured Servers Preview -->
+                  <div class="form-group" id="configuredServersGroup">
+                    <label class="form-label">🎯 Target Servers</label>
+                    <div class="configured-servers-preview" id="configuredServersPreview" style="background:var(--bg3);padding:12px;border-radius:8px;font-size:13px;">
+                      Loading configured servers...
+                    </div>
+                  </div>
+                  
+                  <!-- Channel Selection (shown for specific channel method) -->
+                  <div class="form-group" id="channelSelectGroup" style="display:none;">
+                    <label class="form-label">🎯 Target Channel</label>
+                    <select class="form-select" id="bcChannel">
+                      <option value="">Loading channels...</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Mention Option (for channel broadcasts) -->
+                  <div class="form-group" id="mentionGroup">
+                    <label class="form-label">🔔 Ping/Mention</label>
+                    <select class="form-select" id="bcMention">
+                      <option value="">No mention</option>
+                      <option value="here">@here (online members)</option>
+                      <option value="everyone">@everyone (all members)</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Target Audience (for DM method) -->
+                  <div class="form-group" id="audienceGroup" style="display:none;">
+                    <label class="form-label">Target Audience</label>
+                    <select class="form-select" id="bcAudience">
+                      <option value="all">📢 All Users</option>
+                      <option value="active_24h">⚡ Active (24h)</option>
+                      <option value="active_7d">📅 Active (7 days)</option>
+                      <option value="inactive_7d">😴 Inactive (7+ days)</option>
+                      <option value="beginners">🌱 Beginners (Lv.1-5)</option>
+                      <option value="intermediate">📈 Intermediate (Lv.6-15)</option>
+                      <option value="advanced">🏆 Advanced (Lv.16+)</option>
+                      <option value="streak_holders">🔥 Streak Holders (3+ days)</option>
+                      <option value="quiz_masters">🧠 Quiz Masters (10+ quizzes)</option>
+                      <option value="new_users">🆕 New Users (7 days)</option>
+                    </select>
+                    <div class="audience-count" id="audienceCount">Calculating targets...</div>
+                  </div>
+                  
+                  <!-- Optional: Image URL -->
+                  <div class="form-group">
+                    <label class="form-label">Image URL (optional)</label>
+                    <input type="url" class="form-input" id="bcImage" placeholder="https://example.com/image.png">
+                  </div>
+                  
+                  <!-- Call to Action -->
+                  <div class="form-group">
+                    <label class="form-label">Call to Action (optional)</label>
+                    <input type="text" class="form-input" id="bcCTA" placeholder="Try /quiz to get started!">
+                  </div>
+                  
+                  <!-- Schedule Toggle -->
+                  <div class="form-group">
+                    <div class="toggle-item">
+                      <div><div class="toggle-label">⏰ Schedule for later</div></div>
+                      <label class="switch"><input type="checkbox" id="bcSchedule"><span class="slider"></span></label>
+                    </div>
+                    <input type="datetime-local" class="form-input" id="bcScheduleTime" style="margin-top:8px;display:none;">
+                  </div>
+                  
+                  <!-- Actions -->
+                  <div class="broadcast-actions">
+                    <button type="button" class="btn btn-ghost" onclick="window.previewBroadcast()"><i class="fas fa-eye"></i> Preview</button>
+                    <button type="submit" class="btn btn-primary" id="sendBroadcastBtn"><i class="fas fa-paper-plane"></i> Send Now</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+            
+            <!-- Quick Templates -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header"><span class="card-title"><i class="fas fa-bolt"></i> Quick Send</span></div>
+              <div class="card-body">
+                <div class="quick-templates">
+                  <button class="quick-btn" onclick="window.quickSend('maintenance_start')">🔧 Maintenance Start</button>
+                  <button class="quick-btn" onclick="window.quickSend('maintenance_end')">✨ Maintenance End</button>
+                  <button class="quick-btn" onclick="window.quickSend('streak_reminder')">🔥 Streak Reminder</button>
+                  <button class="quick-btn" onclick="window.quickSend('welcome_new')">👋 Welcome New</button>
+                  <button class="quick-btn" onclick="window.quickSend('reengagement')">🎁 Re-engage Inactive</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right: Preview & Stats -->
+          <div class="broadcast-sidebar">
+            <!-- Live Preview -->
+            <div class="card">
+              <div class="card-header"><span class="card-title"><i class="fas fa-desktop"></i> Live Preview</span></div>
+              <div class="card-body">
+                <div class="discord-preview" id="broadcastPreview">
+                  <div class="discord-embed" id="previewEmbed">
+                    <div class="embed-color"></div>
+                    <div class="embed-content">
+                      <div class="embed-title">📢 Your Title Here</div>
+                      <div class="embed-desc">Your message will appear here...</div>
+                      <div class="embed-footer">MentorAI Announcement • Today</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Broadcast Progress -->
+            <div class="card" style="margin-top:16px;display:none;" id="broadcastProgress">
+              <div class="card-header"><span class="card-title"><i class="fas fa-spinner fa-spin"></i> Sending...</span></div>
+              <div class="card-body">
+                <div class="progress-container">
+                  <div class="progress-bar" id="bcProgressBar" style="width:0%"></div>
+                </div>
+                <div class="progress-stats">
+                  <span id="bcProgressSent">0</span> sent / <span id="bcProgressFailed">0</span> failed
+                </div>
+              </div>
+            </div>
+            
+            <!-- Analytics -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header"><span class="card-title"><i class="fas fa-chart-bar"></i> Broadcast Stats</span></div>
+              <div class="card-body">
+                <div class="stat-mini-grid">
+                  <div class="stat-mini"><div class="stat-mini-value" id="bcStatTotal">0</div><div class="stat-mini-label">Total Sent</div></div>
+                  <div class="stat-mini"><div class="stat-mini-value" id="bcStatSuccess">0%</div><div class="stat-mini-label">Success Rate</div></div>
+                  <div class="stat-mini"><div class="stat-mini-value" id="bcStatToday">0</div><div class="stat-mini-label">Today</div></div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Scheduled -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header"><span class="card-title"><i class="fas fa-clock"></i> Scheduled</span></div>
+              <div class="card-body" id="scheduledBroadcasts">
+                <div class="empty-small"><i class="fas fa-calendar-check"></i> No scheduled broadcasts</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- History -->
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header"><span class="card-title"><i class="fas fa-history"></i> Broadcast History</span></div>
+          <div class="card-body">
+            <div class="broadcast-history" id="broadcastHistory"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Banned -->
+      <div class="page" id="page-banned">
+        <div class="card"><div class="card-header"><span class="card-title"><i class="fas fa-ban"></i> Banned Users</span></div><div class="card-body" id="bannedContainer"><div class="empty"><i class="fas fa-check-circle"></i><p>No banned users</p></div></div></div>
+      </div>
+
+      <!-- Config -->
+      <div class="page" id="page-config">
+        <div class="card" style="max-width:500px;"><div class="card-header"><span class="card-title"><i class="fas fa-toggle-on"></i> Features</span></div><div class="card-body" id="featureToggles"></div></div>
+        <div class="card" style="max-width:500px;margin-top:16px;"><div class="card-header"><span class="card-title"><i class="fas fa-sliders-h"></i> Settings</span></div><div class="card-body"><div class="form-group"><label class="form-label">XP Multiplier</label><input type="number" class="form-input" id="xpMultiplier" min="0.5" max="5" step="0.5" value="1"></div><div class="form-group"><label class="form-label">Max Questions</label><input type="number" class="form-input" id="maxQuestions" min="1" max="20" value="10"></div><button class="btn btn-primary" id="saveSettingsBtn"><i class="fas fa-save"></i> Save</button></div></div>
+      </div>
+
+      <!-- Viral Features -->
+      <div class="page" id="page-viral">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon purple"><i class="fas fa-user-plus"></i></div><span class="stat-trend green" id="referralTrend">+0</span></div><div class="stat-value" id="viralReferrals">0</div><div class="stat-label">Total Referrals</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon blue"><i class="fas fa-share-alt"></i></div></div><div class="stat-value" id="viralShares">0</div><div class="stat-label">Profile Shares</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon yellow"><i class="fas fa-bolt"></i></div></div><div class="stat-value" id="viralQuickQuiz">0</div><div class="stat-label">Quick Quizzes</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon pink"><i class="fas fa-lightbulb"></i></div></div><div class="stat-value" id="viralFunFacts">0</div><div class="stat-label">Fun Facts Viewed</div></div>
+        </div>
+        
+        <div class="charts-row">
+          <!-- Referral System Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fas fa-user-plus"></i> Referral System</span>
+              <span class="badge green">Active</span>
+            </div>
+            <div class="card-body">
+              <div class="viral-stats-mini">
+                <div class="viral-stat"><i class="fas fa-users"></i><span id="viralActiveReferrers">0</span><small>Active Referrers</small></div>
+                <div class="viral-stat"><i class="fas fa-star"></i><span id="viralReferralXP">0</span><small>XP Distributed</small></div>
+              </div>
+              <div class="card-header" style="margin-top:16px;padding:0;"><span class="card-title" style="font-size:13px;">🏆 Top Referrers</span></div>
+              <div id="topReferrersContainer" style="margin-top:8px;"><div class="empty-small"><i class="fas fa-users"></i> No referrers yet</div></div>
+            </div>
+          </div>
+          
+          <!-- Quick Quiz Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fas fa-bolt"></i> Quick Quiz Stats</span>
+              <span class="badge blue">30-second challenges</span>
+            </div>
+            <div class="card-body">
+              <div class="viral-stats-mini">
+                <div class="viral-stat"><i class="fas fa-check-circle"></i><span id="viralQuickCorrect">0</span><small>Correct Answers</small></div>
+                <div class="viral-stat"><i class="fas fa-percentage"></i><span id="viralQuickAccuracy">0%</span><small>Accuracy</small></div>
+              </div>
+              <div class="card-header" style="margin-top:16px;padding:0;"><span class="card-title" style="font-size:13px;">🧠 Top Quick Quizzers</span></div>
+              <div id="topQuickQuizContainer" style="margin-top:8px;"><div class="empty-small"><i class="fas fa-brain"></i> No quick quizzes yet</div></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="charts-row">
+          <!-- Share System Card -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fas fa-share-alt"></i> Share System</span>
+              <span class="badge purple">Social</span>
+            </div>
+            <div class="card-body">
+              <div class="viral-stats-mini">
+                <div class="viral-stat"><i class="fas fa-calendar-day"></i><span id="viralSharesToday">0</span><small>Shares Today</small></div>
+                <div class="viral-stat"><i class="fas fa-user-friends"></i><span id="viralUniqueSharers">0</span><small>Unique Sharers</small></div>
+              </div>
+              <div class="viral-feature-desc">
+                <p>📊 Share cards let users flex their stats on social media</p>
+                <p>🎯 Types: Progress Card, Achievement Showcase, Quiz Stats, Streak Flex</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Weekly Challenges & Fun Facts -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title"><i class="fas fa-calendar-week"></i> Weekly & Fun Facts</span>
+              <span class="badge yellow">Engagement</span>
+            </div>
+            <div class="card-body">
+              <div class="viral-stats-mini">
+                <div class="viral-stat"><i class="fas fa-trophy"></i><span id="viralWeeklyWins">0</span><small>Weekly Wins</small></div>
+                <div class="viral-stat"><i class="fas fa-flag-checkered"></i><span id="viralWeeklyParticipations">0</span><small>Participations</small></div>
+              </div>
+              <div class="viral-feature-desc" style="margin-top:12px;">
+                <p>🗓️ Weekly server-wide challenges with rotating themes</p>
+                <p>💡 Fun facts boost engagement with quick learning moments</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System -->
+      <div class="page" id="page-system">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon green"><i class="fas fa-clock"></i></div></div><div class="stat-value" id="sysUptime">--</div><div class="stat-label">Uptime</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon blue"><i class="fas fa-memory"></i></div></div><div class="stat-value" id="sysMemory">--</div><div class="stat-label">Memory</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon purple"><i class="fas fa-code"></i></div></div><div class="stat-value" id="sysNode">--</div><div class="stat-label">Node.js</div></div>
+          <div class="stat-card"><div class="stat-header"><div class="stat-icon" id="sysStatusIcon"><i class="fas fa-server"></i></div></div><div class="stat-value" id="sysStatus">--</div><div class="stat-label">Status</div></div>
+        </div>
+        <div class="card" style="max-width:500px;"><div class="card-header"><span class="card-title"><i class="fas fa-tools"></i> Maintenance</span></div><div class="card-body"><div class="toggle-item danger"><div><div class="toggle-label">⚠️ Maintenance Mode</div><div class="toggle-desc">Disable bot for all users</div></div><label class="switch"><input type="checkbox" id="maintenanceToggle"><span class="slider"></span></label></div><button class="btn btn-warning" id="clearCacheBtn" style="margin-top:12px;"><i class="fas fa-broom"></i> Clear Cache</button></div></div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="userModal"><div class="modal"><div class="modal-header"><span class="modal-title">User Details</span><button class="modal-close" id="closeModalBtn">&times;</button></div><div class="modal-body" id="userModalBody"></div><div class="modal-footer" id="userModalFooter"></div></div></div>
+  
+  <!-- XP Modal Overlay -->
+  <div class="modal-overlay" id="xpModal">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-star" style="color:var(--warning)"></i> Give XP - <span id="xpModalUser">User</span></span>
+        <button class="modal-close" onclick="window.closeXpModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:20px">
+          <div class="form-label" style="margin-bottom:12px;font-weight:600">Quick XP Rewards</div>
+          <div class="quick-xp-grid">
+            <button class="quick-xp-btn" onclick="window.setQuickXP(25)" data-xp="25"><div class="quick-xp-amount">+25</div><div class="quick-xp-label">Quiz Answer</div></button>
+            <button class="quick-xp-btn" onclick="window.setQuickXP(50)" data-xp="50"><div class="quick-xp-amount">+50</div><div class="quick-xp-label">Quiz Complete</div></button>
+            <button class="quick-xp-btn" onclick="window.setQuickXP(100)" data-xp="100"><div class="quick-xp-amount">+100</div><div class="quick-xp-label">Perfect Quiz</div></button>
+            <button class="quick-xp-btn" onclick="window.setQuickXP(75)" data-xp="75"><div class="quick-xp-amount">+75</div><div class="quick-xp-label">Daily Bonus</div></button>
+            <button class="quick-xp-btn" onclick="window.setQuickXP(150)" data-xp="150"><div class="quick-xp-amount">+150</div><div class="quick-xp-label">Challenge Win</div></button>
+            <button class="quick-xp-btn" onclick="window.setQuickXP(500)" data-xp="500"><div class="quick-xp-amount">+500</div><div class="quick-xp-label">Special Reward</div></button>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div class="form-label" style="margin-bottom:8px;font-weight:600">Custom Amount</div>
+          <div style="display:flex;gap:10px">
+            <input type="number" class="form-input" id="customXpAmount" placeholder="Enter XP" min="1" max="10000" style="flex:1">
+            <select class="form-select" id="xpReason" style="width:140px">
+              <option value="reward">🎁 Reward</option>
+              <option value="bonus">⭐ Bonus</option>
+              <option value="event">🎉 Event</option>
+              <option value="correction">🔧 Correction</option>
+              <option value="other">📝 Other</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-bottom:20px">
+          <div class="form-label" style="margin-bottom:8px">Note (Optional)</div>
+          <input type="text" class="form-input" id="xpNote" placeholder="Reason for giving XP..." style="width:100%">
+        </div>
+        <div class="xp-preview" id="xpPreview">
+          <div class="xp-preview-amount">+0 XP</div>
+          <div class="xp-preview-label">Select amount above</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="window.closeXpModal()">Cancel</button>
+        <button class="btn btn-success" id="giveXpBtn" onclick="window.submitGiveXP()"><i class="fas fa-star"></i> Give XP</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- User Detail Modal Overlay -->
+  <div class="modal-overlay" id="userDetailModal">
+    <div class="modal" style="max-width:550px">
+      <div class="modal-header">
+        <span class="modal-title"><i class="fas fa-user" style="color:var(--primary)"></i> User Details</span>
+        <button class="modal-close" onclick="window.closeUserDetailModal()">&times;</button>
+      </div>
+      <div class="modal-body" id="userDetailBody">Loading...</div>
+      <div class="modal-footer" id="userDetailFooter"></div>
+    </div>
+  </div>
+  
+  <div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ============================================
+// GLOBAL VARIABLES - Available immediately
+// ============================================
+var charts = {};
+var currentUserPage = 1;
+var currentUserId = null;
+var socket = null;
+var selectedBroadcastType = 'announcement';
+var broadcastConfig = null;
+
+// ============================================
+// IMMEDIATELY DEFINE ALL ONCLICK FUNCTIONS ON WINDOW
+// This ensures they're available before any dynamic HTML loads
+// ============================================
+window.showToast = function(msg, type) {
+  type = type || 'info';
+  var icons = { success: 'check-circle', error: 'times-circle', warning: 'exclamation-triangle', info: 'info-circle' };
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.innerHTML = '<i class="fas fa-' + icons[type] + '"></i><span>' + msg + '</span>';
+  document.getElementById('toastContainer').appendChild(toast);
+  setTimeout(function() { toast.remove(); }, 4000);
+};
+
+window.closeModal = function() {
+  document.getElementById('userModal').classList.remove('active');
+};
+
+var xpModalUserId = null;
+
+window.viewUser = function(id) {
+  currentUserId = id;
+  fetch('/api/users/' + id, { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(u) {
+      var xpForNextLevel = calculateXpForLevel(u.level || 1);
+      var currentProgress = ((u.xp || 0) % xpForNextLevel);
+      var progressPercent = Math.round((currentProgress / xpForNextLevel) * 100);
+      var accuracy = u.totalQuestions > 0 ? Math.round((u.correctAnswers / u.totalQuestions) * 100) : 0;
+      var lastActiveText = u.lastActive ? getTimeAgo(u.lastActive) : 'Never';
+      var joinedText = u.createdAt ? formatDate(u.createdAt) : 'Unknown';
+      
+      document.getElementById('userDetailBody').innerHTML =
+        '<div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--bg2)">' +
+          '<div class="avatar-lg" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#5865F2,#7289DA);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">' + ((u.username || 'U')[0].toUpperCase()) + '</div>' +
+          '<div style="flex:1">' +
+            '<div style="font-size:20px;font-weight:700">' + (u.username || 'Unknown') + '</div>' +
+            '<div style="color:var(--text3);font-size:12px">' + u.discordId + '</div>' +
+            '<div style="margin-top:4px">' + (u.banned ? '<span class="badge banned">🚫 Banned</span>' : '<span class="badge active">✅ Active</span>') + '</div>' +
+          '</div>' +
+          '<div style="text-align:right">' +
+            '<div style="font-size:28px;font-weight:800;color:#f59e0b">⭐ Lv.' + (u.level || 1) + '</div>' +
+            '<div style="color:var(--text3);font-size:12px">' + ((u.xp || 0).toLocaleString()) + ' XP</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="detail-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px">' +
+          '<div class="detail-item" style="background:var(--bg2);padding:12px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#5865F2">' + (u.quizzesTaken || 0) + '</div><div style="font-size:11px;color:var(--text3)">Quizzes</div></div>' +
+          '<div class="detail-item" style="background:var(--bg2);padding:12px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#22c55e">' + accuracy + '%</div><div style="font-size:11px;color:var(--text3)">Accuracy</div></div>' +
+          '<div class="detail-item" style="background:var(--bg2);padding:12px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#f59e0b">🔥 ' + (u.streak || 0) + '</div><div style="font-size:11px;color:var(--text3)">Streak</div></div>' +
+          '<div class="detail-item" style="background:var(--bg2);padding:12px;border-radius:8px;text-align:center"><div style="font-size:20px;font-weight:700;color:#ec4899">' + (u.achievements?.length || 0) + '</div><div style="font-size:11px;color:var(--text3)">Achievements</div></div>' +
+        '</div>' +
+        '<div style="margin-bottom:16px">' +
+          '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--text3)">Progress to Level ' + ((u.level || 1) + 1) + '</span><span style="font-size:12px;font-weight:600">' + progressPercent + '%</span></div>' +
+          '<div style="background:var(--bg2);height:8px;border-radius:4px;overflow:hidden"><div style="background:linear-gradient(90deg,#5865F2,#7289DA);height:100%;width:' + progressPercent + '%;transition:width 0.3s"></div></div>' +
+          '<div style="display:flex;justify-content:space-between;margin-top:4px"><span style="font-size:11px;color:var(--text3)">' + currentProgress.toLocaleString() + ' XP</span><span style="font-size:11px;color:var(--text3)">' + xpForNextLevel.toLocaleString() + ' XP needed</span></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">' +
+          '<div style="background:var(--bg2);padding:12px;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Last Active</div><div style="font-weight:600">' + lastActiveText + '</div></div>' +
+          '<div style="background:var(--bg2);padding:12px;border-radius:8px"><div style="font-size:11px;color:var(--text3);margin-bottom:4px">Joined</div><div style="font-weight:600">' + joinedText + '</div></div>' +
+        '</div>' +
+        '<div style="background:var(--bg2);padding:12px;border-radius:8px">' +
+          '<div style="font-size:12px;font-weight:600;margin-bottom:8px">Quick Actions</div>' +
+          '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">' +
+            '<div style="display:flex;align-items:center;gap:8px"><span style="color:var(--text3)">Set Level:</span><input type="number" class="form-input" id="newLevelInput" value="' + (u.level || 1) + '" min="1" max="100" style="width:70px"><button class="btn btn-primary btn-sm" onclick="window.setUserLevel()">Set</button></div>' +
+            '<div style="display:flex;align-items:center;gap:8px"><span style="color:var(--text3)">Set Streak:</span><input type="number" class="form-input" id="newStreakInput" value="' + (u.streak || 0) + '" min="0" max="365" style="width:70px"><button class="btn btn-primary btn-sm" onclick="window.setUserStreak()">Set</button></div>' +
+          '</div>' +
+        '</div>';
+      
+      document.getElementById('userDetailFooter').innerHTML =
+        '<button class="btn btn-success" onclick="window.openXpModal(\'' + id + '\', \'' + (u.username || 'User').replace(/'/g, "\\'") + '\')"><i class="fas fa-star"></i> Give XP</button> ' +
+        '<button class="btn btn-primary" onclick="window.levelUpUser(\'' + id + '\')"><i class="fas fa-arrow-up"></i> Level Up</button> ' +
+        '<button class="btn btn-' + (u.banned ? 'warning' : 'danger') + '" onclick="window.' + (u.banned ? 'unbanUser' : 'banUser') + '(\'' + id + '\')"><i class="fas fa-' + (u.banned ? 'unlock' : 'ban') + '"></i> ' + (u.banned ? 'Unban' : 'Ban') + '</button>';
+      
+      document.getElementById('userDetailModal').classList.add('active');
+    })
+    .catch(function() { window.showToast('Failed to load user', 'error'); });
+};
+
+// Calculate XP needed for a level
+window.calculateXpForLevel = function(level) {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+};
+function calculateXpForLevel(level) {
+  return window.calculateXpForLevel(level);
+}
+
+// Open advanced XP modal
+window.openXpModal = function(id, username) {
+  xpModalUserId = id;
+  document.getElementById('xpModalUser').textContent = username;
+  document.getElementById('customXpAmount').value = '';
+  document.getElementById('xpNote').value = '';
+  // Clear selected buttons
+  document.querySelectorAll('.quick-xp-btn').forEach(function(btn) { btn.classList.remove('selected'); });
+  document.getElementById('xpPreview').innerHTML = '<div class="xp-preview-amount">+0 XP</div><div class="xp-preview-label">Select amount above</div>';
+  document.getElementById('xpModal').classList.add('active');
+};
+
+window.closeXpModal = function() {
+  document.getElementById('xpModal').classList.remove('active');
+  xpModalUserId = null;
+};
+function closeXpModal() { window.closeXpModal(); }
+
+window.closeUserDetailModal = function() {
+  document.getElementById('userDetailModal').classList.remove('active');
+};
+function closeUserDetailModal() { window.closeUserDetailModal(); }
+
+window.setQuickXP = function(amount) {
+  document.getElementById('customXpAmount').value = amount;
+  // Highlight selected button
+  document.querySelectorAll('.quick-xp-btn').forEach(function(btn) {
+    btn.classList.remove('selected');
+    if (btn.getAttribute('data-xp') === String(amount)) {
+      btn.classList.add('selected');
+    }
+  });
+  window.updateXpPreview();
+};
+function setQuickXP(amount) { window.setQuickXP(amount); }
+
+window.updateXpPreview = function() {
+  var amount = parseInt(document.getElementById('customXpAmount').value) || 0;
+  var previewEl = document.getElementById('xpPreview');
+  if (amount > 0) {
+    previewEl.innerHTML = '<div class="xp-preview-amount">+' + amount.toLocaleString() + ' XP</div><div class="xp-preview-label">Ready to give</div>';
+    previewEl.style.borderColor = 'var(--success)';
+  } else {
+    previewEl.innerHTML = '<div class="xp-preview-amount" style="-webkit-text-fill-color:var(--text3)">+0 XP</div><div class="xp-preview-label">Select amount above</div>';
+    previewEl.style.borderColor = 'var(--border)';
+  }
+};
+function updateXpPreview() { window.updateXpPreview(); }
+
+// Add event listener for custom amount
+document.getElementById('customXpAmount')?.addEventListener('input', window.updateXpPreview);
+
+window.submitGiveXP = function() {
+  var amount = parseInt(document.getElementById('customXpAmount').value);
+  var reason = document.getElementById('xpReason').value;
+  var note = document.getElementById('xpNote').value;
+  
+  if (!amount || amount < 1) {
+    window.showToast('Please enter a valid XP amount', 'error');
+    return;
+  }
+  
+  var btn = document.getElementById('giveXpBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Giving...';
+  
+  fetch('/api/users/' + xpModalUserId + '/give-xp', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ amount: amount, reason: reason, note: note })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-star"></i> Give XP';
+    
+    if (d.success) {
+      window.showToast('🎉 Gave ' + amount.toLocaleString() + ' XP!' + (d.leveledUp ? ' Level Up! 🎊' : ''), 'success');
+      window.closeXpModal();
+      window.closeUserDetailModal();
+      loadUsers();
+    } else {
+      window.showToast(d.error || 'Failed to give XP', 'error');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-star"></i> Give XP';
+    window.showToast('Failed to give XP', 'error');
+  });
+};
+function submitGiveXP() { window.submitGiveXP(); }
+
+// Legacy function for quick XP from table
+window.giveXP = function(id) {
+  fetch('/api/users/' + id, { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(u) {
+      window.openXpModal(id, u.username || 'User');
+    })
+    .catch(function() {
+      window.openXpModal(id, 'User');
+    });
+};
+
+window.setUserLevel = function() {
+  var level = parseInt(document.getElementById('newLevelInput').value);
+  if (!level || level < 1 || level > 100) {
+    window.showToast('Invalid level (1-100)', 'error');
+    return;
+  }
+  
+  fetch('/api/users/' + currentUserId + '/set-level', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ level: level })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('Level set to ' + level + '!', 'success');
+      window.viewUser(currentUserId); // Refresh modal
+      loadUsers();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.setUserStreak = function() {
+  var streak = parseInt(document.getElementById('newStreakInput').value);
+  if (streak < 0 || streak > 365) {
+    window.showToast('Invalid streak (0-365)', 'error');
+    return;
+  }
+  
+  fetch('/api/users/' + currentUserId, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ streak: streak })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.discordId) {
+      window.showToast('Streak set to ' + streak + '!', 'success');
+      window.viewUser(currentUserId);
+      loadUsers();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.levelUpUser = function(id) {
+  fetch('/api/users/' + id + '/level-up', {
+    method: 'POST',
+    credentials: 'include'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('🎊 Leveled up to ' + d.newLevel + '!', 'success');
+      if (currentUserId === id) window.viewUser(id);
+      loadUsers();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.setLevel = function() {
+  window.setUserLevel();
+};
+
+window.banUser = function(id) {
+  var reason = prompt('Enter ban reason:');
+  if (!reason) return;
+  fetch('/api/users/' + id + '/ban', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ reason: reason })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('User banned!', 'warning');
+      loadUsers();
+      loadBannedUsers();
+      window.closeModal();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.unbanUser = function(id) {
+  if (!confirm('Unban this user?')) return;
+  fetch('/api/users/' + id + '/unban', { method: 'POST', credentials: 'include' })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('User unbanned!', 'success');
+      loadUsers();
+      loadBannedUsers();
+      window.closeModal();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.goToUserPage = function(page) {
+  currentUserPage = page;
+  loadUsers();
+};
+
+window.selectBroadcastType = function(type) {
+  selectedBroadcastType = type;
+  document.querySelectorAll('.broadcast-type').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var selected = document.querySelector('.broadcast-type[data-type="' + type + '"]');
+  if (selected) selected.classList.add('active');
+  updatePreview();
+};
+
+window.previewBroadcast = function() {
+  window.showToast('Preview updated!', 'info');
+  updatePreview();
+};
+
+// Update delivery method UI
+window.updateDeliveryOptions = function() {
+  var method = document.getElementById('bcMethod').value;
+  var configuredGroup = document.getElementById('configuredServersGroup');
+  var channelGroup = document.getElementById('channelSelectGroup');
+  var mentionGroup = document.getElementById('mentionGroup');
+  var audienceGroup = document.getElementById('audienceGroup');
+  var methodHint = document.getElementById('methodHint');
+  
+  // Hide all first
+  configuredGroup.style.display = 'none';
+  channelGroup.style.display = 'none';
+  mentionGroup.style.display = 'none';
+  audienceGroup.style.display = 'none';
+  
+  if (method === 'configured') {
+    configuredGroup.style.display = 'block';
+    mentionGroup.style.display = 'block';
+    methodHint.innerHTML = '⭐ <strong>Best choice!</strong> Sends to announcement channels configured by server admins via /setup';
+    loadConfiguredServers();
+  } else if (method === 'channel') {
+    channelGroup.style.display = 'block';
+    mentionGroup.style.display = 'block';
+    methodHint.innerHTML = '📢 Pick a specific channel to send to';
+    loadAvailableChannels();
+  } else if (method === 'global') {
+    mentionGroup.style.display = 'block';
+    methodHint.innerHTML = '🌐 Broadcasts to ALL servers (uses system/general channel if no announcement configured)';
+  } else {
+    audienceGroup.style.display = 'block';
+    methodHint.innerHTML = '⚠️ Slower - sends DMs individually (may be rate limited, users can block DMs)';
+  }
+};
+
+// Load configured servers for preview
+window.loadConfiguredServers = function() {
+  fetch('/api/broadcast/servers', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(servers) {
+      var preview = document.getElementById('configuredServersPreview');
+      
+      if (!servers || servers.length === 0) {
+        preview.innerHTML = '<div style="color:var(--warning)">⚠️ No servers have configured announcement channels yet.<br><br>Server admins need to run <code>/setup announcement #channel</code></div>';
+        return;
+      }
+      
+      var totalMembers = 0;
+      var html = '<div style="margin-bottom:8px"><strong>' + servers.length + ' server(s) configured:</strong></div>';
+      
+      servers.forEach(function(s) {
+        var statusIcon = s.isOnline ? '🟢' : '🔴';
+        var channelStatus = s.channelExists ? '✅' : '⚠️';
+        totalMembers += s.currentMemberCount || 0;
+        html += '<div style="padding:4px 0;border-bottom:1px solid var(--bg2)">' + 
+                statusIcon + ' <strong>' + s.guildName + '</strong> ' +
+                '<span style="color:var(--text3)">#' + (s.announcementChannelName || 'unknown') + ' • ' + (s.currentMemberCount || 0) + ' members</span></div>';
+      });
+      
+      html += '<div style="margin-top:8px;font-weight:600;color:var(--success)">📊 Total Reach: ~' + totalMembers.toLocaleString() + ' members</div>';
+      
+      preview.innerHTML = html;
+    })
+    .catch(function() {
+      document.getElementById('configuredServersPreview').innerHTML = '<div style="color:var(--error)">Failed to load servers</div>';
+    });
+};
+
+// Load available channels
+window.loadAvailableChannels = function() {
+  fetch('/api/broadcast/channels', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(channels) {
+      var select = document.getElementById('bcChannel');
+      var html = '<option value="">Select a channel...</option>';
+      
+      // Group by guild
+      var guilds = {};
+      channels.forEach(function(ch) {
+        if (!guilds[ch.guild]) guilds[ch.guild] = [];
+        guilds[ch.guild].push(ch);
+      });
+      
+      for (var guildName in guilds) {
+        html += '<optgroup label="' + guildName + '">';
+        guilds[guildName].forEach(function(ch) {
+          html += '<option value="' + ch.id + '">#' + ch.name + ' (' + ch.memberCount + ' members)</option>';
+        });
+        html += '</optgroup>';
+      }
+      
+      select.innerHTML = html;
+    })
+    .catch(function() {
+      document.getElementById('bcChannel').innerHTML = '<option value="">Failed to load channels</option>';
+    });
+};
+
+window.quickSend = function(templateName) {
+  if (!confirm('Send "' + templateName.replace(/_/g, ' ') + '" broadcast?')) return;
+  window.showToast('Sending broadcast...', 'info');
+  fetch('/api/broadcast/quick/' + templateName, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include'
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('Broadcast sent to ' + d.sent + ' users!', 'success');
+      loadBroadcastHistory();
+      loadBroadcastStats();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.loadTemplates = function() {
+  fetch('/api/broadcast/templates', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(templates) {
+      var html = '<div class="templates-grid">';
+      for (var key in templates) {
+        var t = templates[key];
+        html += '<div class="template-card" onclick="window.applyTemplate(\'' + key + '\')">';
+        html += '<div class="template-name">' + (t.title || key) + '</div>';
+        html += '<div class="template-desc">' + (t.message || '').substring(0, 50) + '...</div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      document.getElementById('userModalBody').innerHTML = html;
+      document.getElementById('userModalFooter').innerHTML = '<button class="btn btn-ghost" onclick="window.closeModal()">Close</button>';
+      document.getElementById('userModal').classList.add('active');
+    })
+    .catch(function() { window.showToast('Failed to load templates', 'error'); });
+};
+
+window.applyTemplate = function(name) {
+  fetch('/api/broadcast/templates/' + name, { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(t) {
+      if (t) {
+        document.getElementById('bcTitle').value = t.title || '';
+        document.getElementById('bcMessage').value = t.message || '';
+        if (t.type) {
+          selectedBroadcastType = t.type;
+          window.selectBroadcastType(t.type);
+        }
+        window.closeModal();
+        updatePreview();
+        window.showToast('Template applied!', 'success');
+      }
+    })
+    .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.cancelScheduled = function(id) {
+  if (!confirm('Cancel this scheduled broadcast?')) return;
+  fetch('/api/broadcast/scheduled/' + id, { method: 'DELETE', credentials: 'include' })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      window.showToast('Broadcast cancelled!', 'success');
+      loadScheduledBroadcasts();
+    } else {
+      window.showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.toggleFeature = function(name, enabled) {
+  fetch('/api/config/features', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ [name]: enabled })
+  })
+  .then(function() { window.showToast(name + ' ' + (enabled ? 'enabled' : 'disabled') + '!', 'success'); })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.saveSettings = function() {
+  var xp = document.getElementById('xpMultiplier').value;
+  var mq = document.getElementById('maxQuestions').value;
+  fetch('/api/config', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ xpMultiplier: parseFloat(xp), maxQuestionsPerQuiz: parseInt(mq) })
+  })
+  .then(function() { window.showToast('Settings saved!', 'success'); })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.toggleMaintenance = function() {
+  var enabled = document.getElementById('maintenanceToggle').checked;
+  fetch('/api/system/maintenance', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ enabled: enabled })
+  })
+  .then(function() { window.showToast('Maintenance ' + (enabled ? 'enabled' : 'disabled') + '!', 'warning'); })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.clearCache = function() {
+  fetch('/api/system/cache/clear', { method: 'POST', credentials: 'include' })
+  .then(function() { window.showToast('Cache cleared!', 'success'); })
+  .catch(function() { window.showToast('Failed', 'error'); });
+};
+
+window.logout = function() {
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+  .then(function() { window.location.href = '/'; });
+};
+
+// ============================================
+// SOCKET.IO REAL-TIME SYNC
+// ============================================
+function initSocket() {
+  socket = io();
+  
+  socket.on('connect', function() {
+    console.log('🔌 Socket connected - Real-time sync active');
+    window.showToast('Real-time sync connected', 'success');
+  });
+  
+  socket.on('disconnect', function() {
+    console.log('🔌 Socket disconnected');
+    window.showToast('Connection lost - Reconnecting...', 'warning');
+  });
+  
+  // Real-time stats update
+  socket.on('statsUpdate', function(stats) {
+    console.log('📊 Real-time stats update received');
+    updateStatsUI(stats);
+  });
+  
+  // Real-time user update
+  socket.on('userUpdate', function(data) {
+    console.log('👤 Real-time user update:', data.action, data.user?.username);
+    showToast('User ' + (data.user?.username || 'Unknown') + ' updated (' + data.action + ')', 'info');
+    
+    // Refresh current view if on users or leaderboard page
+    var activePage = document.querySelector('.page.active');
+    if (activePage) {
+      var pageId = activePage.id;
+      if (pageId === 'page-users') loadUsers();
+      if (pageId === 'page-leaderboard') loadLeaderboard('xp');
+      if (pageId === 'page-dashboard') {
+        loadRecentUsers();
+        loadChartData(); // Also refresh charts on user update
+      }
+    }
+  });
+  
+  // New user joined - special notification
+  socket.on('newUser', function(user) {
+    console.log('🆕 New user joined:', user.username);
+    showToast('🎉 New user: ' + (user.username || 'Unknown') + ' joined!', 'success');
+    
+    var activePage = document.querySelector('.page.active');
+    if (activePage && activePage.id === 'page-dashboard') {
+      loadRecentUsers();
+      loadChartData();
+    }
+  });
+  
+  // User updated from admin action
+  socket.on('userUpdated', function(user) {
+    console.log('👤 User updated via admin:', user.username);
+    loadUsers();
+    loadRecentUsers();
+  });
+  
+  // ============================================
+  // BROADCAST REAL-TIME EVENTS
+  // ============================================
+  
+  // Broadcast progress updates
+  socket.on('broadcastProgress', function(data) {
+    console.log('📡 Broadcast progress:', data);
+    var progressCard = document.getElementById('broadcastProgress');
+    if (progressCard) {
+      progressCard.style.display = 'block';
+      var percent = data.total > 0 ? Math.round((data.sent + data.failed) / data.total * 100) : 0;
+      document.getElementById('bcProgressBar').style.width = percent + '%';
+      document.getElementById('bcProgressSent').textContent = data.sent;
+      document.getElementById('bcProgressFailed').textContent = data.failed;
+    }
+  });
+  
+  // Broadcast complete
+  socket.on('broadcastComplete', function(data) {
+    console.log('✅ Broadcast complete:', data);
+    showToast('🎉 Broadcast complete! ' + data.stats.sent + '/' + data.stats.total + ' delivered (' + data.stats.successRate + '% success)', 'success');
+    
+    // Hide progress, show results
+    setTimeout(function() {
+      document.getElementById('broadcastProgress').style.display = 'none';
+      document.getElementById('bcProgressBar').style.width = '0%';
+    }, 2000);
+    
+    // Reload history and stats
+    loadBroadcastHistory();
+    loadBroadcastStats();
+  });
+  
+  // Broadcast error
+  socket.on('broadcastError', function(data) {
+    console.log('❌ Broadcast error:', data);
+    showToast('Broadcast failed: ' + data.error, 'error');
+    document.getElementById('broadcastProgress').style.display = 'none';
+  });
+  
+  // Scheduled broadcast notification
+  socket.on('broadcastScheduled', function(data) {
+    console.log('📅 Broadcast scheduled:', data);
+    showToast('Broadcast scheduled for ' + new Date(data.scheduledTime).toLocaleString(), 'info');
+    loadScheduledBroadcasts();
+  });
+  
+  // Cancelled broadcast notification
+  socket.on('broadcastCancelled', function(data) {
+    console.log('🚫 Broadcast cancelled:', data);
+    showToast('Scheduled broadcast cancelled', 'info');
+    loadScheduledBroadcasts();
+  });
+}
+
+function updateStatsUI(stats) {
+  if (!stats) return;
+  if (stats.users) {
+    document.getElementById('statUsers').textContent = (stats.users.total || 0).toLocaleString();
+    document.getElementById('statActive').textContent = (stats.users.activeToday || 0).toLocaleString();
+    document.getElementById('userTrend').textContent = '+' + (stats.users.newToday || 0);
+  }
+  if (stats.metrics) {
+    document.getElementById('statXP').textContent = formatNum(stats.metrics.totalXp || 0);
+    document.getElementById('statQuizzes').textContent = (stats.metrics.totalQuizzes || 0).toLocaleString();
+  }
+}
+
+// ============================================
+// AUTH CHECK
+// ============================================
+(function() {
+  console.log('🔐 Checking authentication...');
+  fetch('/api/auth/verify', { credentials: 'include' })
+    .then(function(r) { 
+      console.log('Auth verify status:', r.status);
+      return r.json(); 
+    })
+    .then(function(d) { 
+      console.log('Auth result:', d);
+      if (!d.authenticated) {
+        console.log('❌ Not authenticated, redirecting to login');
+        window.location.href = '/';
+      } else {
+        console.log('✅ Authenticated as:', d.user);
+        init();
+      }
+    })
+    .catch(function(e) { 
+      console.error('Auth check failed:', e);
+      window.location.href = '/'; 
+    });
+})();
+
+// ============================================
+// INITIALIZATION
+// ============================================
+function init() {
+  console.log('🚀 Initializing dashboard...');
+  
+  // Initialize Socket.IO for real-time sync
+  initSocket();
+  
+  // Setup sidebar navigation
+  var navItems = document.querySelectorAll('.nav-item');
+  console.log('Found nav items:', navItems.length);
+  
+  navItems.forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.preventDefault();
+      var page = this.getAttribute('data-page');
+      console.log('Nav clicked:', page);
+      switchPage(page);
+    });
+  });
+  
+  // Setup other buttons
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+  document.getElementById('refreshBtn').addEventListener('click', function() { 
+    loadDashboard(); 
+    showToast('Refreshed!', 'success'); 
+  });
+  document.getElementById('viewAllUsersBtn').addEventListener('click', function() { 
+    switchPage('users'); 
+  });
+  document.getElementById('chartPeriod').addEventListener('change', loadChartData);
+  document.getElementById('userSearch').addEventListener('input', debounce(loadUsers, 300));
+  document.getElementById('userSort').addEventListener('change', loadUsers);
+  document.getElementById('lbXpBtn').addEventListener('click', function() { loadLeaderboard('xp'); });
+  document.getElementById('lbLevelBtn').addEventListener('click', function() { loadLeaderboard('level'); });
+  document.getElementById('lbStreakBtn').addEventListener('click', function() { loadLeaderboard('streak'); });
+  document.getElementById('logFilter').addEventListener('change', loadLogs);
+  document.getElementById('clearLogsBtn').addEventListener('click', clearLogs);
+  document.getElementById('broadcastForm').addEventListener('submit', sendBroadcast);
+  document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+  document.getElementById('maintenanceToggle').addEventListener('change', toggleMaintenance);
+  document.getElementById('clearCacheBtn').addEventListener('click', clearCache);
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+  
+  // Load initial data
+  loadDashboard();
+  
+  // Auto-refresh dashboard every 30 seconds for live feel
+  setInterval(function() {
+    var activePage = document.querySelector('.page.active');
+    if (activePage && activePage.id === 'page-dashboard') {
+      console.log('🔄 Auto-refreshing dashboard...');
+      loadDashboard();
+    }
+  }, 30000);
+  
+  console.log('✅ Dashboard initialized with live updates');
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+function switchPage(page) {
+  console.log('Switching to:', page);
+  
+  // Update nav items
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    item.classList.remove('active');
+  });
+  var activeNav = document.querySelector('.nav-item[data-page="' + page + '"]');
+  if (activeNav) activeNav.classList.add('active');
+  
+  // Update pages
+  document.querySelectorAll('.page').forEach(function(p) {
+    p.classList.remove('active');
+  });
+  var activePage = document.getElementById('page-' + page);
+  if (activePage) activePage.classList.add('active');
+  
+  // Update title
+  var titles = {
+    dashboard: 'Dashboard',
+    users: 'User Management',
+    leaderboard: 'Leaderboard',
+    analytics: 'Analytics',
+    logs: 'Activity Logs',
+    broadcast: 'Broadcast',
+    banned: 'Banned Users',
+    config: 'Configuration',
+    system: 'System Health'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  
+  // Load page data
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'users') loadUsers();
+  if (page === 'leaderboard') loadLeaderboard('xp');
+  if (page === 'analytics') loadAnalytics();
+  if (page === 'logs') loadLogs();
+  if (page === 'broadcast') { initBroadcast(); loadBroadcastHistory(); }
+  if (page === 'banned') loadBannedUsers();
+  if (page === 'config') loadConfig();
+  if (page === 'system') loadSystemHealth();
+}
+
+// ============================================
+// DASHBOARD
+// ============================================
+function loadDashboard() {
+  console.log('Loading dashboard...');
+  fetch('/api/stats', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      console.log('Stats loaded:', d);
+      document.getElementById('statUsers').textContent = (d.users && d.users.total) ? d.users.total.toLocaleString() : '0';
+      document.getElementById('statActive').textContent = (d.users && d.users.activeToday) ? d.users.activeToday : '0';
+      document.getElementById('statXP').textContent = formatNum((d.metrics && d.metrics.totalXp) ? d.metrics.totalXp : 0);
+      document.getElementById('statQuizzes').textContent = (d.metrics && d.metrics.totalQuizzes) ? d.metrics.totalQuizzes : '0';
+      document.getElementById('userTrend').textContent = '+' + ((d.users && d.users.newToday) ? d.users.newToday : '0');
+      loadChartData();
+      loadRecentUsers();
+    })
+    .catch(function(e) { console.error('Dashboard error:', e); });
+}
+
+function loadChartData() {
+  var days = document.getElementById('chartPeriod').value || 7;
+  
+  // User Growth Chart - Cumulative
+  fetch('/api/stats/chart?days=' + days, { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var ctx = document.getElementById('growthChart');
+      if (!ctx) return;
+      if (charts.growth) charts.growth.destroy();
+      
+      // Calculate proper scale - start from minimum value
+      var counts = data.map(function(d) { return d.count || 0; });
+      var minVal = Math.max(0, Math.min.apply(null, counts) - 1);
+      var maxVal = Math.max.apply(null, counts) + 1;
+      
+      charts.growth = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: data.map(function(d) { 
+            var date = new Date(d.date);
+            return (date.getMonth() + 1) + '/' + date.getDate();
+          }),
+          datasets: [{
+            label: 'Total Users',
+            data: counts,
+            borderColor: '#5865F2',
+            backgroundColor: 'rgba(88,101,242,0.15)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: '#5865F2',
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointHoverRadius: 6
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false, 
+          plugins: { 
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  var idx = ctx.dataIndex;
+                  var newUsers = data[idx]?.newUsers || 0;
+                  return 'Total: ' + ctx.parsed.y + ' (+' + newUsers + ' new)';
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              min: minVal,
+              max: maxVal,
+              ticks: { stepSize: 1, color: 'rgba(255,255,255,0.6)' },
+              grid: { color: 'rgba(255,255,255,0.1)' }
+            },
+            x: {
+              ticks: { color: 'rgba(255,255,255,0.6)' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    })
+    .catch(function(e) { console.error('Growth chart error:', e); });
+
+  // Activity Chart - Real data
+  fetch('/api/stats/activity', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(activity) {
+      var ctx2 = document.getElementById('activityChart');
+      if (!ctx2) return;
+      if (charts.activity) charts.activity.destroy();
+      
+      var todayData = activity.today || { quizzes: 0, active: 0, newUsers: 0 };
+      var weekData = activity.week || { quizzes: 0, active: 0, newUsers: 0 };
+      
+      charts.activity = new Chart(ctx2, {
+        type: 'doughnut',
+        data: {
+          labels: ['Quizzes (Week)', 'Active (Week)', 'New Users (Week)'],
+          datasets: [{
+            data: [
+              weekData.quizzes,
+              weekData.active,
+              weekData.newUsers
+            ],
+            backgroundColor: ['#5865F2', '#22c55e', '#f59e0b'],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: { 
+          responsive: true, 
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { color: 'rgba(255,255,255,0.8)', padding: 12, usePointStyle: true }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return ctx.label + ': ' + ctx.parsed;
+                }
+              }
+            }
+          }
+        }
+      });
+    })
+    .catch(function(e) { console.error('Activity chart error:', e); });
+}
+
+function loadRecentUsers() {
+  // Use dedicated recent users endpoint sorted by createdAt
+  fetch('/api/users/recent?limit=5', { credentials: 'include' })
+    .then(function(r) { 
+      console.log('Recent users response status:', r.status);
+      return r.json(); 
+    })
+    .then(function(d) {
+      console.log('Recent users data:', d);
+      var html = '';
+      if (d.error) {
+        console.error('API error:', d.error);
+        document.getElementById('recentUsersTable').innerHTML = '<tr><td colspan="5">Error: ' + d.error + '</td></tr>';
+        return;
+      }
+      if (d.users && d.users.length) {
+        d.users.forEach(function(u) {
+          var levelColor = u.level >= 10 ? '#f59e0b' : u.level >= 5 ? '#22c55e' : '#5865F2';
+          var timeAgo = getTimeAgo(u.createdAt);
+          html += '<tr>' +
+            '<td><div class="user-cell"><div class="avatar-sm" style="background:' + levelColor + '">' + ((u.username || 'U')[0].toUpperCase()) + '</div>' + (u.username || 'Unknown') + '</div></td>' +
+            '<td><span class="badge level">Lv.' + (u.level || 1) + '</span></td>' +
+            '<td>' + ((u.xp || 0).toLocaleString()) + '</td>' +
+            '<td>🔥 ' + (u.streak || 0) + '</td>' +
+            '<td>' + timeAgo + '</td>' +
+          '</tr>';
+        });
+      }
+      document.getElementById('recentUsersTable').innerHTML = html || '<tr><td colspan="5">No users yet - users will appear after they use the bot!</td></tr>';
+    })
+    .catch(function(e) { 
+      console.error('Recent users error:', e); 
+      document.getElementById('recentUsersTable').innerHTML = '<tr><td colspan="5">Failed to load users</td></tr>';
+    });
+}
+
+// Helper for relative time
+window.getTimeAgo = function(dateStr) {
+  if (!dateStr) return 'Unknown';
+  var date = new Date(dateStr);
+  var now = new Date();
+  var diff = Math.floor((now - date) / 1000);
+  
+  if (diff < 60) return 'Just now';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+  if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+  if (diff < 604800) return Math.floor(diff / 86400) + 'd ago';
+  return formatDate(dateStr);
+};
+function getTimeAgo(dateStr) { return window.getTimeAgo(dateStr); }
+
+// ============================================
+// USERS
+// ============================================
+window.loadUsers = loadUsers;
+function loadUsers() {
+  var search = document.getElementById('userSearch').value || '';
+  var sortBy = document.getElementById('userSort').value || 'level';
+  console.log('Loading users - search:', search, 'sortBy:', sortBy, 'page:', currentUserPage);
+  
+  // Also load user stats
+  fetch('/api/stats', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(stats) {
+      document.getElementById('usersTotalCount').textContent = (stats.users?.total || 0).toLocaleString();
+      document.getElementById('usersActiveCount').textContent = stats.users?.activeToday || 0;
+    })
+    .catch(function() {});
+  
+  // Load users with stats
+  fetch('/api/users?page=' + currentUserPage + '&limit=15&search=' + encodeURIComponent(search) + '&sortBy=' + sortBy + '&sortOrder=desc', { credentials: 'include' })
+    .then(function(r) { 
+      console.log('Users response status:', r.status);
+      return r.json(); 
+    })
+    .then(function(d) {
+      console.log('Users data:', d);
+      var html = '';
+      var topLevel = 0;
+      var topStreak = 0;
+      
+      if (d.error) {
+        console.error('API error:', d.error);
+        document.getElementById('usersTable').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--text3)"><i class="fas fa-exclamation-circle" style="font-size:24px;display:block;margin-bottom:10px"></i>Error: ' + d.error + '</td></tr>';
+        return;
+      }
+      if (d.users && d.users.length) {
+        d.users.forEach(function(u, idx) {
+          // Track highest stats
+          if ((u.level || 1) > topLevel) topLevel = u.level || 1;
+          if ((u.streak || 0) > topStreak) topStreak = u.streak || 0;
+          
+          // Calculate progress
+          var xpForNext = calculateXpForLevel(u.level || 1);
+          var currentXp = (u.xp || 0) % xpForNext;
+          var progressPercent = Math.round((currentXp / xpForNext) * 100);
+          
+          // Level badge class
+          var levelClass = (u.level || 1) >= 15 ? 'legendary' : (u.level || 1) >= 10 ? 'epic' : (u.level || 1) >= 5 ? 'rare' : 'common';
+          var avatarClass = (u.level || 1) >= 10 ? 'gold' : (u.level || 1) >= 5 ? 'green' : 'blue';
+          var progressClass = (u.level || 1) >= 10 ? 'gold' : (u.level || 1) >= 5 ? 'green' : 'blue';
+          
+          // Streak styling
+          var streakClass = (u.streak || 0) >= 7 ? 'hot' : (u.streak || 0) >= 3 ? 'warm' : 'cold';
+          
+          // Last active
+          var lastActiveText = u.lastActive ? getTimeAgo(u.lastActive) : 'Never';
+          var isOnline = u.lastActive && (new Date() - new Date(u.lastActive)) < 300000; // 5 min
+          
+          html += '<tr data-userid="' + u.discordId + '">' +
+            '<td><div class="user-cell"><div class="user-avatar-enhanced ' + avatarClass + '">' + ((u.username || 'U')[0].toUpperCase()) + '</div><div><strong style="font-size:14px">' + (u.username || 'Unknown') + '</strong><div style="font-size:10px;color:var(--text3);margin-top:2px">' + u.discordId + '</div></div></div></td>' +
+            '<td><span class="level-badge ' + levelClass + '"><i class="fas fa-star" style="font-size:10px"></i> Lv.' + (u.level || 1) + '</span></td>' +
+            '<td><span style="font-weight:700;font-size:14px">' + ((u.xp || 0).toLocaleString()) + '</span></td>' +
+            '<td><div><div class="xp-progress"><div class="xp-progress-fill ' + progressClass + '" style="width:' + progressPercent + '%"></div></div><div class="xp-progress-text">' + progressPercent + '% to Lv.' + ((u.level || 1) + 1) + '</div></div></td>' +
+            '<td><span class="streak-badge ' + streakClass + '">🔥 ' + (u.streak || 0) + '</span></td>' +
+            '<td><span style="background:var(--bg3);padding:4px 10px;border-radius:8px;font-size:12px">' + (u.quizzesTaken || 0) + '</span></td>' +
+            '<td><span class="status-badge ' + (isOnline ? 'online' : 'offline') + '">' + lastActiveText + '</span></td>' +
+            '<td>' + (u.banned ? '<span class="status-badge banned"><i class="fas fa-ban"></i> Banned</span>' : '<span class="status-badge online">Active</span>') + '</td>' +
+            '<td><div class="action-btns">' +
+              '<button class="action-btn view" onclick="window.viewUser(\'' + u.discordId + '\')" title="View Details"><i class="fas fa-eye"></i></button>' +
+              '<button class="action-btn xp" onclick="window.giveXP(\'' + u.discordId + '\')" title="Give XP"><i class="fas fa-star"></i></button>' +
+              '<button class="action-btn level" onclick="window.levelUpUser(\'' + u.discordId + '\')" title="Level Up"><i class="fas fa-arrow-up"></i></button>' +
+              '<button class="action-btn ' + (u.banned ? 'unban' : 'ban') + '" onclick="window.' + (u.banned ? 'unbanUser' : 'banUser') + '(\'' + u.discordId + '\')" title="' + (u.banned ? 'Unban' : 'Ban') + '"><i class="fas fa-' + (u.banned ? 'unlock' : 'ban') + '"></i></button>' +
+            '</div></td></tr>';
+        });
+        
+        // Update top stats
+        document.getElementById('usersTopLevel').textContent = topLevel;
+        document.getElementById('usersTopStreak').textContent = topStreak;
+      }
+      document.getElementById('usersTable').innerHTML = html || '<tr><td colspan="9" style="text-align:center;padding:60px;color:var(--text3)"><i class="fas fa-users" style="font-size:48px;display:block;margin-bottom:16px;opacity:0.3"></i><div style="font-size:16px;font-weight:600;margin-bottom:8px">No users yet</div><div style="font-size:13px">Users will appear when they interact with the bot!</div></td></tr>';
+      
+      // Pagination
+      var pagHtml = '';
+      if (d.pagination && d.pagination.pages > 1) {
+        if (d.pagination.pages > 7) {
+          // Smart pagination for many pages
+          var start = Math.max(1, currentUserPage - 2);
+          var end = Math.min(d.pagination.pages, currentUserPage + 2);
+          
+          if (start > 1) pagHtml += '<button class="btn btn-ghost btn-sm" onclick="window.goToUserPage(1)">1</button>';
+          if (start > 2) pagHtml += '<span style="padding:0 8px">...</span>';
+          
+          for (var i = start; i <= end; i++) {
+            pagHtml += '<button class="btn ' + (i === currentUserPage ? 'btn-primary' : 'btn-ghost') + ' btn-sm" onclick="window.goToUserPage(' + i + ')">' + i + '</button>';
+          }
+          
+          if (end < d.pagination.pages - 1) pagHtml += '<span style="padding:0 8px">...</span>';
+          if (end < d.pagination.pages) pagHtml += '<button class="btn btn-ghost btn-sm" onclick="window.goToUserPage(' + d.pagination.pages + ')">' + d.pagination.pages + '</button>';
+        } else {
+          for (var i = 1; i <= d.pagination.pages; i++) {
+            pagHtml += '<button class="btn ' + (i === currentUserPage ? 'btn-primary' : 'btn-ghost') + ' btn-sm" onclick="window.goToUserPage(' + i + ')">' + i + '</button>';
+          }
+        }
+      }
+      document.getElementById('usersPagination').innerHTML = pagHtml;
+    })
+    .catch(function(e) { 
+      console.error('Users error:', e); 
+      document.getElementById('usersTable').innerHTML = '<tr><td colspan="9">Failed to load users</td></tr>';
+    });
+}
+
+// ============================================
+// LEADERBOARD
+// ============================================
+function loadLeaderboard(type) {
+  console.log('Loading leaderboard, type:', type);
+  fetch('/api/leaderboard?limit=20&type=' + type, { credentials: 'include' })
+    .then(function(r) { 
+      console.log('Leaderboard response status:', r.status);
+      return r.json(); 
+    })
+    .then(function(users) {
+      console.log('Leaderboard data:', users);
+      var medals = ['🥇', '🥈', '🥉'];
+      var cls = ['gold', 'silver', 'bronze'];
+      var html = '';
+      if (users && users.length) {
+        users.forEach(function(u, i) {
+          html += '<div class="leaderboard-item">' +
+            '<div class="rank ' + (cls[i] || '') + '">' + (medals[i] || (i + 1)) + '</div>' +
+            '<div class="lb-info"><div class="lb-name">' + (u.username || 'Unknown') + '</div><div class="lb-meta">Joined ' + formatDate(u.createdAt) + '</div></div>' +
+            '<div class="lb-stats">' +
+              '<div class="lb-stat"><div class="lb-stat-value">' + (u.level || 1) + '</div><div class="lb-stat-label">Level</div></div>' +
+              '<div class="lb-stat"><div class="lb-stat-value">' + formatNum(u.xp || 0) + '</div><div class="lb-stat-label">XP</div></div>' +
+              '<div class="lb-stat"><div class="lb-stat-value">' + (u.streak || 0) + '</div><div class="lb-stat-label">Streak</div></div>' +
+            '</div></div>';
+        });
+      }
+      document.getElementById('leaderboardContainer').innerHTML = html || '<div class="empty"><i class="fas fa-trophy"></i><p>No users on leaderboard yet - users will appear when they interact with the bot!</p></div>';
+    })
+    .catch(function(e) { 
+      console.error('Leaderboard error:', e); 
+      document.getElementById('leaderboardContainer').innerHTML = '<div class="empty"><i class="fas fa-exclamation-triangle"></i><p>Failed to load leaderboard</p></div>';
+    });
+}
+
+// ============================================
+// ANALYTICS
+// ============================================
+function loadAnalytics() {
+  Promise.all([
+    fetch('/api/analytics/overview', { credentials: 'include' }).then(function(r) { return r.json(); }),
+    fetch('/api/analytics/topics', { credentials: 'include' }).then(function(r) { return r.json(); }),
+    fetch('/api/analytics/achievements', { credentials: 'include' }).then(function(r) { return r.json(); }),
+    fetch('/api/stats', { credentials: 'include' }).then(function(r) { return r.json(); })
+  ])
+  .then(function(results) {
+    var stats = results[0], topics = results[1], achs = results[2], main = results[3];
+    document.getElementById('ana1d').textContent = (stats.last1d && stats.last1d.newUsers) || 0;
+    document.getElementById('ana7d').textContent = (stats.last7d && stats.last7d.newUsers) || 0;
+    document.getElementById('ana30d').textContent = (stats.last30d && stats.last30d.newUsers) || 0;
+    document.getElementById('anaAccuracy').textContent = ((main.metrics && main.metrics.accuracy) || 0) + '%';
+    
+    var topicsHtml = '';
+    if (topics && topics.length) {
+      topics.forEach(function(t) {
+        topicsHtml += '<div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:6px;margin-bottom:6px"><span>' + t.topic + '</span><span class="badge level">' + t.count + '</span></div>';
+      });
+    }
+    document.getElementById('topicsContainer').innerHTML = topicsHtml || '<div class="empty"><i class="fas fa-chart-bar"></i><p>No data</p></div>';
+    
+    var achsHtml = '';
+    if (achs && achs.length) {
+      achs.slice(0, 8).forEach(function(a) {
+        achsHtml += '<div style="display:flex;justify-content:space-between;padding:10px;background:var(--bg3);border-radius:6px;margin-bottom:6px"><span>🏆 ' + a.achievement + '</span><span class="badge streak">' + a.count + '</span></div>';
+      });
+    }
+    document.getElementById('achievementsContainer').innerHTML = achsHtml || '<div class="empty"><i class="fas fa-trophy"></i><p>No data</p></div>';
+  })
+  .catch(function(e) { console.error('Analytics error:', e); });
+}
+
+// ============================================
+// LOGS
+// ============================================
+function loadLogs() {
+  var filter = document.getElementById('logFilter').value || 'all';
+  fetch('/api/logs?type=' + filter + '&limit=50', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(logs) {
+      var html = '';
+      if (logs && logs.length) {
+        logs.forEach(function(l) {
+          html += '<div class="log-item"><span class="log-type ' + l.type + '">' + l.type + '</span><span class="log-msg">' + l.message + '</span><span class="log-time">' + formatTime(l.timestamp) + '</span></div>';
+        });
+      }
+      document.getElementById('logsContainer').innerHTML = html || '<div class="empty"><i class="fas fa-list"></i><p>No logs</p></div>';
+    })
+    .catch(function(e) { console.error('Logs error:', e); });
+}
+
+function clearLogs() {
+  if (!confirm('Clear all logs?')) return;
+  fetch('/api/logs', { method: 'DELETE', credentials: 'include' })
+  .then(function() { showToast('Logs cleared!', 'success'); loadLogs(); })
+  .catch(function() { showToast('Failed', 'error'); });
+}
+
+// ============================================
+// ULTRA ADVANCED BROADCAST SYSTEM
+// ============================================
+var broadcastConfig = null;
+
+function initBroadcast() {
+  // Load broadcast config
+  fetch('/api/broadcast/config', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(cfg) {
+      broadcastConfig = cfg;
+      renderBroadcastTypes();
+      updateAudienceCount();
+    })
+    .catch(function(e) { console.error('Broadcast config error:', e); });
+  
+  // Load configured servers by default (since configured is the default method)
+  window.loadConfiguredServers();
+  
+  // Setup delivery method change handler
+  document.getElementById('bcMethod').addEventListener('change', function() {
+    window.updateDeliveryOptions();
+  });
+  
+  // Setup schedule toggle
+  document.getElementById('bcSchedule').addEventListener('change', function() {
+    document.getElementById('bcScheduleTime').style.display = this.checked ? 'block' : 'none';
+    document.getElementById('sendBroadcastBtn').innerHTML = this.checked ? '<i class="fas fa-clock"></i> Schedule' : '<i class="fas fa-paper-plane"></i> Send Now';
+  });
+  
+  // Setup delivery method toggle
+  document.getElementById('bcMethod').addEventListener('change', window.updateDeliveryOptions);
+  
+  // Setup live preview
+  document.getElementById('bcTitle').addEventListener('input', updatePreview);
+  document.getElementById('bcMessage').addEventListener('input', updatePreview);
+  document.getElementById('bcAudience').addEventListener('change', updateAudienceCount);
+  
+  // Load stats
+  loadBroadcastStats();
+  loadScheduledBroadcasts();
+}
+
+function renderBroadcastTypes() {
+  if (!broadcastConfig) return;
+  var html = '';
+  for (var key in broadcastConfig.types) {
+    var t = broadcastConfig.types[key];
+    html += '<div class="broadcast-type' + (key === selectedBroadcastType ? ' active' : '') + '" data-type="' + key + '" onclick="window.selectBroadcastType(\'' + key + '\')">' + t.emoji + ' ' + t.name + '</div>';
+  }
+  document.getElementById('broadcastTypes').innerHTML = html;
+}
+
+// selectBroadcastType is now defined on window at top of script
+
+function updatePreview() {
+  var title = document.getElementById('bcTitle').value || 'Your Title Here';
+  var message = document.getElementById('bcMessage').value || 'Your message will appear here...';
+  var type = broadcastConfig?.types[selectedBroadcastType] || { emoji: '📢', color: 0x5865F2 };
+  
+  // Replace sample tokens
+  message = message.replace(/\{\{username\}\}/g, 'SampleUser');
+  message = message.replace(/\{\{level\}\}/g, '5');
+  message = message.replace(/\{\{xp\}\}/g, '1,234');
+  message = message.replace(/\{\{streak\}\}/g, '7');
+  
+  var colorHex = '#' + (type.color || 0x5865F2).toString(16).padStart(6, '0');
+  
+  var html = '<div class="discord-embed"><div class="embed-color" style="background:' + colorHex + '"></div><div class="embed-content"><div class="embed-title">' + type.emoji + ' ' + escapeHtml(title) + '</div><div class="embed-desc">' + escapeHtml(message).replace(/\n/g, '<br>') + '</div>';
+  
+  var cta = document.getElementById('bcCTA').value;
+  if (cta) {
+    html += '<div style="margin-top:10px;padding:8px;background:rgba(255,255,255,0.05);border-radius:4px;font-size:12px">📌 ' + escapeHtml(cta) + '</div>';
+  }
+  
+  var img = document.getElementById('bcImage').value;
+  if (img) {
+    html += '<img class="embed-image" src="' + escapeHtml(img) + '" onerror="this.style.display=\'none\'">';
+  }
+  
+  html += '<div class="embed-footer">MentorAI ' + (type.name || 'Announcement') + ' • Today</div></div></div>';
+  
+  document.getElementById('previewEmbed').innerHTML = html;
+}
+
+function updateAudienceCount() {
+  var audience = document.getElementById('bcAudience').value;
+  document.getElementById('audienceCount').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+  
+  fetch('/api/broadcast/preview', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ title: 'Test', message: 'Test', audience: audience })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    document.getElementById('audienceCount').innerHTML = '🎯 ' + d.targetCount + ' users will receive this broadcast';
+  })
+  .catch(function() {
+    document.getElementById('audienceCount').innerHTML = '⚠️ Could not calculate targets';
+  });
+}
+
+function previewBroadcast() {
+  showToast('Preview updated!', 'info');
+  updatePreview();
+}
+
+function sendBroadcast(e) {
+  e.preventDefault();
+  
+  var title = document.getElementById('bcTitle').value;
+  var message = document.getElementById('bcMessage').value;
+  var method = document.getElementById('bcMethod').value;
+  var channelId = document.getElementById('bcChannel').value;
+  var mention = document.getElementById('bcMention').value;
+  var audience = document.getElementById('bcAudience').value;
+  var image = document.getElementById('bcImage').value;
+  var cta = document.getElementById('bcCTA').value;
+  var isScheduled = document.getElementById('bcSchedule').checked;
+  var scheduledTime = document.getElementById('bcScheduleTime').value;
+  
+  // Validation
+  if (method === 'channel' && !channelId) {
+    showToast('Please select a channel', 'error');
+    return;
+  }
+  
+  if (isScheduled && !scheduledTime) {
+    showToast('Please select a schedule time', 'error');
+    return;
+  }
+  
+  var btn = document.getElementById('sendBroadcastBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isScheduled ? 'Scheduling...' : 'Sending...');
+  
+  // Show progress
+  var progressEl = document.getElementById('broadcastProgress');
+  if (progressEl) progressEl.style.display = 'block';
+  
+  var endpoint = isScheduled ? '/api/broadcast/schedule' : '/api/broadcast/send';
+  var payload = {
+    title: title,
+    message: message,
+    type: selectedBroadcastType,
+    method: method,
+    image: image || undefined,
+    cta: cta || undefined
+  };
+  
+  // Add method-specific options
+  if (method === 'configured') {
+    payload.mention = mention || undefined;
+  } else if (method === 'channel') {
+    payload.channelId = channelId;
+    payload.mention = mention || undefined;
+  } else if (method === 'global') {
+    payload.mention = mention || undefined;
+  } else {
+    payload.audience = audience;
+  }
+  
+  if (isScheduled) {
+    payload.scheduledTime = scheduledTime;
+  }
+  
+  fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload)
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    btn.disabled = false;
+    btn.innerHTML = isScheduled ? '<i class="fas fa-clock"></i> Schedule' : '<i class="fas fa-paper-plane"></i> Send Now';
+    if (progressEl) progressEl.style.display = 'none';
+    
+    if (d.success) {
+      var msg = isScheduled ? 'Broadcast scheduled!' : 
+                method === 'configured' ? 'Broadcast sent to ' + d.sent + ' configured servers!' :
+                method === 'channel' ? 'Broadcast sent to channel!' :
+                method === 'global' ? 'Broadcast sent to ' + d.sent + ' servers!' :
+                'Broadcast sent to ' + d.sent + ' users!';
+      showToast(msg, 'success');
+      document.getElementById('broadcastForm').reset();
+      document.getElementById('bcScheduleTime').style.display = 'none';
+      // Reset to configured method (default)
+      document.getElementById('bcMethod').value = 'configured';
+      window.updateDeliveryOptions();
+      loadBroadcastHistory();
+      loadBroadcastStats();
+      if (isScheduled) loadScheduledBroadcasts();
+    } else {
+      showToast(d.error || 'Failed to send', 'error');
+    }
+  })
+  .catch(function(e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Now';
+    if (progressEl) progressEl.style.display = 'none';
+    showToast('Failed to send broadcast', 'error');
+  });
+}
+
+function quickSend(templateName) {
+  if (!confirm('Send "' + templateName.replace(/_/g, ' ') + '" broadcast to all applicable users?')) return;
+  
+  showToast('Sending broadcast...', 'info');
+  
+  fetch('/api/broadcast/quick/' + templateName, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({})
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(d) {
+    if (d.success) {
+      showToast('Quick broadcast sent to ' + d.sent + ' users!', 'success');
+      loadBroadcastHistory();
+      loadBroadcastStats();
+    } else {
+      showToast(d.error || 'Failed', 'error');
+    }
+  })
+  .catch(function() { showToast('Failed', 'error'); });
+}
+
+function loadBroadcastHistory() {
+  fetch('/api/broadcast/history', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(hist) {
+      var html = '';
+      if (hist && hist.length) {
+        hist.forEach(function(b) {
+          var type = broadcastConfig?.types[b.type] || { emoji: '📢', name: 'Announcement' };
+          html += '<div class="broadcast-history-item">';
+          html += '<div class="bc-icon ' + b.type + '">' + type.emoji + '</div>';
+          html += '<div class="bc-content">';
+          html += '<div class="bc-title">' + escapeHtml(b.title) + '</div>';
+          html += '<div class="bc-meta">By ' + (b.sentBy || 'Admin') + ' • ' + formatTime(b.sentAt) + '</div>';
+          if (b.stats) {
+            html += '<div class="bc-stats">';
+            html += '<div class="bc-stat"><span>' + b.stats.sent + '</span> sent</div>';
+            html += '<div class="bc-stat"><span>' + b.stats.failed + '</span> failed</div>';
+            html += '<div class="bc-stat"><span>' + b.stats.successRate + '%</span> success</div>';
+            html += '</div>';
+          }
+          html += '</div></div>';
+        });
+      }
+      document.getElementById('broadcastHistory').innerHTML = html || '<div class="empty"><i class="fas fa-bullhorn"></i><p>No broadcasts yet</p></div>';
+    })
+    .catch(function(e) { console.error('Broadcast history error:', e); });
+}
+
+function loadBroadcastStats() {
+  fetch('/api/broadcast/analytics', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(stats) {
+      document.getElementById('bcStatTotal').textContent = stats.totalSent || 0;
+      document.getElementById('bcStatSuccess').textContent = (stats.avgSuccessRate || 0) + '%';
+      document.getElementById('bcStatToday').textContent = stats.totalBroadcasts || 0;
+    })
+    .catch(function() {});
+}
+
+function loadScheduledBroadcasts() {
+  fetch('/api/broadcast/scheduled', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(scheduled) {
+      var html = '';
+      if (scheduled && scheduled.length) {
+        scheduled.forEach(function(s) {
+          html += '<div class="scheduled-item">';
+          html += '<div class="scheduled-info">' + escapeHtml(s.title) + '<div class="scheduled-time">⏰ ' + formatTime(s.scheduledTime) + '</div></div>';
+          html += '<button class="btn btn-danger btn-sm" onclick="window.cancelScheduled(\'' + s.id + '\')"><i class="fas fa-times"></i></button>';
+          html += '</div>';
+        });
+      }
+      document.getElementById('scheduledBroadcasts').innerHTML = html || '<div class="empty-small"><i class="fas fa-calendar-check"></i> No scheduled broadcasts</div>';
+    })
+    .catch(function() {});
+}
+
+// cancelScheduled, loadTemplates, applyTemplate are defined on window at top of script
+
+// Socket.IO broadcast events
+if (typeof socket !== 'undefined' && socket) {
+  socket.on('broadcastStart', function(data) {
+    showToast('Broadcasting: ' + data.title, 'info');
+    document.getElementById('broadcastProgress').style.display = 'block';
+  });
+  
+  socket.on('broadcastProgress', function(data) {
+    var percent = data.total > 0 ? Math.round((data.sent + data.failed) / data.total * 100) : 0;
+    document.getElementById('bcProgressBar').style.width = percent + '%';
+    document.getElementById('bcProgressSent').textContent = data.sent;
+    document.getElementById('bcProgressFailed').textContent = data.failed;
+  });
+  
+  socket.on('broadcastComplete', function(data) {
+    document.getElementById('broadcastProgress').style.display = 'none';
+    loadBroadcastHistory();
+    loadBroadcastStats();
+  });
+}
+
+// ============================================
+// BANNED
+// ============================================
+function loadBannedUsers() {
+  fetch('/api/users/banned/list', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(banned) {
+      var html = '';
+      if (banned && banned.length) {
+        html = '<table><thead><tr><th>Discord ID</th><th>Reason</th><th>Date</th><th>Action</th></tr></thead><tbody>';
+        banned.forEach(function(b) {
+          html += '<tr><td>' + b.discordId + '</td><td>' + b.reason + '</td><td>' + formatDate(b.date) + '</td><td><button class="btn btn-success btn-sm" onclick="window.unbanUser(\'' + b.discordId + '\')"><i class="fas fa-unlock"></i> Unban</button></td></tr>';
+        });
+        html += '</tbody></table>';
+      }
+      document.getElementById('bannedContainer').innerHTML = html || '<div class="empty"><i class="fas fa-check-circle"></i><p>No banned users</p></div>';
+    })
+    .catch(function(e) { console.error('Banned error:', e); });
+}
+
+// ============================================
+// CONFIG
+// ============================================
+function loadConfig() {
+  fetch('/api/config', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(cfg) {
+      var features = [
+        { k: 'aiQuizzes', l: 'AI Quizzes', d: 'Enable AI quizzes' },
+        { k: 'aiLessons', l: 'AI Lessons', d: 'Enable AI lessons' },
+        { k: 'dailyBonus', l: 'Daily Bonus', d: 'Enable daily XP' },
+        { k: 'leaderboard', l: 'Leaderboard', d: 'Enable leaderboard' },
+        { k: 'challenges', l: 'Challenges', d: 'Enable challenges' }
+      ];
+      var html = '';
+      features.forEach(function(f) {
+        var checked = cfg.features && cfg.features[f.k] ? 'checked' : '';
+        html += '<div class="toggle-item"><div><div class="toggle-label">' + f.l + '</div><div class="toggle-desc">' + f.d + '</div></div><label class="switch"><input type="checkbox" ' + checked + ' onchange="window.toggleFeature(\'' + f.k + '\', this.checked)"><span class="slider"></span></label></div>';
+      });
+      document.getElementById('featureToggles').innerHTML = html;
+      document.getElementById('xpMultiplier').value = cfg.xpMultiplier || 1;
+      document.getElementById('maxQuestions').value = cfg.maxQuestionsPerQuiz || 10;
+    })
+    .catch(function(e) { console.error('Config error:', e); });
+}
+
+// ============================================
+// SYSTEM
+// ============================================
+function loadSystemHealth() {
+  fetch('/api/system/health', { credentials: 'include' })
+    .then(function(r) { return r.json(); })
+    .then(function(h) {
+      document.getElementById('sysUptime').textContent = formatUptime(h.uptime || 0);
+      document.getElementById('sysMemory').textContent = ((h.memory && h.memory.heapUsed ? h.memory.heapUsed : 0) / 1024 / 1024).toFixed(1) + ' MB';
+      document.getElementById('sysNode').textContent = h.nodeVersion || '--';
+      document.getElementById('sysStatus').textContent = h.status === 'maintenance' ? 'Maintenance' : 'Healthy';
+      document.getElementById('sysStatusIcon').className = 'stat-icon ' + (h.status === 'maintenance' ? 'yellow' : 'green');
+      document.getElementById('maintenanceToggle').checked = h.status === 'maintenance';
+    })
+    .catch(function(e) { console.error('System health error:', e); });
+}
+
+// ============================================
+// UTILITIES (non-onclick helpers)
+// ============================================
+function formatNum(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'K';
+  return String(n);
+}
+
+function formatUptime(s) {
+  var d = Math.floor(s / 86400);
+  var h = Math.floor((s % 86400) / 3600);
+  var m = Math.floor((s % 3600) / 60);
+  if (d > 0) return d + 'd ' + h + 'h';
+  if (h > 0) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
+function formatDate(d) {
+  return d ? new Date(d).toLocaleDateString() : 'N/A';
+}
+
+function formatTime(d) {
+  return d ? new Date(d).toLocaleString() : 'N/A';
+}
+
+function debounce(fn, ms) {
+  var t;
+  return function() {
+    clearTimeout(t);
+    t = setTimeout(fn, ms);
+  };
+}
+
+</script>
+</body>
+</html>

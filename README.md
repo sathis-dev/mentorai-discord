@@ -1,130 +1,132 @@
-# 🎓 MentorAI - AI-Powered Discord Learning Platform
+# 🎓 MentorAI - Gamified Discord Learning Bot
 
-MentorAI is an intelligent Discord bot that transforms learning into an engaging, gamified experience powered by cutting-edge AI.
+An AI-powered Discord bot that makes learning fun with generated lessons, quizzes, XP rewards, and achievements!
 
 ## ✨ Features
 
-- 📚 **AI-Generated Lessons** - Learn any topic with personalized, adaptive content
-- 🧠 **Smart Quizzes** - Test your knowledge with AI-generated questions
-- 🏆 **Gamification** - Level up, earn XP, unlock achievements
-- 🔥 **Streak System** - Build daily learning habits
-- 🎉 **Study Parties** - Learn together with friends for bonus XP
-- 📊 **Progress Tracking** - Detailed stats and leaderboards
+- 🤖 **AI-Generated Content** - Lessons and quizzes powered by OpenAI/Anthropic
+- 📚 **Interactive Lessons** - Learn any programming topic with AI explanations
+- ❓ **Smart Quizzes** - Test your knowledge with adaptive quizzes
+- ⭐ **XP & Leveling** - Earn XP and level up as you learn
+- 🔥 **Daily Streaks** - Maintain streaks for bonus rewards
+- 🏆 **Achievements** - Unlock achievements for milestones
+- 📊 **Leaderboards** - Compete with other learners
+- ⚔️ **Challenges** - Battle friends in quiz duels
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ installed
-- Discord Developer Account
-- OpenAI API Key
+- Node.js 18+
 - MongoDB database
+- Discord Bot Token
+- OpenAI API Key (optional: Anthropic API Key)
 
 ### Installation
 
-1. Clone the repository:
 ```bash
-git clone <your-repo-url>
-cd mentorai-discord
-```
-
-2. Install dependencies:
-```bash
+# Clone and install
+git clone <your-repo>
+cd mentorai
 npm install
-```
 
-3. Configure environment:
-```bash
+# Configure environment
 cp .env.example .env
-# Edit .env with your actual keys
-```
+# Edit .env with your credentials
 
-4. Deploy commands to Discord:
-```bash
+# Deploy commands to Discord
 npm run deploy-commands
+
+# Start the bot
+npm run dev
 ```
 
-5. Start the bot:
-```bash
-npm run dev  # Development
-npm start    # Production
-```
-
-## 📝 Commands
-
-- `/learn [topic]` - Start learning any topic
-- `/quiz [topic]` - Take a quiz on a subject
-- `/progress` - View your learning stats
-- `/studyparty [topic]` - Host a group study session
-- `/help` - Get help with commands
-
-## 🏗️ Project Structure
-
-```
-mentorai-discord/
-├── src/
-│   ├── bot/                 # Discord bot logic
-│   ├── ai/                  # AI integration
-│   ├── database/            # Database models
-│   ├── services/            # Business logic
-│   ├── utils/               # Utilities
-│   └── config/              # Configuration
-├── tests/                   # Test files
-└── package.json
-```
-
-## 🔧 Configuration
-
-Edit `.env` file with your credentials:
+### Environment Variables
 
 ```env
 DISCORD_TOKEN=your_discord_bot_token
-DISCORD_CLIENT_ID=your_application_id
+DISCORD_CLIENT_ID=your_application_client_id
 OPENAI_API_KEY=your_openai_api_key
-DATABASE_URL=your_mongodb_connection_string
+ANTHROPIC_API_KEY=your_anthropic_api_key (optional)
+DATABASE_URL=mongodb://localhost:27017/mentorai
 ```
 
-## 📊 Database Setup
+## 📖 Commands
 
-MentorAI uses MongoDB. You can use:
-- MongoDB Atlas (recommended for production)
-- Local MongoDB instance
+| Command | Description |
+|---------|-------------|
+| `/help` | View all commands |
+| `/learn <topic>` | Get an AI-generated lesson |
+| `/quiz <topic>` | Take a quiz on any topic |
+| `/progress` | View your learning stats |
+| `/leaderboard` | See top learners |
+| `/daily` | Claim daily XP bonus |
+| `/streak` | Check your streak |
+| `/achievements` | View your achievements |
+| `/topics` | Browse popular topics |
+| `/challenge @user` | Challenge a friend |
+| `/stats` | Global bot statistics |
+| `/invite` | Add bot to your server |
 
-Connection string format:
+## 🏗️ Architecture
+
 ```
-mongodb+srv://username:password@cluster.mongodb.net/mentorai
+src/
+├── index.js              # Entry point
+├── deploy-commands.js    # Command deployment
+├── ai/
+│   └── index.js          # OpenAI + Anthropic integration
+├── bot/
+│   ├── commands/         # Slash commands
+│   ├── events/           # Discord event handlers
+│   ├── commandLoader.js
+│   └── eventLoader.js
+├── config/
+│   ├── colors.js         # Color constants
+│   └── designSystem.js   # Embed builders
+├── database/
+│   ├── connection.js
+│   └── models/           # MongoDB models
+├── data/
+│   └── quizzes/          # Fallback quiz data
+└── services/
+    ├── gamificationService.js
+    ├── learningService.js
+    └── quizService.js
 ```
 
-## 🚀 Deployment
+## 🎮 Gamification System
 
-### Railway (Recommended)
+### XP Rewards
+
+- Correct quiz answer: +25 XP
+- Quiz completion: +50 XP
+- Perfect score: +100 XP
+- Lesson completion: +30 XP
+- Daily bonus: +50 XP + streak bonus
+
+### Achievements
+
+- 📖 First Steps - Complete your first lesson
+- 🎯 Quiz Starter - Complete your first quiz
+- 💯 Perfectionist - Get 100% on a quiz
+- 🔥 On Fire - 3 day streak
+- ⚡ Week Warrior - 7 day streak
+- ⭐ Rising Star - Reach level 5
+- And many more!
+
+## 🛠️ Development
 
 ```bash
-npm install -g @railway/cli
-railway login
-railway init
-railway up
+npm run dev    # Start with hot reload
+npm start      # Production start
+npm run deploy-commands  # Update Discord commands
 ```
-
-### Docker
-
-```bash
-docker-compose up -d
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
-
-## 🆘 Support
-
-- Join our Discord: [Support Server]
-- Report Issues: [GitHub Issues]
+MIT License - feel free to use and modify!
 
 ---
 
-Built with ❤️ using Discord.js and OpenAI
+Built with ❤️ for the Discord Buildathon

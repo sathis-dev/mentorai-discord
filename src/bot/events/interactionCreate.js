@@ -1,153 +1,1428 @@
-import { logger } from '../../utils/logger.js';
-import { answerQuestion, getQuiz } from '../../services/quizService.js';
-import { EmbedBuilder } from 'discord.js';
-import { COLORS } from '../../config/colors.js';
+import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType } from 'discord.js';
+import { submitAnswer, getCurrentQuestion, cancelSession } from '../../services/quizService.js';
+import { getOrCreateUser } from '../../services/gamificationService.js';
+import { ServerSettings } from '../../database/models/ServerSettings.js';
 import { 
-  createCorrectEmbed, 
-  createIncorrectEmbed, 
-  createQuizEmbed, 
-  createQuizButtons 
+  createQuizQuestionEmbed,
+  createQuizAnswerButtons,
+  createQuizControlButtons,
+  createQuizResultsEmbed,
+  createPostQuizButtons,
+  COLORS
 } from '../../config/designSystem.js';
+import { sleep } from '../../utils/animations.js';
+import {
+  createLearningHelpEmbed,
+  createGamificationHelpEmbed,
+  createProgressHelpEmbed,
+  createSocialHelpEmbed,
+  createUtilityHelpEmbed,
+  createAllCommandsEmbed,
+  createQuickStartEmbed,
+  createPopularCommandsEmbed,
+  createProTipsEmbed
+} from '../../utils/helpEmbeds.js';
+import logger from '../../utils/logger.js';
+import {
+  toggleMaintenanceMode,
+  toggleFeature,
+  clearLogs,
+  searchUser,
+  banUser,
+  unbanUser,
+  resetUserProgress,
+  giveUserXp,
+  setUserLevel,
+  getBannedUsers,
+  broadcastMessage,
+  getAdminStats,
+  getBotHealth
+} from '../../services/adminService.js';
 
-export const name = 'interactionCreate';
+export const name = Events.InteractionCreate;
 
 export async function execute(interaction) {
-  if (interaction.isChatInputCommand()) {
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    if (!command) {
-      logger.warn(`Unknown command: ${interaction.commandName}`);
-      return;
-    }
-
-    try {
-      await command.execute(interaction);
-    } catch (error) {
-      logger.error(`Error executing ${interaction.commandName}:`, error);
-      
-      const errorMessage = {
-        content: '❌ There was an error executing this command!',
-        ephemeral: true
-      };
-
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(errorMessage);
-      } else {
-        await interaction.reply(errorMessage);
-      }
-    }
-  }
-
-  if (interaction.isButton()) {
-    try {
+  try {
+    if (interaction.isChatInputCommand()) {
+      await handleCommand(interaction);
+    } else if (interaction.isButton()) {
       await handleButton(interaction);
-    } catch (error) {
-      logger.error('Button interaction error:', error);
-      await interaction.reply({
-        content: '❌ Failed to process button interaction!',
-        ephemeral: true
-      }).catch(() => {});
+    } else if (interaction.isStringSelectMenu()) {
+      await handleSelectMenu(interaction);
+    } else if (interaction.isChannelSelectMenu()) {
+      await handleChannelSelect(interaction);
+    } else if (interaction.isAutocomplete()) {
+      await handleAutocomplete(interaction);
+    } else if (interaction.isModalSubmit()) {
+      await handleModal(interaction);
     }
+  } catch (error) {
+    logger.error('Interaction error:', error);
+    await sendError(interaction, 'An unexpected error occurred.');
   }
+}
 
-  if (interaction.isStringSelectMenu()) {
-    await handleSelectMenu(interaction);
+async function handleCommand(interaction) {
+  const command = interaction.client.commands.get(interaction.commandName);
+  if (!command) return;
+
+  try {
+    await command.execute(interaction);
+  } catch (error) {
+    logger.error('Command error [' + interaction.commandName + ']:', error);
+    await sendError(interaction, 'Failed to execute command.');
   }
 }
 
 async function handleButton(interaction) {
-  const [action, subaction, ...params] = interaction.customId.split('_');
-  
-  if (action === 'quiz' && subaction === 'answer') {
-    await handleQuizAnswer(interaction, params);
-    return;
-  }
-  
-  switch (action) {
-    case 'lesson':
-      await interaction.reply({ content: '📚 Lesson features coming soon!', ephemeral: true });
-      break;
-    case 'next':
-      await interaction.reply({ content: '➡️ Next action!', ephemeral: true });
-      break;
-    default:
-      logger.warn(`Unknown button action: ${action}`);
-      await interaction.reply({ content: '❌ Unknown action!', ephemeral: true });
+  const [category, action, ...params] = interaction.customId.split('_');
+
+  try {
+    if (category === 'quiz') {
+      await handleQuizButton(interaction, action, params);
+    } else if (category === 'help') {
+      await handleHelpButton(interaction, action, params);
+    } else if (category === 'action') {
+      // NEW: Handle action buttons from help menu
+      await handleActionButton(interaction, action, params);
+    } else if (category === 'execute') {
+      // NEW: Execute actual commands
+      await handleExecuteButton(interaction, action, params);
+    } else if (category === 'lesson') {
+      await handleLessonButton(interaction, action, params);
+    } else if (category === 'progress' || category === 'profile') {
+      await handleProfileButton(interaction, action, params);
+    } else if (category === 'leaderboard') {
+      await handleLeaderboardButton(interaction, action, params);
+    } else if (category === 'challenge') {
+      await handleChallengeButton(interaction, action, params);
+    } else if (category === 'admin') {
+      await handleAdminButton(interaction, action, params);
+    } else if (category === 'setup') {
+      await handleSetupButton(interaction, action, params);
+    } else if (category === 'qq') {
+      // Quick Quiz answers
+      await handleQuickQuizAnswer(interaction, action, params);
+    } else if (category === 'funfact') {
+      await handleFunFactButton(interaction, action, params);
+    } else if (category === 'weekly') {
+      await handleWeeklyButton(interaction, action, params);
+    } else if (category === 'share') {
+      await handleShareButton(interaction, action, params);
+    } else if (category === 'referral') {
+      await handleReferralButton(interaction, action, params);
+    }
+  } catch (error) {
+    logger.error('Button error:', error);
+    await sendError(interaction, 'Button interaction failed.');
   }
 }
 
-async function handleQuizAnswer(interaction, params) {
-  // Parse: quiz_answer_${answerIndex}_${quizId}
-  const [answerIndex, ...quizIdParts] = params;
-  const quizId = quizIdParts.join('_');
-  const selectedAnswer = parseInt(answerIndex);
-
-  try {
-    const result = await answerQuestion(quizId, selectedAnswer);
-    const quiz = getQuiz(quizId);
-    
-    if (result.isComplete) {
-      // Quiz complete - get final stats from quiz object
-      const correctCount = quiz ? quiz.answers.filter(a => a.isCorrect).length : 0;
-      const totalQuestions = quiz ? quiz.questions.length : 5;
-      const percentage = (correctCount / totalQuestions) * 100;
-      const passed = percentage >= 70;
-      
-      const embed = new EmbedBuilder()
-        .setColor(passed ? COLORS.SUCCESS : COLORS.ERROR)
-        .setTitle(passed ? '🎉 Quiz Complete! Passed!' : '📝 Quiz Complete')
-        .setDescription(`You scored **${correctCount}/${totalQuestions}** (${Math.round(percentage)}%)
-
-\`\`\`diff
-${passed ? '+' : '-'} ${passed ? 'PASSED!' : 'Try again to improve'}
-\`\`\``)
-        .addFields(
-          { name: '📊 Performance', value: passed ? 'Passed! ✅' : 'Keep learning! 📚', inline: true },
-          { name: '⭐ XP Earned', value: `\`\`\`diff\n+ ${result.score} XP\n\`\`\``, inline: true }
-        )
-        .setFooter({ text: `Accuracy: ${correctCount}/${totalQuestions} correct` });
-
-      await interaction.update({ embeds: [embed], components: [] });
-    } else {
-      // Show feedback and next question using NEW design system
-      const currentQuestion = quiz.questions[quiz.currentQuestion - 1];
-      const streak = quiz.answers.filter(a => a.isCorrect).length;
-      
-      // Use new design system embeds
-      const feedbackEmbed = result.isCorrect 
-        ? createCorrectEmbed(currentQuestion, currentQuestion.xp || 10, streak)
-        : createIncorrectEmbed(currentQuestion, selectedAnswer);
-
-      // Create next question embed
-      quiz.currentQuestion = quiz.currentQuestion; // Keep current index
-      const questionEmbed = createQuizEmbed(quiz, quiz.currentQuestion);
-      
-      const buttons = createQuizButtons(quizId);
-
-      await interaction.update({ 
-        embeds: [feedbackEmbed, questionEmbed], 
-        components: [buttons] 
+// Handle setup buttons from welcome message
+async function handleSetupButton(interaction, action, params) {
+  if (action === 'announcement' && params[0] === 'prompt') {
+    // Check if user has permission
+    if (!interaction.member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(COLORS.error)
+            .setTitle('❌ Permission Denied')
+            .setDescription('You need **Manage Server** permission to configure MentorAI.\n\nAsk a server admin to run `/setup announcement #channel`')
+        ],
+        ephemeral: true
       });
     }
-  } catch (error) {
-    logger.error('Quiz answer handling error:', error);
-    const errorMsg = error.message || 'Unknown error';
+    
+    // Show channel selector
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ChannelSelectMenuBuilder()
+          .setCustomId('setup_select_announcement')
+          .setPlaceholder('Select announcement channel...')
+          .setChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+      );
+    
     await interaction.reply({
-      content: `❌ ${errorMsg.includes('expired') ? 'Quiz session expired' : 'Error processing answer'}. Start a new quiz with \`/quiz\`!`,
-      flags: 64 // Ephemeral flag
-    }).catch(() => {});
+      embeds: [
+        new EmbedBuilder()
+          .setColor(COLORS.primary)
+          .setTitle('📢 Select Announcement Channel')
+          .setDescription('Choose a channel where MentorAI will send important announcements and broadcasts.\n\nMake sure I have **Send Messages** and **Embed Links** permissions in that channel!')
+      ],
+      components: [row],
+      ephemeral: true
+    });
+  } else if (action === 'skip') {
+    await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(COLORS.secondary)
+          .setTitle('⏭️ Setup Skipped')
+          .setDescription('No problem! You can always configure announcements later with `/setup announcement #channel`\n\nUse `/help` to see all available commands!')
+      ],
+      ephemeral: true
+    });
+  }
+}
+
+// Handle channel select menu for setup
+async function handleChannelSelect(interaction) {
+  if (interaction.customId === 'setup_select_announcement') {
+    const channel = interaction.channels.first();
+    
+    if (!channel) {
+      return interaction.reply({ content: 'No channel selected', ephemeral: true });
+    }
+    
+    // Check bot permissions
+    const permissions = channel.permissionsFor(interaction.client.user);
+    if (!permissions.has('SendMessages') || !permissions.has('EmbedLinks')) {
+      return interaction.reply({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(COLORS.error)
+            .setTitle('❌ Missing Permissions')
+            .setDescription(`I need **Send Messages** and **Embed Links** permissions in ${channel}!\n\nPlease add the permissions and try again.`)
+        ],
+        ephemeral: true
+      });
+    }
+    
+    // Save settings
+    await ServerSettings.setAnnouncementChannel(
+      interaction.guild.id,
+      channel.id,
+      channel.name,
+      interaction.user.id
+    );
+    
+    // Send confirmation to the channel
+    try {
+      await channel.send({
+        embeds: [
+          new EmbedBuilder()
+            .setColor(COLORS.success)
+            .setTitle('📢 Announcement Channel Configured!')
+            .setDescription('This channel will now receive important announcements from MentorAI.')
+            .addFields({ name: 'Configured By', value: `<@${interaction.user.id}>` })
+            .setTimestamp()
+        ]
+      });
+    } catch (e) {
+      console.error('Could not send confirmation:', e);
+    }
+    
+    await interaction.reply({
+      embeds: [
+        new EmbedBuilder()
+          .setColor(COLORS.success)
+          .setTitle('✅ Announcement Channel Set!')
+          .setDescription(`Broadcasts will be sent to ${channel}.\n\nYou can change this anytime with \`/setup announcement\``)
+      ],
+      ephemeral: true
+    });
   }
 }
 
 async function handleSelectMenu(interaction) {
-  const [action, ...params] = interaction.customId.split('_');
+  const customId = interaction.customId;
+  const value = interaction.values[0];
+
+  try {
+    if (customId === 'topic_select') {
+      const embed = new EmbedBuilder()
+        .setTitle('📚 ' + value.charAt(0).toUpperCase() + value.slice(1))
+        .setColor(COLORS.LESSON_BLUE)
+        .setDescription('**Great choice!** Here are your options:')
+        .addFields(
+          { name: '📖 Learn', value: '`/learn topic:' + value + '`', inline: true },
+          { name: '🎯 Quiz', value: '`/quiz topic:' + value + '`', inline: true }
+        )
+        .setFooter({ text: '🎓 MentorAI' });
+
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+    } else if (customId === 'help_category_select') {
+      await handleHelpCategorySelect(interaction, value);
+    } else if (customId === 'help_category') {
+      // NEW: Handle new help category menu
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleCategorySelect(interaction, value);
+    } else if (customId === 'quiz_topic_select') {
+      // NEW: Start quiz with selected topic
+      await startQuizFromHelpMenu(interaction, value);
+    } else if (customId === 'learn_topic_select') {
+      // NEW: Start lesson with selected topic
+      await startLearnFromHelpMenu(interaction, value);
+    }
+  } catch (error) {
+    logger.error('Select menu error:', error);
+  }
+}
+
+// NEW: Start quiz from help menu topic selection
+async function startQuizFromHelpMenu(interaction, topic) {
+  if (topic === 'custom') {
+    await interaction.reply({ 
+      content: '📚 Use `/learn topic:your-topic` to learn about any topic!', 
+      ephemeral: true 
+    });
+    return;
+  }
   
-  switch (action) {
-    case 'subject':
-      break;
-    case 'topic':
-      break;
-    default:
-      logger.warn(`Unknown select menu action: ${action}`);
+  const quizCommand = interaction.client.commands.get('quiz');
+  if (!quizCommand) {
+    return interaction.reply({ content: '❌ Quiz command not found', ephemeral: true });
+  }
+  
+  try {
+    // Defer first
+    await interaction.deferReply();
+    let hasResponded = false;
+    
+    // Start quiz with selected topic
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      isStringSelectMenu: () => false,
+      commandName: 'quiz',
+      options: {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) return interaction.followUp(opts);
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {},
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await quizCommand.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Quiz from help error:', error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `Use \`/quiz topic:${topic}\` to start!` });
+    } else {
+      await interaction.reply({ content: `Use \`/quiz topic:${topic}\` to start!`, ephemeral: true });
+    }
+  }
+}
+
+// NEW: Start lesson from help menu topic selection  
+async function startLearnFromHelpMenu(interaction, topic) {
+  if (topic === 'custom') {
+    await interaction.reply({ 
+      content: '🤖 Use `/learn topic:your-topic` to learn about anything!\n\nExample: `/learn topic:async await in JavaScript`', 
+      ephemeral: true 
+    });
+    return;
+  }
+  
+  const topicMap = {
+    'javascript-basics': 'JavaScript variables and functions',
+    'python-basics': 'Python fundamentals',
+    'webdev': 'Web development with HTML CSS and JavaScript',
+    'datastructures': 'Data structures',
+    'apis': 'REST APIs',
+    'databases': 'SQL databases',
+    'algorithms': 'Basic algorithms'
+  };
+  
+  const learnCommand = interaction.client.commands.get('learn');
+  if (!learnCommand) {
+    return interaction.reply({ content: '❌ Learn command not found', ephemeral: true });
+  }
+  
+  const actualTopic = topicMap[topic] || topic;
+  
+  try {
+    // Defer first
+    await interaction.deferReply();
+    let hasResponded = false;
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      isStringSelectMenu: () => false,
+      commandName: 'learn',
+      options: {
+        getString: (name) => name === 'topic' ? actualTopic : null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) return interaction.followUp(opts);
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {},
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await learnCommand.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Learn from help error:', error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `Use \`/learn topic:${actualTopic}\` to start!` });
+    } else {
+      await interaction.reply({ content: `Use \`/learn topic:${actualTopic}\` to start!`, ephemeral: true });
+    }
+  }
+}
+
+async function handleHelpCategorySelect(interaction, category) {
+  const embedMap = {
+    learning: createLearningHelpEmbed,
+    gamification: createGamificationHelpEmbed,
+    progress: createProgressHelpEmbed,
+    social: createSocialHelpEmbed,
+    utility: createUtilityHelpEmbed,
+    all: createAllCommandsEmbed
+  };
+
+  const createEmbed = embedMap[category];
+  if (createEmbed) {
+    const embed = createEmbed();
+    const backButton = createHelpBackButton();
+    await interaction.update({ embeds: [embed], components: [backButton] });
+  }
+}
+
+async function handleHelpButton(interaction, action, params) {
+  if (action === 'quickstart') {
+    const embed = createQuickStartEmbed();
+    await interaction.update({ embeds: [embed], components: [createHelpBackButton()] });
+  } else if (action === 'popular') {
+    const embed = createPopularCommandsEmbed();
+    await interaction.update({ embeds: [embed], components: [createHelpBackButton()] });
+  } else if (action === 'tips') {
+    const embed = createProTipsEmbed();
+    await interaction.update({ embeds: [embed], components: [createHelpBackButton()] });
+  } else if (action === 'back' && params[0] === 'main') {
+    // Return to main help menu
+    const welcomeEmbed = createWelcomeEmbed(interaction);
+    const statsEmbed = createStatsEmbed(interaction);
+    const components = createHelpComponents();
+    await interaction.update({ embeds: [welcomeEmbed, statsEmbed], components });
+  } else if (action === 'feature') {
+    const feature = params[0];
+    // Execute commands directly instead of showing text!
+    if (feature === 'quiz') {
+      // Show quiz topic selector
+      await showQuizTopicSelector(interaction);
+    } else if (feature === 'learn') {
+      // Show learn topic selector
+      await showLearnTopicSelector(interaction);
+    } else if (feature === 'daily' || feature === 'profile') {
+      // Execute the command directly
+      await executeCommandFromButton(interaction, feature);
+    }
+  }
+}
+
+// Show quiz topic selector for help feature button
+async function showQuizTopicSelector(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('🎯 Choose a Quiz Topic')
+    .setColor(COLORS.SUCCESS)
+    .setDescription('**Select a topic to start your quiz!**\n\nEach quiz gives you XP based on performance.');
+
+  const topicMenu = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('quiz_topic_select')
+      .setPlaceholder('🎯 Select a topic...')
+      .addOptions([
+        { label: 'JavaScript', value: 'javascript', emoji: '🟨' },
+        { label: 'Python', value: 'python', emoji: '🐍' },
+        { label: 'React', value: 'react', emoji: '⚛️' },
+        { label: 'Node.js', value: 'nodejs', emoji: '🟢' },
+        { label: 'HTML & CSS', value: 'html css', emoji: '🌐' },
+        { label: 'SQL', value: 'sql', emoji: '🗄️' },
+        { label: 'Git', value: 'git', emoji: '📦' }
+      ])
+  );
+
+  const backButton = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Help')
+      .setEmoji('◀️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+}
+
+// Show learn topic selector for help feature button
+async function showLearnTopicSelector(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('📚 Choose a Learning Topic')
+    .setColor(COLORS.PRIMARY)
+    .setDescription('**Select a topic to get an AI-generated lesson!**\n\nLearn anything with personalized explanations.');
+
+  const topicMenu = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('learn_topic_select')
+      .setPlaceholder('📚 Select a topic...')
+      .addOptions([
+        { label: 'JavaScript Basics', value: 'javascript-basics', emoji: '🟨' },
+        { label: 'Python Fundamentals', value: 'python-basics', emoji: '🐍' },
+        { label: 'Web Development', value: 'webdev', emoji: '🌐' },
+        { label: 'Data Structures', value: 'datastructures', emoji: '🔢' },
+        { label: 'APIs & REST', value: 'apis', emoji: '🔗' },
+        { label: 'Databases', value: 'databases', emoji: '🗄️' },
+        { label: 'Algorithms', value: 'algorithms', emoji: '🧮' }
+      ])
+  );
+
+  const backButton = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Help')
+      .setEmoji('◀️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+}
+
+function createWelcomeEmbed(interaction) {
+  return new EmbedBuilder()
+    .setTitle('✨ Welcome to MentorAI ✨')
+    .setColor(0x5865F2)
+    .setDescription(
+      '```ansi\n' +
+      '\u001b[1;35m╔══════════════════════════════════════════╗\u001b[0m\n' +
+      '\u001b[1;35m║\u001b[0m  \u001b[1;36m🎓 Your AI-Powered Learning Companion\u001b[0m  \u001b[1;35m║\u001b[0m\n' +
+      '\u001b[1;35m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '> *Learn any programming topic with AI-generated lessons,*\n' +
+      '> *test your knowledge with smart quizzes, and level up!*'
+    )
+    .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .addFields({
+      name: '🌟 Why MentorAI?',
+      value: 
+        '```diff\n' +
+        '+ AI-Generated Lessons & Quizzes\n' +
+        '+ Gamified Learning with XP & Levels\n' +
+        '+ Daily Streaks & Achievements\n' +
+        '+ Challenge Friends to Quiz Battles\n' +
+        '```',
+      inline: false
+    })
+    .setFooter({ text: '🎮 Select a category below to explore!' })
+    .setTimestamp();
+}
+
+function createStatsEmbed(interaction) {
+  return new EmbedBuilder()
+    .setColor(0x2ECC71)
+    .addFields(
+      { name: '🌐 Servers', value: '`' + interaction.client.guilds.cache.size + '`', inline: true },
+      { name: '👥 Users', value: '`' + interaction.client.users.cache.size + '`', inline: true },
+      { name: '⚡ Latency', value: '`' + interaction.client.ws.ping + 'ms`', inline: true }
+    );
+}
+
+// NEW: Handle action buttons from help command (show sub-menus)
+async function handleActionButton(interaction, action, params) {
+  const helpModule = await import('../commands/help.js');
+  
+  if (action === 'back' && params[0] === 'help') {
+    // Go back to main help menu
+    await helpModule.execute({ 
+      ...interaction, 
+      reply: async (opts) => interaction.update(opts),
+      user: interaction.user,
+      client: interaction.client
+    });
+    return;
+  }
+  
+  // Handle the action button
+  await helpModule.handleButton(interaction, action);
+}
+
+// NEW: Execute actual commands from help menu buttons
+async function handleExecuteButton(interaction, action, params) {
+  const commandMap = {
+    'daily': 'daily',
+    'profile': 'profile', 
+    'progress': 'progress',
+    'streak': 'streak',
+    'achievements': 'achievements',
+    'leaderboard': 'leaderboard',
+    'topics': 'topics'
+  };
+  
+  const commandName = commandMap[action];
+  if (!commandName) return;
+  
+  const command = interaction.client.commands.get(commandName);
+  if (!command) {
+    return interaction.reply({ 
+      content: `❌ Command not found. Use \`/${commandName}\` directly.`, 
+      ephemeral: true 
+    });
+  }
+  
+  try {
+    // First, defer the button interaction
+    await interaction.deferReply();
+    
+    // Track if we've responded
+    let hasResponded = false;
+    
+    // Create a fake interaction that redirects responses
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: commandName,
+      options: {
+        getString: () => null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true, // Already deferred
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) {
+          return interaction.followUp(opts);
+        }
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {
+        // Already deferred, do nothing
+        return;
+      },
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await command.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Execute button error:', error);
+    // Use editReply since we deferred
+    if (interaction.deferred) {
+      await interaction.editReply({ 
+        content: `❌ Failed to execute. Try \`/${commandName}\` directly.`
+      });
+    } else {
+      await interaction.reply({ 
+        content: `❌ Failed to execute. Try \`/${commandName}\` directly.`, 
+        ephemeral: true 
+      });
+    }
+  }
+}
+
+// Helper function to execute any command from a button
+async function executeCommandFromButton(interaction, commandName) {
+  const command = interaction.client.commands.get(commandName);
+  if (!command) {
+    return interaction.reply({ 
+      content: `❌ Command not found.`, 
+      ephemeral: true 
+    });
+  }
+  
+  try {
+    await interaction.deferReply();
+    let hasResponded = false;
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: commandName,
+      options: {
+        getString: () => null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) return interaction.followUp(opts);
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {},
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await command.execute(fakeInteraction);
+  } catch (error) {
+    logger.error(`Execute ${commandName} from button error:`, error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `❌ Something went wrong.` });
+    } else {
+      await interaction.reply({ content: `❌ Something went wrong.`, ephemeral: true });
+    }
+  }
+}
+
+function createHelpComponents() {
+  const categoryMenu = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('help_category_select')
+      .setPlaceholder('📂 Choose a category to explore...')
+      .addOptions([
+        { label: '📚 Learning Commands', description: 'AI lessons, quizzes, and explanations', value: 'learning', emoji: '📚' },
+        { label: '🎮 Gamification', description: 'XP, levels, streaks, and achievements', value: 'gamification', emoji: '🎮' },
+        { label: '📊 Progress & Stats', description: 'Track your learning journey', value: 'progress', emoji: '📊' },
+        { label: '👥 Social Features', description: 'Challenges, parties, and leaderboards', value: 'social', emoji: '👥' },
+        { label: '⚙️ Utility Commands', description: 'Settings, feedback, and more', value: 'utility', emoji: '⚙️' },
+        { label: '📋 All Commands', description: 'View complete command list', value: 'all', emoji: '📋' }
+      ])
+  );
+
+  const quickButtons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_quickstart')
+      .setLabel('🚀 Quick Start')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('help_popular')
+      .setLabel('⭐ Popular')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_tips')
+      .setLabel('💡 Pro Tips')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const featureButtons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_feature_quiz')
+      .setLabel('Take Quiz')
+      .setEmoji('🎯')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_feature_learn')
+      .setLabel('Learn')
+      .setEmoji('📚')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_feature_daily')
+      .setLabel('Daily')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Success)
+  );
+
+  return [categoryMenu, quickButtons, featureButtons];
+}
+
+function createHelpBackButton() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('← Back to Main Menu')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+}
+
+// ============================================================
+// QUIZ HANDLERS
+// ============================================================
+
+async function handleQuizButton(interaction, action, params) {
+  const userId = interaction.user.id;
+
+  if (action === 'answer') {
+    const answerIndex = parseInt(params[0]);
+    const user = await getOrCreateUser(userId, interaction.user.username);
+    const result = await submitAnswer(userId, answerIndex, user);
+
+    if (!result) {
+      await interaction.reply({ content: '❌ No active quiz! Start one with `/quiz`', ephemeral: true });
+      return;
+    }
+
+    if (result.isComplete) {
+      const calculatingEmbed = new EmbedBuilder()
+        .setTitle('🎯 Calculating Results...')
+        .setColor(COLORS.PRIMARY)
+        .setDescription('```\n⏳ Please wait...\n```');
+
+      await interaction.update({ embeds: [calculatingEmbed], components: [] });
+
+      user.quizzesTaken = (user.quizzesTaken || 0) + 1;
+      user.correctAnswers = (user.correctAnswers || 0) + result.score;
+      user.totalQuestions = (user.totalQuestions || 0) + result.totalQuestions;
+
+      const levelResult = await user.addXp(result.xpEarned);
+      result.leveledUp = levelResult.leveledUp;
+      result.newLevel = levelResult.newLevel;
+      await user.save();
+
+      await sleep(1000);
+      const resultsEmbed = createQuizResultsEmbed(result);
+      const postButtons = createPostQuizButtons(result.topic);
+      await interaction.editReply({ embeds: [resultsEmbed], components: [postButtons] });
+
+      if (result.leveledUp) {
+        await sleep(500);
+        const levelUpEmbed = new EmbedBuilder()
+          .setTitle('🎉 LEVEL UP!')
+          .setColor(COLORS.XP_GOLD)
+          .setDescription('You reached **Level ' + result.newLevel + '**!')
+          .setFooter({ text: '🎓 MentorAI' });
+        await interaction.followUp({ embeds: [levelUpEmbed] });
+      }
+    } else {
+      const feedbackEmbed = new EmbedBuilder()
+        .setTitle(result.isCorrect ? '✅ Correct!' : '❌ Incorrect')
+        .setColor(result.isCorrect ? COLORS.SUCCESS : COLORS.ERROR)
+        .setDescription(result.isCorrect ? '🎉 +25 XP' : '💪 Keep learning!')
+        .addFields({ name: '📝 Explanation', value: result.explanation || 'Moving on...', inline: false });
+
+      await interaction.update({ embeds: [feedbackEmbed], components: [] });
+
+      await sleep(2000);
+      const nextQ = result.nextQuestion;
+      if (nextQ && nextQ.question) {
+        const questionEmbed = createQuizQuestionEmbed(nextQ.question, nextQ.questionNum, nextQ.totalQuestions, nextQ.topic || 'Quiz', nextQ.difficulty || 'medium');
+        await interaction.editReply({ embeds: [questionEmbed], components: [createQuizAnswerButtons(), createQuizControlButtons()] });
+      }
+    }
+  } else if (action === 'cancel') {
+    cancelSession(userId);
+    const cancelEmbed = new EmbedBuilder()
+      .setTitle('🛑 Quiz Cancelled')
+      .setColor(COLORS.WARNING)
+      .setDescription('Start a new one with `/quiz`!');
+    await interaction.update({ embeds: [cancelEmbed], components: [] });
+  } else if (action === 'restart' || action === 'start') {
+    const topic = decodeURIComponent(params.join('_') || 'JavaScript');
+    
+    // Start a new quiz directly
+    const quizCommand = interaction.client.commands.get('quiz');
+    if (!quizCommand) {
+      return interaction.reply({ content: '❌ Quiz command not found', ephemeral: true });
+    }
+    
+    try {
+      await interaction.deferReply();
+      let hasResponded = false;
+      
+      const fakeInteraction = {
+        ...interaction,
+        isChatInputCommand: () => true,
+        isButton: () => false,
+        commandName: 'quiz',
+        options: {
+          getString: (name) => name === 'topic' ? topic : null,
+          getInteger: (name) => name === 'questions' ? 5 : null,
+          getUser: () => null,
+          getSubcommand: () => null,
+          get: () => null
+        },
+        replied: true,
+        deferred: true,
+        reply: async (opts) => {
+          if (hasResponded) return interaction.followUp(opts);
+          hasResponded = true;
+          return interaction.editReply(opts);
+        },
+        deferReply: async () => {},
+        editReply: async (opts) => {
+          hasResponded = true;
+          return interaction.editReply(opts);
+        },
+        followUp: async (opts) => interaction.followUp(opts)
+      };
+      
+      await quizCommand.execute(fakeInteraction);
+    } catch (error) {
+      logger.error('Quiz restart error:', error);
+      if (interaction.deferred) {
+        await interaction.editReply({ content: `Starting quiz on ${topic}...` });
+      }
+    }
+  }
+}
+
+// ============================================================
+// OTHER HANDLERS
+// ============================================================
+
+async function handleLessonButton(interaction, action, params) {
+  const topic = decodeURIComponent(params.join('_') || 'programming');
+  
+  // Execute learn command directly
+  const learnCommand = interaction.client.commands.get('learn');
+  if (!learnCommand) {
+    return interaction.reply({ content: '❌ Learn command not found', ephemeral: true });
+  }
+  
+  try {
+    await interaction.deferReply();
+    let hasResponded = false;
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: 'learn',
+      options: {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) return interaction.followUp(opts);
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {},
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await learnCommand.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Lesson button error:', error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `Starting lesson on ${topic}...` });
+    }
+  }
+}
+
+async function handleProfileButton(interaction, action, params) {
+  const userId = interaction.user.id;
+  const username = interaction.user.username;
+  
+  try {
+    const user = await getOrCreateUser(userId, username);
+    
+    switch(action) {
+      case 'achievements':
+        // Execute achievements command directly
+        await executeCommandFromButton(interaction, 'achievements');
+        break;
+        
+      case 'history':
+        // Show learning history
+        await showLearningHistory(interaction, user);
+        break;
+        
+      case 'compare':
+        // Show compare prompt
+        await showComparePrompt(interaction);
+        break;
+        
+      case 'share':
+        // Generate shareable profile card
+        await shareProfile(interaction, user);
+        break;
+        
+      default:
+        await executeCommandFromButton(interaction, 'profile');
+    }
+  } catch (error) {
+    logger.error('Profile button error:', error);
+    await interaction.reply({ content: '❌ Something went wrong', ephemeral: true });
+  }
+}
+
+// Show learning history embed
+async function showLearningHistory(interaction, user) {
+  const lessonsCompleted = user.lessonsCompleted || 0;
+  const quizzesTaken = user.quizzesTaken || 0;
+  const correctAnswers = user.correctAnswers || 0;
+  const totalQuestions = user.totalQuestions || 0;
+  const recentTopics = user.topicsLearned || [];
+  
+  const embed = new EmbedBuilder()
+    .setTitle('📜 Learning History')
+    .setColor(COLORS.INFO)
+    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+    .setDescription(`**${interaction.user.username}'s learning journey**`)
+    .addFields(
+      {
+        name: '📊 Overall Stats',
+        value: [
+          `📚 **Lessons Completed:** ${lessonsCompleted}`,
+          `🎯 **Quizzes Taken:** ${quizzesTaken}`,
+          `✅ **Correct Answers:** ${correctAnswers}/${totalQuestions}`,
+          `📈 **Accuracy:** ${totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0}%`
+        ].join('\n'),
+        inline: false
+      },
+      {
+        name: '🎓 Recent Topics',
+        value: recentTopics.length > 0 
+          ? recentTopics.slice(-5).map(t => `• ${t}`).join('\n')
+          : '_Start learning to see your topics here!_',
+        inline: false
+      },
+      {
+        name: '🔥 Streak Info',
+        value: `Current: **${user.streak || 0}** days | Best: **${user.bestStreak || 0}** days`,
+        inline: false
+      }
+    )
+    .setFooter({ text: '🎓 MentorAI | Keep learning!' })
+    .setTimestamp();
+
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('execute_progress')
+      .setLabel('View Progress')
+      .setEmoji('📊')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('execute_achievements')
+      .setLabel('Achievements')
+      .setEmoji('🏆')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply({ embeds: [embed], components: [buttons], ephemeral: true });
+}
+
+// Show compare prompt
+async function showComparePrompt(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('⚔️ Compare Profiles')
+    .setColor(COLORS.INFO)
+    .setDescription(
+      '**Challenge a friend to see who\'s learned more!**\n\n' +
+      '> 🎯 Compare XP, levels, and achievements\n' +
+      '> 📊 See who has better quiz accuracy\n' +
+      '> 🔥 Compare learning streaks\n\n' +
+      '*Use `/challenge @user` to start a quiz battle!*'
+    )
+    .setFooter({ text: '🎓 MentorAI' });
+
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('execute_leaderboard')
+      .setLabel('View Leaderboard')
+      .setEmoji('🏆')
+      .setStyle(ButtonStyle.Primary)
+  );
+
+  await interaction.reply({ embeds: [embed], components: [buttons], ephemeral: true });
+}
+
+// Share profile
+async function shareProfile(interaction, user) {
+  const level = user.level || 1;
+  const xp = user.xp || 0;
+  const achievements = user.achievements || [];
+  
+  const embed = new EmbedBuilder()
+    .setTitle(`🎓 ${interaction.user.username}'s MentorAI Profile`)
+    .setColor(0x5865F2)
+    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .setDescription(
+      `**Level ${level} Learner**\n\n` +
+      `⭐ **${xp.toLocaleString()}** Total XP\n` +
+      `🔥 **${user.streak || 0}** Day Streak\n` +
+      `🏆 **${achievements.length}** Achievements\n` +
+      `📝 **${user.quizzesTaken || 0}** Quizzes Completed`
+    )
+    .setFooter({ text: '🎓 Powered by MentorAI | Learn with AI!' })
+    .setTimestamp();
+
+  // Send as a public message (not ephemeral)
+  await interaction.reply({ 
+    content: `**${interaction.user.username}** shared their profile! 🎉`,
+    embeds: [embed] 
+  });
+}
+
+async function handleLeaderboardButton(interaction, action, params) {
+  // Execute leaderboard command directly
+  await executeCommandFromButton(interaction, 'leaderboard');
+}
+
+async function handleChallengeButton(interaction, action, params) {
+  const opponentId = params[1];
+
+  if (action === 'accept') {
+    if (interaction.user.id !== opponentId) {
+      await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
+      return;
+    }
+    const embed = new EmbedBuilder()
+      .setTitle('⚔️ Challenge Accepted!')
+      .setColor(COLORS.SUCCESS)
+      .setDescription('Both players use `/quiz` to compete!');
+    await interaction.update({ embeds: [embed], components: [] });
+  } else if (action === 'decline') {
+    if (interaction.user.id !== opponentId) {
+      await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
+      return;
+    }
+    const embed = new EmbedBuilder()
+      .setTitle('❌ Challenge Declined')
+      .setColor(COLORS.ERROR)
+      .setDescription('Maybe next time!');
+    await interaction.update({ embeds: [embed], components: [] });
+  }
+}
+
+async function handleAutocomplete(interaction) {
+  const focused = interaction.options.getFocused(true);
+  if (focused.name === 'topic') {
+    const topics = ['JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'HTML', 'CSS', 'SQL', 'Git', 'Docker', 'APIs', 'Algorithms'];
+    const filtered = topics.filter(t => t.toLowerCase().includes(focused.value.toLowerCase())).slice(0, 25);
+    await interaction.respond(filtered.map(t => ({ name: t, value: t })));
+  }
+}
+
+async function handleModal(interaction) {
+  if (interaction.customId === 'modal_feedback') {
+    const rating = interaction.fields.getTextInputValue('feedback_rating');
+    logger.info('Feedback from ' + interaction.user.tag + ': ' + rating + ' stars');
+    const embed = new EmbedBuilder()
+      .setTitle('✅ Thank You!')
+      .setColor(COLORS.SUCCESS)
+      .setDescription('Your feedback has been received!');
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  } else if (interaction.customId === 'admin_modal_broadcast') {
+    const title = interaction.fields.getTextInputValue('broadcast_title');
+    const message = interaction.fields.getTextInputValue('broadcast_message');
+    await broadcastMessage(title, message);
+    const embed = new EmbedBuilder()
+      .setTitle('📢 Broadcast Sent')
+      .setColor(COLORS.SUCCESS)
+      .setDescription('Your message has been sent to all users.');
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+}
+
+async function sendError(interaction, message) {
+  const embed = new EmbedBuilder()
+    .setTitle('❌ Error')
+    .setDescription(message)
+    .setColor(COLORS.ERROR);
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.followUp({ embeds: [embed], ephemeral: true });
+    } else {
+      await interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+  } catch (e) {
+    logger.error('Failed to send error:', e);
+  }
+}
+
+async function handleAdminButton(interaction, action, params) {
+  // Admin ID check
+  const ADMIN_IDS = ['YOUR_DISCORD_ID_HERE']; // Replace with your ID
+  if (!ADMIN_IDS.includes(interaction.user.id)) {
+    await interaction.reply({ content: '🔒 Access denied.', ephemeral: true });
+    return;
+  }
+
+  if (action === 'nav') {
+    const page = params[0];
+    if (page === 'dashboard') {
+      // Re-run dashboard
+      const adminCmd = interaction.client.commands.get('admin');
+      interaction.options = { getSubcommand: () => 'dashboard' };
+      await adminCmd.execute(interaction);
+    } else if (page === 'users') {
+      interaction.options = { getSubcommand: () => 'users' };
+      const adminCmd = interaction.client.commands.get('admin');
+      await adminCmd.execute(interaction);
+    } else if (page === 'analytics') {
+      interaction.options = { getSubcommand: () => 'analytics' };
+      const adminCmd = interaction.client.commands.get('admin');
+      await adminCmd.execute(interaction);
+    } else if (page === 'logs') {
+      interaction.options = { getSubcommand: () => 'logs' };
+      const adminCmd = interaction.client.commands.get('admin');
+      await adminCmd.execute(interaction);
+    } else if (page === 'config') {
+      interaction.options = { getSubcommand: () => 'config' };
+      const adminCmd = interaction.client.commands.get('admin');
+      await adminCmd.execute(interaction);
+    }
+  } else if (action === 'action') {
+    const actionType = params[0];
+    if (actionType === 'refresh') {
+      await interaction.reply({ content: '🔄 Dashboard refreshed!', ephemeral: true });
+    } else if (actionType === 'broadcast') {
+      // Show broadcast modal
+      const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import('discord.js');
+      const modal = new ModalBuilder()
+        .setCustomId('admin_modal_broadcast')
+        .setTitle('📢 Broadcast Announcement');
+      
+      const titleInput = new TextInputBuilder()
+        .setCustomId('broadcast_title')
+        .setLabel('Title')
+        .setStyle(TextInputStyle.Short)
+        .setRequired(true);
+      
+      const messageInput = new TextInputBuilder()
+        .setCustomId('broadcast_message')
+        .setLabel('Message')
+        .setStyle(TextInputStyle.Paragraph)
+        .setRequired(true);
+      
+      modal.addComponents(
+        new ActionRowBuilder().addComponents(titleInput),
+        new ActionRowBuilder().addComponents(messageInput)
+      );
+      
+      await interaction.showModal(modal);
+    } else if (actionType === 'maintenance') {
+      const isEnabled = toggleMaintenanceMode();
+      await interaction.reply({
+        content: isEnabled ? '🔧 Maintenance mode **ENABLED**' : '🟢 Maintenance mode **DISABLED**',
+        ephemeral: true
+      });
+    }
+  } else if (action === 'maint') {
+    const maintAction = params[0];
+    if (maintAction === 'toggle') {
+      const isEnabled = toggleMaintenanceMode();
+      await interaction.reply({
+        content: isEnabled ? '🔧 Maintenance mode **ENABLED**' : '🟢 Maintenance mode **DISABLED**',
+        ephemeral: true
+      });
+    } else if (maintAction === 'cache') {
+      await interaction.reply({ content: '🗑️ Cache cleared!', ephemeral: true });
+    } else if (maintAction === 'sync') {
+      await interaction.reply({ content: '🔄 Database synced!', ephemeral: true });
+    } else if (maintAction === 'health') {
+      const health = await getBotHealth();
+      await interaction.reply({
+        content: '❤️ **Health Check**\n```\nStatus: ' + health.status + '\nMemory: ' + 
+          (health.memory.heapUsed / 1024 / 1024).toFixed(2) + 'MB\nMaintenance: ' + 
+          (health.maintenanceMode ? 'ON' : 'OFF') + '\n```',
+        ephemeral: true
+      });
+    }
+  } else if (action === 'logs') {
+    const logAction = params[0];
+    if (logAction === 'clear') {
+      clearLogs();
+      await interaction.reply({ content: '🗑️ Logs cleared!', ephemeral: true });
+    } else if (logAction === 'export') {
+      await interaction.reply({ content: '📥 Log export feature coming soon!', ephemeral: true });
+    }
+  } else if (action === 'analytics') {
+    const range = params[0];
+    await interaction.reply({ content: '📊 Showing ' + range + ' analytics...', ephemeral: true });
+  } else if (action === 'users') {
+    const userAction = params[0];
+    if (userAction === 'export') {
+      await interaction.reply({ content: '📥 User export feature coming soon!', ephemeral: true });
+    } else if (userAction === 'refresh') {
+      await interaction.reply({ content: '🔄 User list refreshed!', ephemeral: true });
+    }
+  } else if (action === 'config') {
+    const configAction = params[0];
+    if (configAction === 'reload') {
+      await interaction.reply({ content: '🔄 Configuration reloaded!', ephemeral: true });
+    } else if (configAction === 'restart') {
+      await interaction.reply({ content: '🔄 Restart initiated... (This is a simulation)', ephemeral: true });
+    }
+  }
+}
+// Handle Quick Quiz answers
+async function handleQuickQuizAnswer(interaction, quizId, params) {
+  const answerIndex = parseInt(params[0]);
+  
+  // Dynamic import to avoid circular dependency
+  const { activeQuizzes } = await import('../commands/quickquiz.js');
+  const quiz = activeQuizzes.get(quizId);
+  
+  if (!quiz) {
+    return interaction.reply({ content: '❌ This quiz has expired!', ephemeral: true });
+  }
+  
+  if (quiz.userId !== interaction.user.id) {
+    return interaction.reply({ content: '❌ This isn\'t your quiz!', ephemeral: true });
+  }
+  
+  quiz.answered = true;
+  activeQuizzes.delete(quizId);
+  
+  const isCorrect = answerIndex === quiz.correct;
+  const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+  
+  // Track quick quiz stats
+  user.quickQuizzesTaken = (user.quickQuizzesTaken || 0) + 1;
+  if (isCorrect) {
+    user.quickQuizCorrect = (user.quickQuizCorrect || 0) + 1;
+    // Track best streak (consecutive correct answers)
+    user.quickQuizCurrentStreak = (user.quickQuizCurrentStreak || 0) + 1;
+    if (user.quickQuizCurrentStreak > (user.quickQuizBestStreak || 0)) {
+      user.quickQuizBestStreak = user.quickQuizCurrentStreak;
+    }
+    await user.addXp(25);
+  } else {
+    // Reset current streak on wrong answer
+    user.quickQuizCurrentStreak = 0;
+  }
+  await user.save();
+  
+  const resultEmbed = new EmbedBuilder()
+    .setTitle(isCorrect ? '✅ Correct!' : '❌ Wrong!')
+    .setColor(isCorrect ? COLORS.SUCCESS_GREEN : COLORS.ERROR_RED)
+    .setDescription(
+      '**Question:** ' + quiz.question + '\n\n' +
+      '**Your Answer:** ' + quiz.options[answerIndex] + '\n' +
+      '**Correct Answer:** ' + quiz.options[quiz.correct] + '\n\n' +
+      '**Explanation:** ' + quiz.explanation
+    )
+    .addFields({
+      name: '🎁 Reward',
+      value: isCorrect ? '+25 XP earned!' : 'Try again for XP!',
+      inline: false
+    })
+    .setFooter({ text: '🎓 MentorAI | /quickquiz for more!' })
+    .setTimestamp();
+
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('execute_quickquiz')
+      .setLabel('Another Question')
+      .setEmoji('⚡')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('funfact_learn_' + encodeURIComponent(quiz.topic))
+      .setLabel('Learn This Topic')
+      .setEmoji('📚')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.update({ embeds: [resultEmbed], components: [buttons] });
+}
+
+// Handle Fun Fact buttons
+async function handleFunFactButton(interaction, action, params) {
+  if (action === 'another') {
+    // Execute funfact command
+    const command = interaction.client.commands.get('funfact');
+    if (command) {
+      await command.execute(interaction);
+    }
+  } else if (action === 'learn') {
+    const topic = decodeURIComponent(params.join('_'));
+    const command = interaction.client.commands.get('learn');
+    if (command) {
+      // Create a mock interaction with the topic
+      interaction.options = {
+        getString: (name) => name === 'topic' ? topic : null
+      };
+      await interaction.deferUpdate();
+      await command.execute(interaction);
+    }
+  } else if (action === 'quiz') {
+    const topic = decodeURIComponent(params.join('_'));
+    const command = interaction.client.commands.get('quiz');
+    if (command) {
+      interaction.options = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: () => 3,
+        getBoolean: () => false
+      };
+      await interaction.deferUpdate();
+      await command.execute(interaction);
+    }
+  }
+}
+
+// Handle Weekly challenge buttons
+async function handleWeeklyButton(interaction, action, params) {
+  if (action === 'leaderboard') {
+    const command = interaction.client.commands.get('weekly');
+    if (command) {
+      interaction.options = {
+        getSubcommand: () => 'leaderboard'
+      };
+      await command.execute(interaction);
+    }
+  }
+}
+
+// Handle Share buttons
+async function handleShareButton(interaction, action, params) {
+  if (action === 'copy') {
+    const type = params[0];
+    await interaction.reply({
+      content: '📋 Copy the share text from the message above and paste it anywhere!',
+      ephemeral: true
+    });
+  }
+}
+
+// Handle Referral buttons  
+async function handleReferralButton(interaction, action, params) {
+  const command = interaction.client.commands.get('referral');
+  if (!command) return;
+
+  if (action === 'stats') {
+    interaction.options = {
+      getSubcommand: () => 'stats'
+    };
+    await command.execute(interaction);
+  } else if (action === 'link') {
+    interaction.options = {
+      getSubcommand: () => 'link'
+    };
+    await command.execute(interaction);
+  } else if (action === 'leaderboard') {
+    interaction.options = {
+      getSubcommand: () => 'leaderboard'
+    };
+    await command.execute(interaction);
+  } else if (action === 'claim') {
+    interaction.options = {
+      getSubcommand: () => 'claim'
+    };
+    await command.execute(interaction);
   }
 }

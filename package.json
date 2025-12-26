@@ -1,35 +1,36 @@
 {
-  "name": "mentorai-discord",
-  "version": "1.0.0",
-  "description": "AI-powered learning platform for Discord",
+  "name": "mentorai",
+  "version": "2.0.0",
+  "description": "AI-powered Discord learning bot with gamification",
   "main": "src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "deploy-commands": "node src/bot/deploy-commands.js",
-    "lint": "eslint src/",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "deploy-commands": "node src/deploy-commands.js",
+    "admin": "node src/web/server.js",
+    "dev:all": "npm run dev"
   },
-  "keywords": ["discord", "ai", "learning", "education"],
-  "author": "MentorAI Team",
-  "license": "MIT",
   "dependencies": {
-    "discord.js": "^14.14.1",
-    "@discordjs/rest": "^2.2.0",
-    "@discordjs/builders": "^1.7.0",
-    "dotenv": "^16.3.1",
-    "openai": "^4.24.1",
-    "@anthropic-ai/sdk": "^0.9.1",
-    "mongoose": "^8.0.3",
-    "winston": "^3.11.0",
-    "node-cron": "^3.0.3",
-    "axios": "^1.6.2",
-    "uuid": "^9.0.1"
+    "@anthropic-ai/sdk": "^0.52.0",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "discord.js": "^14.18.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.15.1",
+    "openai": "^4.96.2",
+    "socket.io": "^4.7.2",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.2",
-    "eslint": "^8.56.0",
-    "prettier": "^3.1.1"
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1"
   }
 }

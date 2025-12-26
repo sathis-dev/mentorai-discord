@@ -1,135 +1,83 @@
 import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
-  discordId: {
-    type: String,
-    required: true,
-    unique: true
-  },
-  username: String,
+  discordId: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
+  xp: { type: Number, default: 0 },
+  level: { type: Number, default: 1 },
+  streak: { type: Number, default: 0 },
+  lastActive: { type: Date, default: Date.now },
+  achievements: [{ type: String }],
+  completedLessons: [{ type: String }],
+  quizzesTaken: { type: Number, default: 0 },
+  correctAnswers: { type: Number, default: 0 },
+  totalQuestions: { type: Number, default: 0 },
+  topicsStudied: [{ type: String }],
+  createdAt: { type: Date, default: Date.now },
   
-  level: {
-    type: Number,
-    default: 1
-  },
-  totalXp: {
-    type: Number,
-    default: 0
-  },
-  currentXp: {
-    type: Number,
-    default: 0
-  },
+  // Referral System
+  referralCode: { type: String, unique: true, sparse: true },
+  referredBy: { type: String },
+  referrals: { type: Number, default: 0 },
+  referralXpEarned: { type: Number, default: 0 },
+  pendingReferralRewards: { type: Number, default: 0 },
   
-  lessonsCompleted: {
-    type: Number,
-    default: 0
-  },
-  quizzesCompleted: {
-    type: Number,
-    default: 0
-  },
-  quizzesPassed: {
-    type: Number,
-    default: 0
-  },
-  totalQuestions: {
-    type: Number,
-    default: 0
-  },
-  correctAnswers: {
-    type: Number,
-    default: 0
-  },
+  // Share System
+  shareCount: { type: Number, default: 0 },
+  lastShareDate: { type: Date },
   
-  currentStreak: {
-    type: Number,
-    default: 0
-  },
-  longestStreak: {
-    type: Number,
-    default: 0
-  },
-  lastActiveDate: Date,
+  // Weekly Challenges
+  weeklyParticipations: { type: Number, default: 0 },
+  weeklyWins: { type: Number, default: 0 },
+  lastWeeklyDate: { type: Date },
+  lastWeeklyParticipation: { type: Number, default: 0 },
   
-  achievements: [{
-    id: String,
-    unlockedAt: Date
-  }],
+  // Quick Quiz Stats
+  quickQuizzesTaken: { type: Number, default: 0 },
+  quickQuizCorrect: { type: Number, default: 0 },
+  quickQuizBestStreak: { type: Number, default: 0 },
+  quickQuizCurrentStreak: { type: Number, default: 0 },
   
-  activePaths: [{
-    pathId: String,
-    currentLesson: Number,
-    startedAt: Date,
-    completedLessons: [Number]
-  }],
-  
-  preferredLevel: {
-    type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
-    default: 'beginner'
-  },
-  
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+  // Fun Facts
+  funFactsViewed: { type: Number, default: 0 },
+  lastFunFactDate: { type: Date },
 });
 
+// Calculate XP needed for next level
 userSchema.methods.xpForNextLevel = function() {
   return Math.floor(100 * Math.pow(1.5, this.level - 1));
 };
 
+// Add XP and handle level ups
 userSchema.methods.addXp = async function(amount) {
-  this.totalXp += amount;
-  this.currentXp += amount;
+  this.xp += amount;
   
-  const xpNeeded = this.xpForNextLevel();
-  
-  while (this.currentXp >= xpNeeded) {
-    this.currentXp -= xpNeeded;
+  let leveledUp = false;
+  while (this.xp >= this.xpForNextLevel()) {
+    this.xp -= this.xpForNextLevel();
     this.level += 1;
+    leveledUp = true;
   }
   
-  this.updatedAt = new Date();
   await this.save();
-  
-  return {
-    newXp: this.currentXp,
-    level: this.level,
-    totalXp: this.totalXp
-  };
+  return { leveledUp, newLevel: this.level };
 };
 
+// Update streak
 userSchema.methods.updateStreak = async function() {
-  const today = new Date().toDateString();
-  const lastActive = this.lastActiveDate?.toDateString();
+  const now = new Date();
+  const lastActive = new Date(this.lastActive);
+  const diffHours = (now - lastActive) / (1000 * 60 * 60);
   
-  if (lastActive === today) {
-    return this.currentStreak;
+  if (diffHours >= 24 && diffHours < 48) {
+    this.streak += 1;
+  } else if (diffHours >= 48) {
+    this.streak = 1;
   }
   
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  if (lastActive === yesterday.toDateString()) {
-    this.currentStreak += 1;
-  } else {
-    this.currentStreak = 1;
-  }
-  
-  if (this.currentStreak > this.longestStreak) {
-    this.longestStreak = this.currentStreak;
-  }
-  
-  this.lastActiveDate = new Date();
+  this.lastActive = now;
   await this.save();
-  
-  return this.currentStreak;
+  return this.streak;
 };
 
 export const User = mongoose.model('User', userSchema);

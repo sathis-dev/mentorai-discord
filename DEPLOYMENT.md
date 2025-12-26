@@ -1,74 +1,161 @@
 # 🚀 MentorAI Deployment Guide
 
+## Quick Deploy to Railway (Recommended)
+
+Railway is the easiest way to deploy MentorAI. Follow these steps:
+
+### Prerequisites
+- GitHub account with this repo pushed
+- Railway account (free at [railway.app](https://railway.app))
+- MongoDB Atlas database (free tier) or use Railway's MongoDB plugin
+- Discord Bot Token, Client ID
+- OpenAI API Key
+
+---
+
+## 🚂 Railway Deployment (Step-by-Step)
+
+### Step 1: Create Railway Account
+1. Go to [railway.app](https://railway.app)
+2. Sign up with GitHub (recommended for auto-deploy)
+
+### Step 2: Create New Project
+1. Click **"New Project"**
+2. Select **"Deploy from GitHub repo"**
+3. Authorize Railway to access your GitHub
+4. Select your MentorAI repository
+
+### Step 3: Add MongoDB Database
+1. In your Railway project, click **"+ New"**
+2. Select **"Database"** → **"MongoDB"**
+3. Railway will create a MongoDB instance
+4. Click on the MongoDB service → **"Variables"** tab
+5. Copy the `MONGO_URL` value
+
+**OR use MongoDB Atlas (recommended for free tier):**
+1. Go to [mongodb.com/atlas](https://www.mongodb.com/atlas)
+2. Create a free M0 cluster
+3. Get your connection string
+4. Use that as `DATABASE_URL`
+
+### Step 4: Configure Environment Variables
+Click on your deployment service → **"Variables"** tab → Add these:
+
+| Variable | Value | Required |
+|----------|-------|----------|
+| `DISCORD_TOKEN` | Your Discord bot token | ✅ |
+| `DISCORD_CLIENT_ID` | Your Discord app client ID | ✅ |
+| `OPENAI_API_KEY` | Your OpenAI API key | ✅ |
+| `DATABASE_URL` | MongoDB connection string | ✅ |
+| `JWT_SECRET` | Random 32+ char string | ✅ |
+| `ADMIN_USERNAME` | Admin panel username | ✅ |
+| `ADMIN_PASSWORD` | Admin panel password | ✅ |
+| `NODE_ENV` | `production` | ✅ |
+| `ANTHROPIC_API_KEY` | Claude API key (fallback) | Optional |
+
+### Step 5: Deploy
+1. Railway will auto-deploy when you push to GitHub
+2. Or click **"Deploy"** button manually
+3. Wait for build to complete (2-3 minutes)
+
+### Step 6: Verify Deployment
+1. Check **"Deployments"** tab for build logs
+2. Your bot should show as online in Discord
+3. Access admin panel at: `https://your-app.railway.app`
+
+### Step 7: Deploy Discord Commands
+After first deploy, run this locally once:
+```bash
+npm run deploy-commands
+```
+
+---
+
+## 🔧 Railway Configuration Files
+
+Your project includes these Railway-optimized files:
+
+**railway.json** - Railway-specific settings:
+```json
+{
+  "build": { "builder": "NIXPACKS" },
+  "deploy": {
+    "startCommand": "npm start",
+    "restartPolicyType": "ON_FAILURE",
+    "healthcheckPath": "/"
+  }
+}
+```
+
+**Procfile** - Process type:
+```
+web: npm start
+```
+
+---
+
+## 🎛️ Admin Panel Access
+
+After deployment:
+1. Go to `https://your-app.railway.app`
+2. Login with `ADMIN_USERNAME` and `ADMIN_PASSWORD` you set
+3. Manage users, view analytics, send broadcasts
+
+---
+
+## 📊 Monitoring
+
+- **Railway Dashboard**: View logs, metrics, and deployments
+- **Discord**: Bot should appear online
+- **Admin Panel**: Real-time user stats
+
+---
+
+## 🔄 Updating
+
+Railway auto-deploys when you push to GitHub:
+```bash
+git add .
+git commit -m "Update"
+git push origin main
+```
+
+---
+
+## 💰 Railway Pricing
+
+- **Free Tier**: $5 free credit/month (enough for small bots)
+- **Developer**: $5/month for more resources
+- **Pro**: For larger applications
+
+---
+
+## 🆘 Troubleshooting
+
+### Bot Not Coming Online
+1. Check Railway logs for errors
+2. Verify `DISCORD_TOKEN` is correct
+3. Ensure MongoDB is connected
+
+### Database Connection Failed
+1. Check `DATABASE_URL` format
+2. Whitelist Railway IPs in MongoDB Atlas (or use 0.0.0.0/0)
+
+### Admin Panel Not Loading
+1. Ensure `PORT` is not manually set (Railway sets it)
+2. Check `JWT_SECRET` is configured
+
+### Commands Not Working
+Run locally: `npm run deploy-commands`
+
+---
+
 ## Deployment Options
 
 1. **Railway** - Easiest, recommended for beginners
 2. **DigitalOcean** - More control, cost-effective
 3. **Heroku** - Simple, free tier available
 4. **AWS/GCP** - Enterprise-grade, more complex
-
----
-
-## Option 1: Railway (Recommended)
-
-### Prerequisites
-- GitHub account
-- Railway account (free)
-- Project pushed to GitHub
-
-### Steps
-
-1. **Install Railway CLI**
-```bash
-npm install -g @railway/cli
-```
-
-2. **Login to Railway**
-```bash
-railway login
-```
-
-3. **Initialize Project**
-```bash
-railway init
-```
-
-4. **Link to GitHub Repo**
-```bash
-railway link
-```
-
-5. **Add Environment Variables**
-```bash
-railway variables set DISCORD_TOKEN=your_token
-railway variables set DISCORD_CLIENT_ID=your_client_id
-railway variables set OPENAI_API_KEY=your_openai_key
-railway variables set NODE_ENV=production
-```
-
-6. **Add MongoDB Plugin**
-```bash
-railway add
-# Select MongoDB
-# Copy connection string
-railway variables set DATABASE_URL=mongodb_connection_string
-```
-
-7. **Deploy**
-```bash
-railway up
-```
-
-8. **View Logs**
-```bash
-railway logs
-```
-
-### Railway Dashboard
-- Monitor usage: https://railway.app/dashboard
-- View logs in real-time
-- Manage environment variables
-- Scale resources as needed
 
 ---
 

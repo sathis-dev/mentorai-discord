@@ -1,22 +1,44 @@
 import mongoose from 'mongoose';
-import { logger } from '../utils/logger.js';
+
+let isConnected = false;
 
 export async function connectDatabase() {
+  if (isConnected) {
+    console.log('Using existing database connection');
+    return mongoose.connection;
+  }
+  
+  const uri = process.env.DATABASE_URL || 'mongodb://localhost:27017/mentorai';
+  
+  mongoose.connection.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+    isConnected = false;
+  });
+
+  mongoose.connection.on('disconnected', () => {
+    console.log('MongoDB disconnected');
+    isConnected = false;
+  });
+
+  mongoose.connection.on('connected', () => {
+    console.log('MongoDB connected');
+    isConnected = true;
+  });
+
   try {
-    await mongoose.connect(process.env.DATABASE_URL || process.env.MONGODB_URI);
-    logger.info('📦 MongoDB connected successfully');
+    await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+    });
+    isConnected = true;
+    return mongoose.connection;
   } catch (error) {
-    logger.error('MongoDB connection error:', error);
-    throw error;
+    console.error('Failed to connect to MongoDB:', error.message);
+    console.log('⚠️ Bot will run without database functionality');
+    return null;
   }
 }
 
-mongoose.connection.on('error', (err) => {
-  logger.error('MongoDB error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  logger.warn('MongoDB disconnected');
-});
-
-export default mongoose;
+export function isDatabaseConnected() {
+  return isConnected;
+}
