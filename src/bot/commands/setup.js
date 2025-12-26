@@ -72,7 +72,7 @@ export async function execute(interaction) {
     return interaction.reply({
       embeds: [
         new EmbedBuilder()
-          .setColor(COLORS.error)
+          .setColor(COLORS.ERROR)
           .setTitle('🔒 Permission Required')
           .setDescription('You need one of these permissions to configure MentorAI:\n• Administrator\n• Manage Server\n• Manage Channels\n• Moderate Members\n• Server Owner')
       ],
@@ -113,7 +113,7 @@ async function handleAnnouncementSetup(interaction, settings) {
     return interaction.reply({
       embeds: [
         new EmbedBuilder()
-          .setColor(COLORS.error)
+          .setColor(COLORS.ERROR)
           .setTitle('❌ Missing Permissions')
           .setDescription(`I need **Send Messages** and **Embed Links** permissions in ${channel}!`)
       ],
@@ -131,7 +131,7 @@ async function handleAnnouncementSetup(interaction, settings) {
   
   // Send confirmation to the channel
   const confirmEmbed = new EmbedBuilder()
-    .setColor(COLORS.success)
+    .setColor(COLORS.SUCCESS)
     .setTitle('📢 Announcement Channel Configured!')
     .setDescription('This channel will now receive important announcements and broadcasts from MentorAI.')
     .addFields(
@@ -149,7 +149,7 @@ async function handleAnnouncementSetup(interaction, settings) {
   
   // Reply to user
   const embed = new EmbedBuilder()
-    .setColor(COLORS.success)
+    .setColor(COLORS.SUCCESS)
     .setTitle('✅ Announcement Channel Set!')
     .setDescription(`Broadcasts and announcements will be sent to ${channel}`)
     .addFields(
@@ -173,7 +173,7 @@ async function handleWelcomeSetup(interaction, settings) {
   await settings.save();
   
   const embed = new EmbedBuilder()
-    .setColor(COLORS.success)
+    .setColor(COLORS.SUCCESS)
     .setTitle('✅ Welcome Messages Configured!')
     .setDescription(`New members will be welcomed in ${channel}`)
     .addFields(
@@ -192,7 +192,7 @@ async function handleLevelUpSetup(interaction, settings) {
     await settings.save();
     
     const embed = new EmbedBuilder()
-      .setColor(COLORS.success)
+      .setColor(COLORS.SUCCESS)
       .setTitle('✅ Level-Up Announcements Enabled!')
       .setDescription(`Level-up messages will be sent to ${channel}`);
     
@@ -203,7 +203,7 @@ async function handleLevelUpSetup(interaction, settings) {
     await settings.save();
     
     const embed = new EmbedBuilder()
-      .setColor(COLORS.warning)
+      .setColor(COLORS.WARNING)
       .setTitle('📴 Level-Up Announcements Disabled')
       .setDescription('Level-up messages will only be shown in the channel where the user gained XP.');
     
@@ -227,7 +227,7 @@ async function handleViewConfig(interaction, settings) {
     : '❌ Disabled';
   
   const embed = new EmbedBuilder()
-    .setColor(COLORS.primary)
+    .setColor(COLORS.PRIMARY)
     .setTitle(`⚙️ MentorAI Configuration - ${guild.name}`)
     .setThumbnail(guild.iconURL())
     .addFields(
@@ -270,7 +270,7 @@ async function handleReset(interaction, settings) {
   await settings.save();
   
   const embed = new EmbedBuilder()
-    .setColor(COLORS.warning)
+    .setColor(COLORS.WARNING)
     .setTitle('🔄 Settings Reset')
     .setDescription('All MentorAI settings for this server have been reset to defaults.')
     .setFooter({ text: 'Use /setup to configure the bot again' });
