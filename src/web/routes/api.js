@@ -915,4 +915,4 @@ addLog('SYSTEM', 'Admin panel started');
 
 // Export router as default, and other items as named exports
 export default router;
-export { getAdminStats, addLog, botConfig, bannedUsers };
+export { getAdminStats, addLog, botConfig };
