@@ -144,7 +144,7 @@ export async function execute(interaction) {
       user.topicsStudied.push(topic.toLowerCase());
     }
     if (!user.completedLessons) user.completedLessons = [];
-    user.completedLessons.push({ topic, difficulty, timestamp: new Date() });
+    user.completedLessons.push(`${topic}:${difficulty}:${Date.now()}`);
     
     const levelResult = await user.addXp(result.xpEarned);
     await user.save();
