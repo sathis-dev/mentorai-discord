@@ -122,18 +122,19 @@ export async function execute(interaction) {
       embeds.push(challengeEmbed);
     }
 
-    // Create action buttons
+    // Create action buttons - truncate topic for customId (max 100 chars total)
+    const safeTopic = encodeURIComponent(topic.substring(0, 50));
     const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
-        .setCustomId('quiz_start_' + encodeURIComponent(topic))
+        .setCustomId('quiz_start_' + safeTopic)
         .setLabel('🎯 Take Quiz')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId('lesson_next_' + encodeURIComponent(topic))
+        .setCustomId('lesson_next_' + safeTopic)
         .setLabel('📚 Next Lesson')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('lesson_explain_' + encodeURIComponent(topic))
+        .setCustomId('lesson_explain_' + safeTopic)
         .setLabel('❓ Explain More')
         .setStyle(ButtonStyle.Secondary)
     );
