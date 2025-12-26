@@ -290,6 +290,7 @@ async function startQuizFromHelpMenu(interaction, topic) {
       options: {
         getString: (name) => name === 'topic' ? topic : null,
         getInteger: (name) => name === 'questions' ? 5 : null,
+        getBoolean: () => false,
         getUser: () => null,
         getSubcommand: () => null,
         get: () => null

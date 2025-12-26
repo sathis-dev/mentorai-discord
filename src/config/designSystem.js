@@ -514,7 +514,6 @@ export function createHelpEmbed() {
 export function createQuizAnswerButtons(disabled = false) {
   const row = new ActionRowBuilder();
   const labels = ['A', 'B', 'C', 'D'];
-  const emojis = ['🅰️', '🅱️', '🅲', '🅳'];
   const styles = [ButtonStyle.Primary, ButtonStyle.Primary, ButtonStyle.Primary, ButtonStyle.Primary];
   
   for (let i = 0; i < 4; i++) {
@@ -522,7 +521,6 @@ export function createQuizAnswerButtons(disabled = false) {
       new ButtonBuilder()
         .setCustomId('quiz_answer_' + i)
         .setLabel(labels[i])
-        .setEmoji(emojis[i])
         .setStyle(styles[i])
         .setDisabled(disabled)
     );
