@@ -25,9 +25,6 @@ async function deployCommands() {
   
   console.log('📦 Loading commands...');
   
-  // Commands to skip from global registration (owner-only)
-  const OWNER_ONLY_COMMANDS = ['admin'];
-  
   for (const file of commandFiles) {
     try {
       const filePath = join(commandsPath, file);
@@ -35,11 +32,6 @@ async function deployCommands() {
       const command = await import(fileUrl);
       
       if ('data' in command) {
-        // Skip owner-only commands from global deployment
-        if (OWNER_ONLY_COMMANDS.includes(command.data.name)) {
-          console.log(`  ⊘ ${command.data.name} (owner-only, not deployed globally)`);
-          continue;
-        }
         commands.push(command.data.toJSON());
         console.log(`  ✓ ${command.data.name}`);
       }
