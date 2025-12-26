@@ -1,5 +1,6 @@
 import express from 'express';
 import { User } from '../../database/models/User.js';
+import { AccessKey } from '../../database/models/AccessKey.js';
 
 const router = express.Router();
 
@@ -913,7 +914,6 @@ router.get('/analytics/quickquiz', async (req, res) => {
 // ============================================================
 // BETA ACCESS KEY MANAGEMENT
 // ============================================================
-import { AccessKey } from '../../database/models/AccessKey.js';
 
 // Get all access keys with stats
 router.get('/access-keys', async (req, res) => {
