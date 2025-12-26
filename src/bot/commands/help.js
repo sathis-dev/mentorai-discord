@@ -15,20 +15,20 @@ export async function execute(interaction) {
   const mainEmbed = new EmbedBuilder()
     .setColor(0x5865F2)
     .setAuthor({ 
-      name: 'MentorAI • Help Center', 
+      name: 'MentorAI • Your AI-Powered Coding Mentor', 
       iconURL: interaction.client.user.displayAvatarURL() 
     })
-    .setTitle('🎓 Your AI-Powered Learning Journey Starts Here')
+    .setTitle('🎓 Master Programming with AI — The Fun Way!')
     .setDescription(
       `Hey **${interaction.user.username}**! 👋\n\n` +
-      `I'm **MentorAI**, your personal AI tutor that makes learning fun!\n` +
-      `Here's what I can do for you:\n\n` +
-      `> 🧠 **AI-Generated Lessons** on any programming topic\n` +
-      `> 🎯 **Smart Quizzes** that adapt to your level\n` +
-      `> ⭐ **XP & Levels** to track your growth\n` +
-      `> 🔥 **Daily Streaks** for consistent learning\n` +
-      `> 🏆 **Achievements** to unlock & show off\n` +
-      `> ⚔️ **Quiz Battles** to challenge friends`
+      `Welcome to **MentorAI** — the gamified Discord bot that transforms learning to code into an exciting adventure!\n\n` +
+      `**What makes MentorAI special:**\n` +
+      `> 🧠 **AI-Generated Lessons** — Personalized tutorials on any topic\n` +
+      `> 🎯 **Smart Quizzes** — Adaptive questions that match your level\n` +
+      `> ⭐ **XP & Levels** — Earn rewards as you learn\n` +
+      `> 🔥 **Daily Streaks** — Stay consistent, unlock bonuses\n` +
+      `> 🏆 **Achievements** — Collect badges & show off progress\n` +
+      `> ⚔️ **Quiz Battles** — Challenge friends in real-time!`
     )
     .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
     .addFields(
