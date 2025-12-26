@@ -13,15 +13,19 @@ import {
 import { COLORS } from '../../config/designSystem.js';
 import { getAdminStats, getBotHealth, getRecentActivity } from '../../services/adminService.js';
 
-// Admin user IDs - Add your Discord ID here
-const ADMIN_IDS = [
-  'YOUR_DISCORD_ID_HERE', // Replace with your actual Discord user ID
-];
+// Bot Owner IDs - Only these users can access /admin
+// Add IDs via BOT_OWNER_IDS env variable (comma-separated) or directly here
+const BOT_OWNER_IDS = process.env.BOT_OWNER_IDS 
+  ? process.env.BOT_OWNER_IDS.split(',').map(id => id.trim())
+  : [
+    '1116096965755813968', // sathis.dev - Primary Owner
+  ];
 
 export const data = new SlashCommandBuilder()
   .setName('admin')
-  .setDescription('🔐 Admin control panel (Authorized users only)')
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+  .setDescription('🔐 Admin control panel (Bot owners only)')
+  .setDefaultMemberPermissions(null) // Hide from everyone by default
+  .setDMPermission(false)
   .addSubcommand(sub =>
     sub.setName('dashboard')
       .setDescription('📊 View admin dashboard'))
@@ -45,16 +49,15 @@ export const data = new SlashCommandBuilder()
       .setDescription('🔧 Maintenance mode controls'));
 
 export async function execute(interaction) {
-  // Security check
-  if (!ADMIN_IDS.includes(interaction.user.id)) {
+  // Security check - Bot owners only
+  if (!BOT_OWNER_IDS.includes(interaction.user.id)) {
     const deniedEmbed = new EmbedBuilder()
       .setTitle('🔒 Access Denied')
       .setColor(COLORS.ERROR)
       .setDescription(
         '```ansi\n\u001b[1;31m⛔ UNAUTHORIZED ACCESS ATTEMPT\u001b[0m\n```\n' +
-        'You do not have permission to access the admin panel.\n\n' +
-        '**Your ID:** `' + interaction.user.id + '`\n' +
-        '**Logged:** ' + new Date().toISOString()
+        'This command is restricted to **bot owners only**.\n\n' +
+        'If you are a server admin, you can use `/setup` to configure the bot for your server.'
       )
       .setFooter({ text: '🔐 MentorAI Security' })
       .setTimestamp();
