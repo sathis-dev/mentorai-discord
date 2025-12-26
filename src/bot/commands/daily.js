@@ -16,19 +16,34 @@ export async function execute(interaction) {
     const result = await claimDailyBonus(user);
 
     if (!result.success) {
+      // Calculate time remaining nicely
+      const hours = result.hoursRemaining || 0;
+      const minutes = result.minutesRemaining || 0;
+      let timeString = '';
+      if (hours > 0) timeString += `${hours} hour${hours !== 1 ? 's' : ''}`;
+      if (minutes > 0) timeString += ` ${minutes} min`;
+      
       const waitEmbed = new EmbedBuilder()
-        .setTitle('⏰ Daily Bonus Not Ready')
+        .setTitle('⏰ Already Claimed Today!')
         .setColor(COLORS.WARNING)
         .setDescription(
-          '```ansi\n\u001b[1;33m⏳ Come back in ' + result.hoursRemaining + ' hour' +
-          (result.hoursRemaining !== 1 ? 's' : '') + '!\u001b[0m\n```'
+          '```ansi\n\u001b[1;33m✓ You\'ve already claimed today\'s bonus!\u001b[0m\n```\n' +
+          `⏳ **Next bonus available in:** ${timeString.trim()}\n\n` +
+          `🕐 **Resets at:** <t:${Math.floor(result.nextClaimTime.getTime() / 1000)}:t> (<t:${Math.floor(result.nextClaimTime.getTime() / 1000)}:R>)`
         )
-        .addFields({
-          name: '💡 While You Wait',
-          value: '• `/quiz` - Test your knowledge\n• `/learn` - Study a new topic\n• `/leaderboard` - Check rankings',
-          inline: false
-        })
-        .setFooter({ text: '🎓 MentorAI' })
+        .addFields(
+          {
+            name: '🔥 Current Streak',
+            value: `**${user.dailyBonusStreak || user.streak || 0} days** - Don\'t break it!`,
+            inline: true
+          },
+          {
+            name: '💡 While You Wait',
+            value: '• `/quiz` - Earn XP from quizzes\n• `/learn` - Study new topics\n• `/quickquiz` - 60-second challenge',
+            inline: false
+          }
+        )
+        .setFooter({ text: '🎓 MentorAI | Daily bonus resets at midnight UTC' })
         .setTimestamp();
 
       await interaction.editReply({ embeds: [waitEmbed] });
@@ -52,19 +67,47 @@ export async function execute(interaction) {
         '```ansi\n' +
         '\u001b[1;33m✨ Welcome back, ' + interaction.user.username + '! ✨\u001b[0m\n' +
         '```'
-      )
-      .addFields(
-        { name: '💰 Base XP', value: '```diff\n+ ' + (result.baseXp || 75) + ' XP\n```', inline: true },
-        { name: '🔥 Streak Bonus', value: '```diff\n+ ' + (result.streakBonus || 0) + ' XP\n```', inline: true },
-        { name: '✨ Total', value: '```diff\n+ ' + result.xpEarned + ' XP\n```', inline: true },
-        {
-          name: '🔥 Current Streak: ' + result.streak + ' day' + (result.streak !== 1 ? 's' : ''),
-          value: createStreakVisual(result.streak),
-          inline: false
-        }
-      )
-      .setFooter({ text: '🎓 MentorAI | Come back tomorrow!' })
-      .setTimestamp();
+      );
+    
+    // Add XP breakdown fields
+    const xpFields = [
+      { name: '💰 Base XP', value: '```diff\n+ ' + result.baseXp + ' XP\n```', inline: true },
+      { name: '🔥 Streak Bonus', value: '```diff\n+ ' + result.streakBonus + ' XP\n```', inline: true }
+    ];
+    
+    // Add milestone bonus if earned
+    if (result.milestoneBonus > 0) {
+      xpFields.push({ name: '🏆 Milestone!', value: '```diff\n+ ' + result.milestoneBonus + ' XP\n```', inline: true });
+    }
+    
+    xpFields.push({ name: '✨ Total Earned', value: '```diff\n+ ' + result.xpEarned + ' XP\n```', inline: true });
+    
+    bonusEmbed.addFields(...xpFields);
+    
+    // Streak display
+    bonusEmbed.addFields({
+      name: '🔥 Streak: ' + result.streak + ' day' + (result.streak !== 1 ? 's' : '') + (result.streakMaintained ? ' 🎯' : ''),
+      value: createStreakVisual(result.streak),
+      inline: false
+    });
+    
+    // Milestone message
+    if (result.milestoneMessage) {
+      bonusEmbed.addFields({
+        name: '🎊 MILESTONE REACHED!',
+        value: '```ansi\n\u001b[1;35m' + result.milestoneMessage + '\u001b[0m\n```',
+        inline: false
+      });
+    }
+    
+    // Streak broken warning
+    if (result.streakBroken) {
+      bonusEmbed.addFields({
+        name: '💔 Streak Reset',
+        value: 'Your streak was reset. Claim daily to build it back up!',
+        inline: false
+      });
+    }
 
     // Level up notification
     if (result.leveledUp) {
@@ -83,6 +126,16 @@ export async function execute(interaction) {
         inline: false
       });
     }
+    
+    // Next claim time
+    bonusEmbed.addFields({
+      name: '⏰ Next Bonus',
+      value: `Available <t:${Math.floor(result.nextClaimTime.getTime() / 1000)}:R>`,
+      inline: true
+    });
+    
+    bonusEmbed.setFooter({ text: '🎓 MentorAI | Come back tomorrow to keep your streak!' })
+      .setTimestamp();
 
     // AI Tip embed
     const tipEmbed = new EmbedBuilder()

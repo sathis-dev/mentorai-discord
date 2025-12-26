@@ -222,26 +222,96 @@ export async function getLeaderboard(limit = 10, sortBy = 'xp') {
 }
 
 /**
- * Claim daily bonus with AI motivation
+ * Claim daily bonus with smart timing logic
+ * - Resets at midnight UTC (or user timezone)
+ * - Streak maintained if claimed within 48 hours
+ * - Bonus multipliers for consecutive days
  */
 export async function claimDailyBonus(user) {
   if (!user) return { success: false, hoursRemaining: 24 };
 
   const now = new Date();
-  const last = new Date(user.lastActive || 0);
-  const hoursDiff = (now - last) / (1000 * 60 * 60);
-
-  // Must wait at least 20 hours
-  if (hoursDiff < 20) {
-    return { success: false, hoursRemaining: Math.ceil(20 - hoursDiff) };
+  const lastClaim = user.lastDailyBonus ? new Date(user.lastDailyBonus) : null;
+  
+  // Get today's date at midnight UTC
+  const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const yesterdayMidnight = new Date(todayMidnight.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgoMidnight = new Date(todayMidnight.getTime() - 48 * 60 * 60 * 1000);
+  
+  // Check if already claimed today
+  if (lastClaim && lastClaim >= todayMidnight) {
+    // Already claimed today - calculate time until tomorrow
+    const tomorrowMidnight = new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000);
+    const msRemaining = tomorrowMidnight - now;
+    const hoursRemaining = Math.ceil(msRemaining / (1000 * 60 * 60));
+    const minutesRemaining = Math.ceil((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return { 
+      success: false, 
+      hoursRemaining,
+      minutesRemaining,
+      nextClaimTime: tomorrowMidnight,
+      message: `Come back in ${hoursRemaining}h ${minutesRemaining}m!`
+    };
+  }
+  
+  // Calculate streak
+  let newStreak = 1;
+  let streakBroken = false;
+  let streakMaintained = false;
+  
+  if (lastClaim) {
+    if (lastClaim >= yesterdayMidnight) {
+      // Claimed yesterday - increase streak!
+      newStreak = (user.dailyBonusStreak || 0) + 1;
+      streakMaintained = true;
+    } else if (lastClaim >= twoDaysAgoMidnight) {
+      // Claimed 2 days ago - streak broken but grace period
+      newStreak = 1;
+      streakBroken = user.dailyBonusStreak > 1;
+    } else {
+      // More than 2 days - streak fully reset
+      newStreak = 1;
+      streakBroken = user.dailyBonusStreak > 1;
+    }
   }
 
-  // Update streak
-  await user.updateStreak();
+  // Calculate rewards with multipliers
+  const baseXp = XP_REWARDS.DAILY_BONUS; // 75 XP base
+  
+  // Streak bonus: 10 XP per day of streak (capped at 100 XP bonus)
+  const streakBonus = Math.min(newStreak * XP_REWARDS.STREAK_BONUS, 100);
+  
+  // Milestone bonuses
+  let milestoneBonus = 0;
+  let milestoneMessage = null;
+  
+  if (newStreak === 7) {
+    milestoneBonus = 200;
+    milestoneMessage = '🎉 1 Week Streak! +200 XP Bonus!';
+  } else if (newStreak === 14) {
+    milestoneBonus = 400;
+    milestoneMessage = '⚡ 2 Week Streak! +400 XP Bonus!';
+  } else if (newStreak === 30) {
+    milestoneBonus = 1000;
+    milestoneMessage = '👑 1 Month Streak! +1000 XP Bonus!';
+  } else if (newStreak === 100) {
+    milestoneBonus = 5000;
+    milestoneMessage = '🏆 100 Day Legend! +5000 XP Bonus!';
+  } else if (newStreak % 50 === 0 && newStreak > 100) {
+    milestoneBonus = 2500;
+    milestoneMessage = `💎 ${newStreak} Day Streak! +2500 XP Bonus!`;
+  }
+  
+  const totalXp = baseXp + streakBonus + milestoneBonus;
 
-  // Calculate rewards
-  const streakBonus = (user.streak || 1) * XP_REWARDS.STREAK_BONUS;
-  const totalXp = XP_REWARDS.DAILY_BONUS + streakBonus;
+  // Update user
+  user.lastDailyBonus = now;
+  user.dailyBonusStreak = newStreak;
+  user.lastActive = now;
+  
+  // Also update the general streak for compatibility
+  user.streak = newStreak;
 
   // Add XP
   const levelResult = await user.addXp(totalXp);
@@ -249,26 +319,24 @@ export async function claimDailyBonus(user) {
   // Check achievements
   const achievements = await checkAchievements(user);
 
-  // Get AI motivation
-  const motivation = await generateMotivation({
-    streak: user.streak,
-    level: user.level,
-    recentActivity: 'Claimed daily bonus'
-  });
-
   await user.save();
   broadcastUserUpdate(user.toObject(), 'daily_bonus');
 
   return {
     success: true,
     xpEarned: totalXp,
-    baseXp: XP_REWARDS.DAILY_BONUS,
+    baseXp,
     streakBonus,
-    streak: user.streak,
+    milestoneBonus,
+    milestoneMessage,
+    streak: newStreak,
+    previousStreak: user.dailyBonusStreak,
+    streakMaintained,
+    streakBroken,
     leveledUp: levelResult.leveledUp,
     newLevel: levelResult.newLevel,
     achievements,
-    motivation
+    nextClaimTime: new Date(todayMidnight.getTime() + 24 * 60 * 60 * 1000)
   };
 }
 

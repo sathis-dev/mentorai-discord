@@ -7,6 +7,9 @@ const userSchema = new mongoose.Schema({
   level: { type: Number, default: 1 },
   streak: { type: Number, default: 0 },
   lastActive: { type: Date, default: Date.now },
+  lastDailyBonus: { type: Date }, // Separate field for daily bonus tracking
+  dailyBonusStreak: { type: Number, default: 0 }, // Separate streak for daily bonus
+  timezone: { type: String, default: 'UTC' }, // User timezone for proper reset
   achievements: [{ type: String }],
   completedLessons: [{ type: String }],
   quizzesTaken: { type: Number, default: 0 },
