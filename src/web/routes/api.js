@@ -979,6 +979,35 @@ router.post('/access-keys/:key/revoke', async (req, res) => {
   }
 });
 
+// Delete an access key permanently
+router.delete('/access-keys/:key', async (req, res) => {
+  try {
+    const key = req.params.key.toUpperCase();
+    const deletedBy = req.user?.username || 'Admin';
+    
+    const accessKey = await AccessKey.findOne({ key });
+    
+    if (!accessKey) {
+      return res.status(404).json({ error: 'Key not found' });
+    }
+    
+    // Only allow deleting revoked or expired keys
+    if (accessKey.status === 'active' || accessKey.status === 'used') {
+      return res.status(400).json({ error: 'Cannot delete active or used keys. Revoke first.' });
+    }
+    
+    await AccessKey.deleteOne({ key });
+    
+    addLog('ACCESS', `Deleted access key ${key}`, deletedBy);
+    req.app.get('io')?.emit('accessKeyDeleted', { key });
+    
+    res.json({ success: true, message: 'Key deleted permanently' });
+  } catch (e) {
+    console.error('Failed to delete access key:', e);
+    res.status(500).json({ error: 'Failed to delete access key' });
+  }
+});
+
 // Get beta users list
 router.get('/access-keys/users', async (req, res) => {
   try {

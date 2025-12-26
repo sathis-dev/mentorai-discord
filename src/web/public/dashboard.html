@@ -1350,8 +1350,7 @@ function init() {
   // Setup other buttons
   document.getElementById('logoutBtn').addEventListener('click', logout);
   document.getElementById('refreshBtn').addEventListener('click', function() { 
-    loadDashboard(); 
-    showToast('Refreshed!', 'success'); 
+    smartRefresh();
   });
   document.getElementById('viewAllUsersBtn').addEventListener('click', function() { 
     switchPage('users'); 
@@ -2377,6 +2376,13 @@ function renderKeysTable(keys) {
       expired: '<span class="badge badge-gray">Expired</span>'
     }[key.status] || '<span class="badge">Unknown</span>';
     
+    var actionBtn = '-';
+    if (key.status === 'active') {
+      actionBtn = '<button class="btn btn-danger btn-sm" onclick="revokeKey(\'' + key.key + '\')"><i class="fas fa-ban"></i> Revoke</button>';
+    } else if (key.status === 'revoked' || key.status === 'expired') {
+      actionBtn = '<button class="btn btn-sm" style="background:rgba(237,66,69,0.2);color:#ED4245;border:1px solid rgba(237,66,69,0.3);" onclick="deleteKey(\'' + key.key + '\')"><i class="fas fa-trash"></i> Delete</button>';
+    }
+    
     return '<tr>' +
       '<td><code style="background:rgba(88,101,242,0.2);padding:4px 8px;border-radius:4px;font-size:12px;color:#a8b4ff;">' + key.key + '</code>' +
       ' <button onclick="copyToClipboard(\'' + key.key + '\')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fas fa-copy"></i></button></td>' +
@@ -2385,7 +2391,7 @@ function renderKeysTable(keys) {
       '<td>' + new Date(key.createdAt).toLocaleDateString() + '</td>' +
       '<td>' + (key.activatedByUsername || key.activatedBy || '-') + '</td>' +
       '<td style="color:var(--text-muted);font-size:12px;">' + (key.note || '-') + '</td>' +
-      '<td>' + (key.status === 'active' ? '<button class="btn btn-danger btn-sm" onclick="revokeKey(\'' + key.key + '\')"><i class="fas fa-ban"></i> Revoke</button>' : '-') + '</td>' +
+      '<td>' + actionBtn + '</td>' +
       '</tr>';
   }).join('');
 }
@@ -2404,6 +2410,57 @@ async function revokeKey(key) {
   } catch (e) {
     showToast('Error: ' + e.message, 'error');
   }
+}
+
+async function deleteKey(key) {
+  if (!confirm('Permanently delete this key?\\n\\n' + key + '\\n\\nThis cannot be undone!')) return;
+  try {
+    const response = await fetch('/api/access-keys/' + key, { method: 'DELETE', credentials: 'include' });
+    const data = await response.json();
+    if (data.success) {
+      showToast('Key deleted!', 'success');
+      loadAccessKeysPage();
+    } else {
+      showToast(data.error || 'Failed to delete', 'error');
+    }
+  } catch (e) {
+    showToast('Error: ' + e.message, 'error');
+  }
+}
+
+// Smart refresh based on current page
+var currentPageName = 'dashboard';
+function smartRefresh() {
+  var btn = document.getElementById('refreshBtn');
+  var icon = btn.querySelector('i');
+  icon.classList.add('fa-spin');
+  
+  // Get current active page
+  var activePage = document.querySelector('.page.active');
+  var pageId = activePage ? activePage.id.replace('page-', '') : 'dashboard';
+  currentPageName = pageId;
+  
+  console.log('Smart refreshing:', pageId);
+  
+  // Refresh based on current page
+  switch(pageId) {
+    case 'dashboard': loadDashboard(); break;
+    case 'users': loadUsers(); break;
+    case 'leaderboard': loadLeaderboard('xp'); break;
+    case 'analytics': loadAnalytics(); break;
+    case 'logs': loadLogs(); break;
+    case 'banned': loadBannedUsers(); break;
+    case 'config': loadConfig(); break;
+    case 'system': loadSystemHealth(); break;
+    case 'access-keys': loadAccessKeysPage(); break;
+    case 'beta-users': loadBetaUsersPage(); break;
+    default: loadDashboard();
+  }
+  
+  setTimeout(function() {
+    icon.classList.remove('fa-spin');
+    showToast('Refreshed ' + (pageId.replace('-', ' ')) + '!', 'success');
+  }, 500);
 }
 
 async function loadBetaUsersPage() {
