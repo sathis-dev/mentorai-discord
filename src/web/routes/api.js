@@ -3,9 +3,8 @@ import { User } from '../../database/models/User.js';
 
 const router = express.Router();
 
-// In-memory storage
+// In-memory storage for non-persistent data
 const systemLogs = [];
-const bannedUsers = new Map();
 const botConfig = {
   maintenanceMode: false,
   features: {
@@ -173,7 +172,7 @@ router.get('/users', async (req, res) => {
       User.countDocuments(query)
     ]);
 
-    res.json({ users: users.map(u => ({ ...u, banned: bannedUsers.has(u.discordId) })), pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    res.json({ users: users.map(u => ({ ...u, banned: u.banned || false })), pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch users' });
   }
@@ -181,9 +180,22 @@ router.get('/users', async (req, res) => {
 
 // IMPORTANT: Put specific routes BEFORE parameterized routes
 // Move this route BEFORE router.get('/users/:id')
-router.get('/users/banned/list', (req, res) => {
-  const list = Array.from(bannedUsers.entries()).map(([id, data]) => ({ discordId: id, ...data }));
-  res.json(list);
+router.get('/users/banned/list', async (req, res) => {
+  try {
+    const bannedUsers = await User.find({ banned: true })
+      .select('discordId username bannedAt bannedReason bannedBy')
+      .lean();
+    const list = bannedUsers.map(u => ({
+      discordId: u.discordId,
+      username: u.username,
+      reason: u.bannedReason || 'No reason provided',
+      date: u.bannedAt,
+      by: u.bannedBy || 'Admin'
+    }));
+    res.json(list);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch banned users' });
+  }
 });
 
 // Then the parameterized route
@@ -191,7 +203,7 @@ router.get('/users/:id', async (req, res) => {
   try {
     const user = await User.findOne({ discordId: req.params.id }).lean();
     if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json({ ...user, banned: bannedUsers.has(user.discordId) });
+    res.json({ ...user, banned: user.banned || false });
   } catch (e) {
     res.status(500).json({ error: 'Failed to fetch user' });
   }
@@ -206,8 +218,16 @@ router.patch('/users/:id', async (req, res) => {
     if (streak !== undefined) update.streak = parseInt(streak);
 
     if (banned !== undefined) {
-      if (banned) bannedUsers.set(req.params.id, { reason: 'Admin action', date: new Date() });
-      else bannedUsers.delete(req.params.id);
+      update.banned = banned;
+      if (banned) {
+        update.bannedAt = new Date();
+        update.bannedReason = 'Admin action';
+        update.bannedBy = req.user?.username || 'Admin';
+      } else {
+        update.bannedAt = null;
+        update.bannedReason = null;
+        update.bannedBy = null;
+      }
     }
 
     const user = await User.findOneAndUpdate({ discordId: req.params.id }, { $set: update }, { new: true });
@@ -345,9 +365,22 @@ router.post('/users/:id/level-up', async (req, res) => {
 router.post('/users/:id/ban', async (req, res) => {
   try {
     const reason = req.body.reason || 'No reason provided';
-    bannedUsers.set(req.params.id, { reason, date: new Date(), by: req.user?.username || 'Admin' });
-    addLog('MODERATION', `Banned user ${req.params.id}: ${reason}`, req.user?.username || 'Admin');
-    res.json({ success: true });
+    const user = await User.findOneAndUpdate(
+      { discordId: req.params.id },
+      {
+        $set: {
+          banned: true,
+          bannedAt: new Date(),
+          bannedReason: reason,
+          bannedBy: req.user?.username || 'Admin'
+        }
+      },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    addLog('MODERATION', `Banned user ${user.username} (${req.params.id}): ${reason}`, req.user?.username || 'Admin');
+    req.app.get('io')?.emit('userBanned', { userId: req.params.id, username: user.username, reason });
+    res.json({ success: true, user });
   } catch (e) {
     res.status(500).json({ error: 'Failed to ban user' });
   }
@@ -355,9 +388,22 @@ router.post('/users/:id/ban', async (req, res) => {
 
 router.post('/users/:id/unban', async (req, res) => {
   try {
-    bannedUsers.delete(req.params.id);
-    addLog('MODERATION', `Unbanned user ${req.params.id}`, req.user?.username || 'Admin');
-    res.json({ success: true });
+    const user = await User.findOneAndUpdate(
+      { discordId: req.params.id },
+      {
+        $set: {
+          banned: false,
+          bannedAt: null,
+          bannedReason: null,
+          bannedBy: null
+        }
+      },
+      { new: true }
+    );
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    addLog('MODERATION', `Unbanned user ${user.username} (${req.params.id})`, req.user?.username || 'Admin');
+    req.app.get('io')?.emit('userUnbanned', { userId: req.params.id, username: user.username });
+    res.json({ success: true, user });
   } catch (e) {
     res.status(500).json({ error: 'Failed to unban user' });
   }

@@ -36,13 +36,32 @@ import {
   getBannedUsers,
   broadcastMessage,
   getAdminStats,
-  getBotHealth
+  getBotHealth,
+  isUserBanned
 } from '../../services/adminService.js';
 
 export const name = Events.InteractionCreate;
 
 export async function execute(interaction) {
   try {
+    // Check if user is banned (skip for autocomplete)
+    if (!interaction.isAutocomplete()) {
+      const isBanned = await isUserBanned(interaction.user.id);
+      if (isBanned) {
+        const bannedEmbed = new EmbedBuilder()
+          .setTitle('🚫 Access Denied')
+          .setColor(0xED4245)
+          .setDescription('You have been banned from using MentorAI.\n\nIf you believe this is a mistake, please contact the bot owner.')
+          .setFooter({ text: 'Ban ID: ' + interaction.user.id })
+          .setTimestamp();
+        
+        if (interaction.replied || interaction.deferred) {
+          return interaction.followUp({ embeds: [bannedEmbed], ephemeral: true });
+        }
+        return interaction.reply({ embeds: [bannedEmbed], ephemeral: true });
+      }
+    }
+    
     if (interaction.isChatInputCommand()) {
       await handleCommand(interaction);
     } else if (interaction.isButton()) {

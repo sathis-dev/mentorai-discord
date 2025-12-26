@@ -217,43 +217,91 @@ export function getFeatureStatus(feature) {
 }
 
 /**
- * Ban user
+ * Ban user - persisted to database
  */
-export async function banUser(userId, reason = 'No reason provided') {
-  bannedUsers.set(userId, {
-    bannedAt: new Date(),
-    reason
-  });
-  addLog('MODERATION', 'User ' + userId + ' banned: ' + reason);
-  return true;
+export async function banUser(userId, reason = 'No reason provided', bannedBy = 'System') {
+  try {
+    const user = await User.findOneAndUpdate(
+      { discordId: userId },
+      {
+        banned: true,
+        bannedAt: new Date(),
+        bannedReason: reason,
+        bannedBy: bannedBy
+      },
+      { new: true }
+    );
+    
+    if (user) {
+      addLog('MODERATION', `User ${user.username} (${userId}) banned: ${reason}`);
+      return { success: true, user };
+    }
+    return { success: false, error: 'User not found' };
+  } catch (error) {
+    console.error('Error banning user:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 /**
- * Unban user
+ * Unban user - persisted to database
  */
 export async function unbanUser(userId) {
-  const wasBanned = bannedUsers.delete(userId);
-  if (wasBanned) {
-    addLog('MODERATION', 'User ' + userId + ' unbanned');
+  try {
+    const user = await User.findOneAndUpdate(
+      { discordId: userId },
+      {
+        banned: false,
+        bannedAt: null,
+        bannedReason: null,
+        bannedBy: null
+      },
+      { new: true }
+    );
+    
+    if (user) {
+      addLog('MODERATION', `User ${user.username} (${userId}) unbanned`);
+      return { success: true, user };
+    }
+    return { success: false, error: 'User not found' };
+  } catch (error) {
+    console.error('Error unbanning user:', error);
+    return { success: false, error: error.message };
   }
-  return wasBanned;
 }
 
 /**
- * Check if user is banned
+ * Check if user is banned - from database
  */
-export function isUserBanned(userId) {
-  return bannedUsers.has(userId);
+export async function isUserBanned(userId) {
+  try {
+    const user = await User.findOne({ discordId: userId }).select('banned').lean();
+    return user?.banned === true;
+  } catch (error) {
+    console.error('Error checking ban status:', error);
+    return false;
+  }
 }
 
 /**
- * Get banned users list
+ * Get banned users list - from database
  */
-export function getBannedUsers() {
-  return Array.from(bannedUsers.entries()).map(([id, data]) => ({
-    id,
-    ...data
-  }));
+export async function getBannedUsers() {
+  try {
+    const users = await User.find({ banned: true })
+      .select('discordId username bannedAt bannedReason bannedBy')
+      .lean();
+    return users.map(u => ({
+      id: u.discordId,
+      username: u.username,
+      bannedAt: u.bannedAt,
+      reason: u.bannedReason,
+      bannedBy: u.bannedBy
+    }));
+  } catch (error) {
+    console.error('Error getting banned users:', error);
+    return [];
+  }
 }
 
 /**

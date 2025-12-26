@@ -41,6 +41,12 @@ const userSchema = new mongoose.Schema({
   // Fun Facts
   funFactsViewed: { type: Number, default: 0 },
   lastFunFactDate: { type: Date },
+  
+  // Ban System
+  banned: { type: Boolean, default: false },
+  bannedAt: { type: Date },
+  bannedReason: { type: String },
+  bannedBy: { type: String },
 });
 
 // Calculate XP needed for next level
