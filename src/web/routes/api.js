@@ -929,6 +929,7 @@ router.get('/access-keys', async (req, res) => {
 // Generate new access key(s)
 router.post('/access-keys/generate', async (req, res) => {
   try {
+    console.log('Generating access keys...', req.body);
     const { count = 1, note, keyType = 'beta', trialDays = 30 } = req.body;
     const createdBy = req.user?.username || 'Admin';
     
@@ -938,12 +939,14 @@ router.post('/access-keys/generate', async (req, res) => {
       keys.push(key);
     }
     
+    console.log('Generated keys:', keys.length);
     addLog('ACCESS', `Generated ${keys.length} access key(s)`, createdBy);
     req.app.get('io')?.emit('accessKeyGenerated', { count: keys.length });
     
     res.json({ success: true, keys });
   } catch (e) {
-    res.status(500).json({ error: 'Failed to generate access keys' });
+    console.error('Failed to generate access keys:', e);
+    res.status(500).json({ error: 'Failed to generate access keys', details: e.message });
   }
 });
 

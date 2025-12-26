@@ -775,6 +775,7 @@ function renderAccessKeysTable(keys) {
 }
 
 async function generateAccessKeys() {
+  console.log('generateAccessKeys called');
   const countInput = document.getElementById('keyCount');
   const typeInput = document.getElementById('keyType');
   const noteInput = document.getElementById('keyNote');
@@ -783,13 +784,16 @@ async function generateAccessKeys() {
   const keyType = typeInput?.value || 'beta';
   const note = noteInput?.value || '';
   
+  console.log('Generating:', { count, keyType, note });
+  
   if (count < 1 || count > 50) {
     showToast('Please enter 1-50 keys', 'error');
     return;
   }
   
+  const btn = document.getElementById('generateKeysBtn');
+  
   try {
-    const btn = document.getElementById('generateKeysBtn');
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
     
@@ -800,7 +804,9 @@ async function generateAccessKeys() {
       body: JSON.stringify({ count, keyType, note })
     });
     
+    console.log('Response status:', response.status);
     const data = await response.json();
+    console.log('Response data:', data);
     
     if (data.success) {
       showToast(`✨ Generated ${data.keys.length} access key(s)!`, 'success');
@@ -819,9 +825,8 @@ async function generateAccessKeys() {
     }
   } catch (error) {
     console.error('Failed to generate keys:', error);
-    showToast('Failed to generate keys', 'error');
+    showToast('Failed to generate keys: ' + error.message, 'error');
   } finally {
-    const btn = document.getElementById('generateKeysBtn');
     btn.disabled = false;
     btn.innerHTML = '<i class="fas fa-magic"></i> Generate Keys';
   }
