@@ -623,6 +623,17 @@ async function handleActionButton(interaction, action, params) {
 
 // NEW: Execute actual commands from help menu buttons
 async function handleExecuteButton(interaction, action, params) {
+  // Commands that need special handling (require options)
+  const specialCommands = {
+    'learn': showLearnTopicSelector,
+    'quiz': showQuizTopicSelector
+  };
+  
+  // Check if this is a special command
+  if (specialCommands[action]) {
+    return specialCommands[action](interaction);
+  }
+  
   const commandMap = {
     'daily': 'daily',
     'profile': 'profile', 
@@ -631,8 +642,6 @@ async function handleExecuteButton(interaction, action, params) {
     'achievements': 'achievements',
     'leaderboard': 'leaderboard',
     'topics': 'topics',
-    'learn': 'learn',
-    'quiz': 'quiz',
     'help': 'help'
   };
   
@@ -708,6 +717,90 @@ async function handleExecuteButton(interaction, action, params) {
       });
     }
   }
+}
+
+// Show topic selector for /learn command
+async function showLearnTopicSelector(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('📚 Start Learning')
+    .setColor(0x3498DB)
+    .setDescription('**Choose a topic to learn about!**\n\nSelect from popular topics below, or use `/learn topic:YourTopic` for any custom topic.')
+    .addFields({
+      name: '💡 Tip',
+      value: 'You can learn about anything! Try topics like:\n`JavaScript`, `Python`, `React`, `APIs`, `Git`, etc.',
+      inline: false
+    })
+    .setFooter({ text: '🎓 MentorAI - AI-Powered Learning' });
+
+  const topicSelect = new StringSelectMenuBuilder()
+    .setCustomId('learn_topic_select')
+    .setPlaceholder('🎯 Choose a topic to learn...')
+    .addOptions([
+      { label: 'JavaScript', description: 'Web programming fundamentals', emoji: '🟨', value: 'JavaScript' },
+      { label: 'Python', description: 'Versatile & beginner-friendly', emoji: '🐍', value: 'Python' },
+      { label: 'React', description: 'Modern UI development', emoji: '⚛️', value: 'React' },
+      { label: 'Node.js', description: 'Server-side JavaScript', emoji: '🟢', value: 'Node.js' },
+      { label: 'TypeScript', description: 'Typed JavaScript', emoji: '🔷', value: 'TypeScript' },
+      { label: 'HTML & CSS', description: 'Web basics', emoji: '🌐', value: 'HTML and CSS' },
+      { label: 'SQL', description: 'Database queries', emoji: '🗄️', value: 'SQL' },
+      { label: 'Git & GitHub', description: 'Version control', emoji: '📚', value: 'Git and GitHub' },
+      { label: 'REST APIs', description: 'API fundamentals', emoji: '🔌', value: 'REST APIs' },
+      { label: 'Data Structures', description: 'CS fundamentals', emoji: '📊', value: 'Data Structures' }
+    ]);
+
+  const row = new ActionRowBuilder().addComponents(topicSelect);
+  
+  const backButton = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Back to Help')
+      .setEmoji('◀️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply({ embeds: [embed], components: [row, backButton], ephemeral: false });
+}
+
+// Show topic selector for /quiz command
+async function showQuizTopicSelector(interaction) {
+  const embed = new EmbedBuilder()
+    .setTitle('🎯 Take a Quiz')
+    .setColor(0xE91E63)
+    .setDescription('**Test your knowledge!**\n\nSelect a topic below to start a quiz, or use `/quiz topic:YourTopic` for any custom topic.')
+    .addFields({
+      name: '🏆 Earn XP',
+      value: 'Correct answers earn you XP and help build your streak!',
+      inline: false
+    })
+    .setFooter({ text: '🎓 MentorAI - Quiz Master' });
+
+  const topicSelect = new StringSelectMenuBuilder()
+    .setCustomId('quiz_topic_select')
+    .setPlaceholder('🎯 Choose a topic for your quiz...')
+    .addOptions([
+      { label: 'JavaScript', description: 'Test your JS skills', emoji: '🟨', value: 'JavaScript' },
+      { label: 'Python', description: 'Python programming quiz', emoji: '🐍', value: 'Python' },
+      { label: 'React', description: 'React & component basics', emoji: '⚛️', value: 'React' },
+      { label: 'Node.js', description: 'Backend JS quiz', emoji: '🟢', value: 'Node.js' },
+      { label: 'TypeScript', description: 'TypeScript concepts', emoji: '🔷', value: 'TypeScript' },
+      { label: 'HTML & CSS', description: 'Web fundamentals', emoji: '🌐', value: 'HTML and CSS' },
+      { label: 'SQL', description: 'Database quiz', emoji: '🗄️', value: 'SQL' },
+      { label: 'Git', description: 'Version control quiz', emoji: '📚', value: 'Git' },
+      { label: 'APIs', description: 'API concepts', emoji: '🔌', value: 'APIs' },
+      { label: 'General Programming', description: 'Mixed topics', emoji: '💻', value: 'Programming' }
+    ]);
+
+  const row = new ActionRowBuilder().addComponents(topicSelect);
+  
+  const backButton = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Back to Help')
+      .setEmoji('◀️')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply({ embeds: [embed], components: [row, backButton], ephemeral: false });
 }
 
 // Helper function to execute any command from a button
