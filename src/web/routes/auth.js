@@ -4,26 +4,28 @@ import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mentorai-admin-secret-key-change-in-production';
+// Change JWT secret to invalidate all existing sessions
+const JWT_SECRET = process.env.JWT_SECRET || 'mentorai-secure-key-v2-dec2025';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Mentor$ecure#2025!';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
 
-// Admin credentials
-const ADMIN_USERS = [];
+// Admin credentials - reset on each deploy
+let ADMIN_USERS = [];
+let adminInitialized = false;
 
-// Initialize admin user
+// Initialize admin user - force fresh hash each time
 async function initializeAdmin() {
-  if (ADMIN_USERS.length === 0) {
-    const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
-    ADMIN_USERS.push({
-      id: '1',
-      username: ADMIN_USERNAME,
-      passwordHash: passwordHash,
-      role: 'superadmin'
-    });
-    console.log('✅ Admin user initialized');
-  }
+  // Always reinitialize to pick up password changes
+  const passwordHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  ADMIN_USERS = [{
+    id: '1',
+    username: ADMIN_USERNAME,
+    passwordHash: passwordHash,
+    role: 'superadmin'
+  }];
+  adminInitialized = true;
+  console.log('✅ Admin user initialized with current password');
 }
 
 // Initialize on module load
