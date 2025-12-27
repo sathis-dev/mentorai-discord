@@ -153,55 +153,71 @@ export function createPremiumEmbed(options = {}) {
   return embed;
 }
 
-// Quiz Question Embed with Rich UI
+// Quiz Question Embed with Premium UI
 export function createQuizQuestionEmbed(question, questionNum, totalQuestions, topic, difficulty) {
   const difficultyColors = {
-    easy: COLORS.SUCCESS,
-    medium: COLORS.WARNING,
-    hard: COLORS.ERROR
+    easy: 0x57F287,
+    medium: 0xFEE75C,
+    hard: 0xED4245
   };
   
-  const difficultyEmojis = {
-    easy: '🟢',
-    medium: '🟡',
-    hard: '🔴'
+  const difficultyInfo = {
+    easy: { emoji: '🟢', label: 'Easy', xp: '+20 XP' },
+    medium: { emoji: '🟡', label: 'Medium', xp: '+25 XP' },
+    hard: { emoji: '🔴', label: 'Hard', xp: '+35 XP' }
   };
   
+  const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
+  const progressBar = createProgressBar(questionNum, totalQuestions, 10, 'blocks');
+  
+  // Format question text - handle code blocks
+  let questionText = question.question || 'Loading question...';
+  const hasCode = questionText.includes('```') || questionText.includes('`');
+  
+  // Create styled question display
+  const questionDisplay = hasCode 
+    ? questionText 
+    : `\`\`\`\n${questionText}\n\`\`\``;
+
   const embed = new EmbedBuilder()
-    .setTitle(EMOJIS.QUIZ + ' Question ' + questionNum + '/' + totalQuestions)
     .setColor(difficultyColors[difficulty] || COLORS.QUIZ_PINK)
-    .setDescription('```\n' + question.question + '\n```')
+    .setAuthor({ 
+      name: `📚 ${topic} Quiz`, 
+      iconURL: 'https://cdn.discordapp.com/emojis/1234567890.png' 
+    })
+    .setTitle(`❓ Question ${questionNum} of ${totalQuestions}`)
+    .setDescription(`
+${questionDisplay}
+
+${diffData.emoji} **Difficulty:** ${diffData.label} | ${diffData.xp}
+${progressBar} \`${Math.round((questionNum/totalQuestions)*100)}%\`
+`)
     .addFields(
       {
-        name: EMOJIS.A + ' Option A',
-        value: '> ' + (question.options[0] || 'N/A'),
+        name: '🅰️ Option A',
+        value: `\`\`\`${question.options?.[0] || 'N/A'}\`\`\``,
         inline: true
       },
       {
-        name: EMOJIS.B + ' Option B',
-        value: '> ' + (question.options[1] || 'N/A'),
+        name: '🅱️ Option B',
+        value: `\`\`\`${question.options?.[1] || 'N/A'}\`\`\``,
         inline: true
       },
-      { name: '\u200B', value: '\u200B', inline: true },
+      { name: '\u200B', value: '\u200B', inline: false },
       {
-        name: EMOJIS.C + ' Option C',
-        value: '> ' + (question.options[2] || 'N/A'),
+        name: '🅲 Option C',
+        value: `\`\`\`${question.options?.[2] || 'N/A'}\`\`\``,
         inline: true
       },
       {
-        name: EMOJIS.D + ' Option D',
-        value: '> ' + (question.options[3] || 'N/A'),
+        name: '🅳 Option D',
+        value: `\`\`\`${question.options?.[3] || 'N/A'}\`\`\``,
         inline: true
-      },
-      { name: '\u200B', value: '\u200B', inline: true }
+      }
     )
-    .addFields({
-      name: createSectionDivider(),
-      value: '**Topic:** ' + topic + ' | **Difficulty:** ' + difficultyEmojis[difficulty] + ' ' + 
-        (difficulty ? difficulty.charAt(0).toUpperCase() + difficulty.slice(1) : 'Medium'),
-      inline: false
+    .setFooter({ 
+      text: '🎓 MentorAI | Click A, B, C, or D to answer • Think carefully!',
     })
-    .setFooter({ text: '🎓 MentorAI | Select your answer below' })
     .setTimestamp();
   
   return embed;
@@ -231,49 +247,106 @@ export function createQuizResultsEmbed(result) {
   const grade = getGrade(percentage);
   const gradeColor = getGradeColor(percentage);
   
-  // Create visual score display
-  const scoreBar = createProgressBar(result.score, result.totalQuestions, 10, 'stars');
+  // Premium grade styling
+  const gradeInfo = {
+    'S+': { emoji: '👑', title: 'LEGENDARY', color: '[1;33m' },
+    'S': { emoji: '🏆', title: 'OUTSTANDING', color: '[1;33m' },
+    'A+': { emoji: '⭐', title: 'EXCELLENT', color: '[1;32m' },
+    'A': { emoji: '✨', title: 'GREAT JOB', color: '[1;32m' },
+    'B+': { emoji: '🌟', title: 'VERY GOOD', color: '[1;36m' },
+    'B': { emoji: '💫', title: 'GOOD', color: '[1;36m' },
+    'C': { emoji: '📚', title: 'KEEP LEARNING', color: '[1;34m' },
+    'D': { emoji: '💪', title: 'PRACTICE MORE', color: '[0;33m' },
+    'F': { emoji: '🔄', title: 'TRY AGAIN', color: '[0;31m' }
+  };
+  
+  const gradeData = gradeInfo[grade] || gradeInfo['C'];
+  
+  // Create visual score bar (filled/empty blocks)
+  const filledBlocks = Math.round((result.score / result.totalQuestions) * 10);
+  const emptyBlocks = 10 - filledBlocks;
+  const scoreBar = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+  
+  // Create ANSI styled header
+  const ansiHeader = '```ansi\n' +
+    '\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m\n' +
+    '\u001b[1;36m║\u001b[0m  ' + gradeData.emoji + ' \u001b[1;37mQUIZ COMPLETE!\u001b[0m ' + gradeData.emoji + '              \u001b[1;36m║\u001b[0m\n' +
+    '\u001b[1;36m║\u001b[0m     \u001b' + gradeData.color + gradeData.title + '\u001b[0m                       \u001b[1;36m║\u001b[0m\n' +
+    '\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m\n' +
+    '```';
+  
+  // Score display with ANSI
+  const scoreDisplay = '```ansi\n' +
+    '\u001b[1;37m┌─────────────────────────────────────┐\u001b[0m\n' +
+    '\u001b[1;37m│\u001b[0m  📊 \u001b[1;33mSCORE:\u001b[0m \u001b[1;32m' + result.score + '\u001b[0m/\u001b[1;36m' + result.totalQuestions + '\u001b[0m              \u001b[1;37m│\u001b[0m\n' +
+    '\u001b[1;37m│\u001b[0m  \u001b[1;36m' + scoreBar + '\u001b[0m \u001b[1;33m' + percentage + '%\u001b[0m       \u001b[1;37m│\u001b[0m\n' +
+    '\u001b[1;37m│\u001b[0m                                     \u001b[1;37m│\u001b[0m\n' +
+    '\u001b[1;37m│\u001b[0m  🏆 \u001b[1;37mGRADE:\u001b[0m \u001b' + gradeData.color + grade + '\u001b[0m                       \u001b[1;37m│\u001b[0m\n' +
+    '\u001b[1;37m│\u001b[0m  ✨ \u001b[1;37mXP EARNED:\u001b[0m \u001b[1;32m+' + (result.xpEarned || 0) + ' XP\u001b[0m               \u001b[1;37m│\u001b[0m\n' +
+    '\u001b[1;37m└─────────────────────────────────────┘\u001b[0m\n' +
+    '```';
   
   // Create answer breakdown visualization
   const answerBreakdown = result.answers 
     ? result.answers.map((a, i) => (a.isCorrect ? '✅' : '❌')).join(' ')
-    : '';
+    : '📝 Answers recorded';
   
   const embed = new EmbedBuilder()
-    .setTitle('🎉 Quiz Complete!')
     .setColor(gradeColor)
-    .setDescription(getResultBanner(percentage))
+    .setDescription(ansiHeader + '\n' + scoreDisplay)
     .addFields(
-      { name: '📊 Score', value: '**' + result.score + '/' + result.totalQuestions + '** (' + percentage + '%)', inline: true },
-      { name: '🏆 Grade', value: '**' + grade + '**', inline: true },
-      { name: '✨ XP Earned', value: '**+' + (result.xpEarned || 0) + ' XP**', inline: true },
-      { name: '📈 Performance', value: scoreBar, inline: false },
-      { name: '📝 Answer Breakdown', value: answerBreakdown || 'N/A', inline: false }
+      { name: '📝 Answer Breakdown', value: answerBreakdown, inline: false }
     );
   
   if (result.leveledUp) {
+    const levelUpArt = '```ansi\n' +
+      '\u001b[1;33m┌─────────────────────────────┐\u001b[0m\n' +
+      '\u001b[1;33m│\u001b[0m  🆙 \u001b[1;32mLEVEL UP!\u001b[0m              \u001b[1;33m│\u001b[0m\n' +
+      '\u001b[1;33m│\u001b[0m  \u001b[1;36mYou reached Level \u001b[1;33m' + result.newLevel + '\u001b[0m        \u001b[1;33m│\u001b[0m\n' +
+      '\u001b[1;33m└─────────────────────────────┘\u001b[0m\n' +
+      '```';
     embed.addFields({
-      name: '🆙 LEVEL UP!',
-      value: '```diff\n+ You reached Level ' + result.newLevel + '!\n```',
+      name: '\u200b',
+      value: levelUpArt,
       inline: false
     });
   }
   
   if (result.achievements && result.achievements.length > 0) {
+    const achievementList = result.achievements.map(a => '🎖️ **' + a + '**').join('\n');
     embed.addFields({
-      name: '🏆 Achievements Unlocked',
-      value: result.achievements.map(a => '🎖️ ' + a).join('\n'),
+      name: '🏆 Achievements Unlocked!',
+      value: achievementList,
       inline: false
     });
   }
   
   if (result.conceptsToReview && result.conceptsToReview.length > 0) {
+    const reviewList = result.conceptsToReview.map(c => '📖 ' + c).join('\n');
     embed.addFields({
       name: '📚 Concepts to Review',
-      value: result.conceptsToReview.map(c => '• ' + c).join('\n'),
+      value: '> *Focus on these topics to improve:*\n' + reviewList,
       inline: false
     });
   }
+  
+  // Add motivational message based on score
+  let motivation = '';
+  if (percentage >= 90) {
+    motivation = '🌟 *Outstanding performance! You\'re a master!*';
+  } else if (percentage >= 70) {
+    motivation = '💪 *Great job! Keep up the excellent work!*';
+  } else if (percentage >= 50) {
+    motivation = '📈 *Good effort! Practice makes perfect!*';
+  } else {
+    motivation = '🔄 *Don\'t give up! Review and try again!*';
+  }
+  
+  embed.addFields({
+    name: '\u200b',
+    value: motivation,
+    inline: false
+  });
   
   embed.setFooter({ text: '🎓 MentorAI | Keep learning and growing!' });
   embed.setTimestamp();

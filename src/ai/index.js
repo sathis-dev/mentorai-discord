@@ -177,61 +177,100 @@ Return ONLY valid JSON:
 }
 
 // ============================================================
-// QUIZ GENERATION
+// QUIZ GENERATION - Enhanced with GPT-4
 // ============================================================
 
 export async function generateQuiz(topic, numQuestions = 5, difficulty = 'medium', userContext = {}) {
-  const systemPrompt = `You are MentorAI Quiz Master. Create educational, fair, and engaging quiz questions.
+  const systemPrompt = `You are MentorAI Quiz Master - an expert educator creating ENGAGING, CHALLENGING, and EDUCATIONAL programming quizzes.
 
-Guidelines:
-- Questions should test understanding, not just memorization
-- All options should be plausible (no obviously wrong answers)
-- Include practical/applied questions, not just theory
-- Explanations should teach, not just state the answer
-- Match the difficulty level appropriately
+🎯 YOUR MISSION:
+Create quiz questions that are FUN, make people THINK, and teach real-world applicable knowledge.
 
-Difficulty:
-- easy: Basic concepts, straightforward questions
-- medium: Applied knowledge, some tricky options
-- hard: Edge cases, deep understanding required`;
+📋 QUESTION QUALITY REQUIREMENTS:
+1. **Scenario-Based**: Frame questions as real coding situations, not textbook definitions
+2. **Tricky but Fair**: All wrong options should be plausible - no obviously silly answers
+3. **Progressive Thinking**: Questions should require applying knowledge, not just recalling facts
+4. **Code Snippets**: Include actual code when relevant - "What does this code output?"
+5. **Real-World Context**: "In a production app, which approach would you choose?"
 
-  const userPrompt = `Create a ${difficulty} quiz about "${topic}" with exactly ${numQuestions} questions.
+🎮 DIFFICULTY CALIBRATION:
+- EASY: Test fundamental understanding with clear scenarios
+- MEDIUM: Require applying concepts, understanding tradeoffs, reading short code
+- HARD: Edge cases, performance implications, debugging scenarios, multi-concept integration
 
-${userContext.weakAreas ? 'Focus on areas student struggles with: ' + userContext.weakAreas.join(', ') : ''}
-${userContext.recentlyLearned ? 'Recently learned: ' + userContext.recentlyLearned : ''}
+🚫 AVOID:
+- "Which is NOT..." questions (confusing)
+- Questions with only one plausible answer
+- Pure memorization ("In what year was X released?")
+- Ambiguous wording
+- Questions with multiple correct interpretations
 
-Return ONLY valid JSON:
+✅ MAKE QUESTIONS THAT:
+- Developers actually face in real work
+- Reveal common misconceptions
+- Teach something even when answered wrong
+- Build confidence when answered correctly
+
+📝 EXPLANATION QUALITY:
+- Explain WHY the correct answer is right
+- Explain WHY each wrong option fails
+- Include a "Pro tip" for the concept
+- Keep it concise but educational`;
+
+  const userPrompt = `Create an ENGAGING ${difficulty.toUpperCase()} difficulty quiz about "${topic}" with exactly ${numQuestions} questions.
+
+${userContext.weakAreas?.length ? '⚠️ Focus more on: ' + userContext.weakAreas.join(', ') : ''}
+${userContext.recentlyLearned ? '📚 Recently studied: ' + userContext.recentlyLearned : ''}
+
+IMPORTANT GUIDELINES FOR THIS QUIZ:
+1. Mix question types: concept questions, code output questions, "what happens if" questions, best practice questions
+2. Each question should teach something valuable
+3. Make wrong options tempting - test for common mistakes
+4. Include at least one question with a code snippet
+5. Progress from slightly easier to harder within the quiz
+
+Return ONLY this exact JSON structure:
 {
-  "quizTitle": "Engaging quiz title",
+  "quizTitle": "🎯 [Catchy, Specific Title about ${topic}]",
   "topic": "${topic}",
   "difficulty": "${difficulty}",
   "questions": [
     {
       "id": 1,
-      "question": "Clear, specific question?",
-      "options": ["Option A", "Option B", "Option C", "Option D"],
+      "type": "concept|code|scenario|debug|best-practice",
+      "question": "[Clear, engaging question. Include code block if type is 'code']",
+      "options": [
+        "Option A - make all 4 options similar in length and plausibility",
+        "Option B",
+        "Option C", 
+        "Option D"
+      ],
       "correctIndex": 0,
-      "explanation": "Why this is correct and why others are wrong",
-      "conceptTested": "What concept this tests",
-      "difficulty": "easy|medium|hard"
+      "explanation": "✅ [Why correct] + ❌ [Why others are wrong] + 💡 Pro tip: [Useful insight]",
+      "conceptTested": "[Specific concept being tested]",
+      "difficulty": "${difficulty}"
     }
   ],
   "passingScore": 60,
-  "encouragement": "Motivational message for completing the quiz"
+  "encouragement": "[Motivational message mentioning ${topic}]",
+  "learningTips": ["Tip 1 for mastering ${topic}", "Tip 2", "Tip 3"]
 }`;
 
+  // Use GPT-4 for better quality questions
   const response = await generateWithAI(systemPrompt, userPrompt, { 
-    maxTokens: 2500, 
-    temperature: 0.8,
+    maxTokens: 3500, 
+    temperature: 0.85,
+    model: 'gpt-4o', // Use GPT-4 for smarter questions
     jsonMode: true 
   });
 
   const parsed = parseAIJson(response);
   
   if (parsed && parsed.questions && parsed.questions.length > 0) {
-    // Validate and fix questions
+    // Validate and enhance questions
     parsed.questions = parsed.questions.map((q, i) => ({
       id: q.id || i + 1,
+      type: q.type || 'concept',
       question: q.question || 'Question ' + (i + 1),
       options: Array.isArray(q.options) && q.options.length === 4 
         ? q.options 
@@ -244,10 +283,19 @@ Return ONLY valid JSON:
       difficulty: q.difficulty || difficulty
     }));
     
+    // Add learning tips if missing
+    if (!parsed.learningTips) {
+      parsed.learningTips = [
+        `Practice ${topic} regularly`,
+        'Build small projects to apply your knowledge',
+        'Review concepts you got wrong'
+      ];
+    }
+    
     return parsed;
   }
 
-  // Fallback quiz
+  // Fallback quiz with better questions
   return generateFallbackQuiz(topic, numQuestions, difficulty);
 }
 

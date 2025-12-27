@@ -70,7 +70,7 @@ export function getCurrentQuestion(userId) {
 }
 
 /**
- * Submit an answer and get result
+ * Submit an answer and get result - Enhanced with more data
  */
 export async function submitAnswer(userId, answerIndex, user) {
   const session = activeSessions.get(userId);
@@ -102,14 +102,18 @@ export async function submitAnswer(userId, answerIndex, user) {
     return await completeQuiz(userId, user);
   }
 
-  // Return result with next question
+  // Return result with more data for enhanced UI
   return {
     isCorrect,
     explanation: currentQ.explanation,
+    correctAnswer: currentQ.correctIndex,
+    selectedAnswer: answerIndex,
+    correctOption: currentQ.options[currentQ.correctIndex],
     isComplete: false,
     currentQuestion: session.currentQuestion,
     totalQuestions: session.questions.length,
-    nextQuestion: getCurrentQuestion(userId)
+    score: session.score,
+    nextQuestion: null // Don't include next question - wait for continue button
   };
 }
 

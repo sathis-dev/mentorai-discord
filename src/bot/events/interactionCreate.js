@@ -875,7 +875,7 @@ function createHelpBackButton() {
 }
 
 // ============================================================
-// QUIZ HANDLERS
+// QUIZ HANDLERS - Enhanced with Continue Button
 // ============================================================
 
 async function handleQuizButton(interaction, action, params) {
@@ -892,10 +892,15 @@ async function handleQuizButton(interaction, action, params) {
     }
 
     if (result.isComplete) {
+      // Quiz complete - show calculating then results
       const calculatingEmbed = new EmbedBuilder()
-        .setTitle('🎯 Calculating Results...')
+        .setTitle('🎯 Calculating Your Results...')
         .setColor(COLORS.PRIMARY)
-        .setDescription('```\n⏳ Please wait...\n```');
+        .setDescription(`\`\`\`ansi
+\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m
+\u001b[1;36m║\u001b[0m      \u001b[1;33m⏳ Analyzing Performance...\u001b[0m       \u001b[1;36m║\u001b[0m
+\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m
+\`\`\``);
 
       await interaction.update({ embeds: [calculatingEmbed], components: [] });
 
@@ -908,7 +913,7 @@ async function handleQuizButton(interaction, action, params) {
       result.newLevel = levelResult.newLevel;
       await user.save();
 
-      await sleep(1000);
+      await sleep(1500);
       const resultsEmbed = createQuizResultsEmbed(result);
       const postButtons = createPostQuizButtons(result.topic);
       await interaction.editReply({ embeds: [resultsEmbed], components: [postButtons] });
@@ -918,32 +923,120 @@ async function handleQuizButton(interaction, action, params) {
         const levelUpEmbed = new EmbedBuilder()
           .setTitle('🎉 LEVEL UP!')
           .setColor(COLORS.XP_GOLD)
-          .setDescription('You reached **Level ' + result.newLevel + '**!')
-          .setFooter({ text: '🎓 MentorAI' });
+          .setDescription(`\`\`\`ansi
+\u001b[1;33m╔═══════════════════════════╗\u001b[0m
+\u001b[1;33m║\u001b[0m   \u001b[1;32m⭐ LEVEL ${result.newLevel} REACHED! ⭐\u001b[0m   \u001b[1;33m║\u001b[0m
+\u001b[1;33m╚═══════════════════════════╝\u001b[0m
+\`\`\``)
+          .setFooter({ text: '🎓 MentorAI | Keep learning!' });
         await interaction.followUp({ embeds: [levelUpEmbed] });
       }
     } else {
+      // Show answer result with CONTINUE button - no auto-advance!
+      const correctLetter = ['A', 'B', 'C', 'D'][result.correctAnswer] || '?';
+      const selectedLetter = ['A', 'B', 'C', 'D'][answerIndex] || '?';
+      
+      // Create enhanced feedback embed
       const feedbackEmbed = new EmbedBuilder()
-        .setTitle(result.isCorrect ? '✅ Correct!' : '❌ Incorrect')
-        .setColor(result.isCorrect ? COLORS.SUCCESS : COLORS.ERROR)
-        .setDescription(result.isCorrect ? '🎉 +25 XP' : '💪 Keep learning!')
-        .addFields({ name: '📝 Explanation', value: result.explanation || 'Moving on...', inline: false });
+        .setColor(result.isCorrect ? 0x00D166 : 0xED4245)
+        .setTitle(result.isCorrect ? '✅ Correct! +25 XP' : '❌ Incorrect')
+        .setDescription(result.isCorrect 
+          ? `\`\`\`ansi
+\u001b[1;32m╔════════════════════════════════════════╗\u001b[0m
+\u001b[1;32m║\u001b[0m    \u001b[1;33m🎉 GREAT JOB! You nailed it!\u001b[0m       \u001b[1;32m║\u001b[0m
+\u001b[1;32m╚════════════════════════════════════════╝\u001b[0m
+\`\`\``
+          : `\`\`\`ansi
+\u001b[1;31m╔════════════════════════════════════════╗\u001b[0m
+\u001b[1;31m║\u001b[0m  \u001b[1;37mYou selected: ${selectedLetter}\u001b[0m                       \u001b[1;31m║\u001b[0m
+\u001b[1;31m║\u001b[0m  \u001b[1;32mCorrect answer: ${correctLetter}\u001b[0m                    \u001b[1;31m║\u001b[0m
+\u001b[1;31m╚════════════════════════════════════════╝\u001b[0m
+\`\`\``)
+        .addFields(
+          {
+            name: '📚 Explanation',
+            value: result.explanation || 'Keep learning!',
+            inline: false
+          },
+          {
+            name: '📊 Progress',
+            value: `Question **${result.currentQuestion}** of **${result.totalQuestions}** completed`,
+            inline: true
+          },
+          {
+            name: result.isCorrect ? '🔥 Streak' : '💪 Keep Going',
+            value: result.isCorrect ? 'You\'re doing great!' : 'Learn from mistakes!',
+            inline: true
+          }
+        )
+        .setFooter({ text: '🎓 MentorAI | Click Continue when ready for the next question' })
+        .setTimestamp();
 
-      await interaction.update({ embeds: [feedbackEmbed], components: [] });
+      // Create CONTINUE button
+      const continueRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('quiz_continue')
+          .setLabel('Continue →')
+          .setEmoji('▶️')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('quiz_cancel')
+          .setLabel('End Quiz')
+          .setEmoji('🛑')
+          .setStyle(ButtonStyle.Danger)
+      );
 
-      await sleep(2000);
-      const nextQ = result.nextQuestion;
-      if (nextQ && nextQ.question) {
-        const questionEmbed = createQuizQuestionEmbed(nextQ.question, nextQ.questionNum, nextQ.totalQuestions, nextQ.topic || 'Quiz', nextQ.difficulty || 'medium');
-        await interaction.editReply({ embeds: [questionEmbed], components: [createQuizAnswerButtons(), createQuizControlButtons()] });
-      }
+      await interaction.update({ embeds: [feedbackEmbed], components: [continueRow] });
     }
+  } else if (action === 'continue') {
+    // User clicked continue - show next question
+    const questionData = getCurrentQuestion(userId);
+    
+    if (!questionData || !questionData.question) {
+      await interaction.reply({ content: '❌ Quiz session expired. Start a new one with `/quiz`', ephemeral: true });
+      return;
+    }
+
+    // Create styled transition embed
+    const transitionEmbed = new EmbedBuilder()
+      .setTitle('⏳ Loading Next Question...')
+      .setColor(COLORS.PRIMARY)
+      .setDescription(`\`\`\`ansi
+\u001b[1;36m▓▓▓▓▓▓▓▓▓▓ Question ${questionData.questionNum}/${questionData.totalQuestions}\u001b[0m
+\`\`\``);
+
+    await interaction.update({ embeds: [transitionEmbed], components: [] });
+    await sleep(800);
+
+    const questionEmbed = createQuizQuestionEmbed(
+      questionData.question, 
+      questionData.questionNum, 
+      questionData.totalQuestions, 
+      questionData.topic || 'Quiz', 
+      questionData.difficulty || 'medium'
+    );
+    
+    await interaction.editReply({ 
+      embeds: [questionEmbed], 
+      components: [createQuizAnswerButtons(), createQuizControlButtons()] 
+    });
+    
   } else if (action === 'cancel') {
     cancelSession(userId);
     const cancelEmbed = new EmbedBuilder()
-      .setTitle('🛑 Quiz Cancelled')
+      .setTitle('🛑 Quiz Ended')
       .setColor(COLORS.WARNING)
-      .setDescription('Start a new one with `/quiz`!');
+      .setDescription(`\`\`\`ansi
+\u001b[1;33m╔══════════════════════════════════════╗\u001b[0m
+\u001b[1;33m║\u001b[0m    \u001b[1;37mQuiz cancelled - No XP earned\u001b[0m     \u001b[1;33m║\u001b[0m
+\u001b[1;33m╚══════════════════════════════════════╝\u001b[0m
+\`\`\``)
+      .addFields({
+        name: '🎯 Ready for another challenge?',
+        value: 'Use `/quiz` to start a new quiz!',
+        inline: false
+      })
+      .setFooter({ text: '🎓 MentorAI' });
     await interaction.update({ embeds: [cancelEmbed], components: [] });
   } else if (action === 'restart' || action === 'start') {
     const topic = decodeURIComponent(params.join('_') || 'JavaScript');
