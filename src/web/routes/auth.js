@@ -6,7 +6,7 @@ const router = express.Router();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'mentorai-admin-secret-key-change-in-production';
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'MentorAI@2024';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'Mentor$ecure#2025!';
 const IS_PRODUCTION = process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT;
 
 // Admin credentials
