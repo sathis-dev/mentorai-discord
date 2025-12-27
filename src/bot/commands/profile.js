@@ -18,32 +18,33 @@ export async function execute(interaction) {
   try {
     const user = await getOrCreateUser(targetUser.id, targetUser.username);
     
-    // Calculate stats
-    const level = user.level || 1;
-    const xp = user.xp || 0;
-    const xpNeeded = typeof user.xpForNextLevel === 'function' ? user.xpForNextLevel() : 100;
-    const streak = user.streak || 0;
-    const quizzes = user.quizzesTaken || 0;
-    const accuracy = user.totalQuestions > 0 
-      ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
-      : 0;
-    const achievements = user.achievements || [];
+    // Calculate stats with safe defaults
+    const level = user?.level || 1;
+    const xp = user?.xp || 0;
+    const xpNeeded = typeof user?.xpForNextLevel === 'function' ? user.xpForNextLevel() : 100;
+    const streak = user?.streak || 0;
+    const quizzes = user?.quizzesTaken || 0;
+    const totalQ = user?.totalQuestions || 0;
+    const correctA = user?.correctAnswers || 0;
+    const accuracy = totalQ > 0 ? Math.round((correctA / totalQ) * 100) : 0;
+    const achievements = user?.achievements || [];
 
     // Determine rank/tier
     const tier = getTier(level);
     
-    // Create profile embed
+    // Create profile embed with safe values
+    const bannerText = (tier?.name || 'Learner') + ' Learner';
     const profileEmbed = new EmbedBuilder()
       .setAuthor({
-        name: targetUser.username + '\'s Profile',
+        name: (targetUser?.username || 'User') + '\'s Profile',
         iconURL: targetUser.displayAvatarURL({ dynamic: true })
       })
-      .setColor(tier.color)
+      .setColor(tier?.color || 0x5865F2)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 256 }))
-      .setDescription(createBanner(tier.name + ' Learner', 'fancy'))
+      .setDescription(createBanner(bannerText, 'fancy'))
       .addFields(
         { 
-          name: DECORATIONS.sparkDivider, 
+          name: DECORATIONS.sparkDivider || '✨━━━━━━━━━━━━━━━━✨', 
           value: '**📊 STATISTICS**', 
           inline: false 
         },
@@ -131,7 +132,40 @@ export async function execute(interaction) {
 
   } catch (error) {
     console.error('Profile command error:', error);
-    await interaction.editReply({ content: '❌ Failed to load profile.' });
+    console.error('Profile error details:', {
+      userId: targetUser?.id,
+      username: targetUser?.username,
+      interactionUser: interaction?.user?.id,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
+    
+    // Try to show a helpful fallback profile
+    try {
+      const fallbackEmbed = new EmbedBuilder()
+        .setTitle('👤 ' + (targetUser?.username || 'User') + '\'s Profile')
+        .setColor(0x5865F2)
+        .setDescription('Profile data is loading...')
+        .addFields(
+          { name: '⭐ Level', value: '1', inline: true },
+          { name: '✨ XP', value: '0', inline: true },
+          { name: '🔥 Streak', value: '0 days', inline: true }
+        )
+        .setFooter({ text: 'Use /profile to refresh your stats' });
+      
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ embeds: [fallbackEmbed] });
+      } else {
+        await interaction.reply({ embeds: [fallbackEmbed] });
+      }
+    } catch (fallbackError) {
+      console.error('Profile fallback error:', fallbackError);
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: '❌ Failed to load profile. Try `/profile` directly.' });
+      } else {
+        await interaction.reply({ content: '❌ Failed to load profile. Try `/profile` directly.' });
+      }
+    }
   }
 }
 
@@ -147,12 +181,16 @@ function getTier(level) {
 }
 
 function createFancyProgressBar(current, max) {
-  const percentage = Math.round((current / max) * 100);
+  // Ensure valid numbers
+  const safeMax = max > 0 ? max : 100;
+  const safeCurrent = current >= 0 ? current : 0;
+  
+  const percentage = Math.min(100, Math.round((safeCurrent / safeMax) * 100));
   const filled = Math.round(percentage / 5);
-  const empty = 20 - filled;
+  const empty = Math.max(0, 20 - filled);
   
   const bar = '▓'.repeat(filled) + '░'.repeat(empty);
   
   return '```\n[' + bar + '] ' + percentage + '%\n' + 
-    current.toLocaleString() + ' / ' + max.toLocaleString() + ' XP\n```';
+    safeCurrent.toLocaleString() + ' / ' + safeMax.toLocaleString() + ' XP\n```';
 }
