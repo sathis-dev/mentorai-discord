@@ -16,7 +16,7 @@ export async function generateWithAI(systemPrompt, userPrompt, options = {}) {
   const { 
     maxTokens = 2000, 
     temperature = 0.7,
-    model = 'gpt-3.5-turbo',
+    model = 'gpt-4o', // Default to GPT-4o for all AI features
     jsonMode = false 
   } = options;
 
@@ -26,25 +26,31 @@ export async function generateWithAI(systemPrompt, userPrompt, options = {}) {
   }
 
   try {
+    // o1 models don't support system messages, combine them
+    const isO1Model = model.startsWith('o1');
+    const messages = isO1Model 
+      ? [{ role: 'user', content: systemPrompt + '\n\n' + userPrompt }]
+      : [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ];
+    
     const response = await openai.chat.completions.create({
       model: model,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
-      ],
-      max_tokens: maxTokens,
-      temperature: temperature,
-      ...(jsonMode && { response_format: { type: 'json_object' } })
+      messages: messages,
+      max_completion_tokens: maxTokens,
+      ...(isO1Model ? {} : { temperature: temperature }),
+      ...(!isO1Model && jsonMode && { response_format: { type: 'json_object' } })
     });
 
     return response.choices[0]?.message?.content || null;
   } catch (error) {
     console.error('OpenAI API error:', error.message);
     
-    // Retry with fallback model if rate limited
-    if (error.status === 429 && model !== 'gpt-3.5-turbo') {
-      console.log('Retrying with gpt-3.5-turbo...');
-      return generateWithAI(systemPrompt, userPrompt, { ...options, model: 'gpt-3.5-turbo' });
+    // Retry with fallback model if rate limited or o1 fails
+    if ((error.status === 429 || error.status === 400) && model !== 'gpt-4o') {
+      console.log('Retrying with gpt-4o...');
+      return generateWithAI(systemPrompt, userPrompt, { ...options, model: 'gpt-4o' });
     }
     
     return null;
@@ -256,12 +262,12 @@ Return ONLY this exact JSON structure:
   "learningTips": ["Tip 1 for mastering ${topic}", "Tip 2", "Tip 3"]
 }`;
 
-  // Use GPT-4 for better quality questions
+  // Use OpenAI's most advanced reasoning model for best quality questions
   const response = await generateWithAI(systemPrompt, userPrompt, { 
-    maxTokens: 3500, 
-    temperature: 0.85,
-    model: 'gpt-4o', // Use GPT-4 for smarter questions
-    jsonMode: true 
+    maxTokens: 4000, 
+    temperature: 1, // o1 models use temperature 1
+    model: 'o1', // OpenAI's most advanced reasoning model (latest)
+    jsonMode: false // o1 doesn't support json_mode yet
   });
 
   const parsed = parseAIJson(response);
