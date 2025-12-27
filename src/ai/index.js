@@ -91,7 +91,32 @@ function parseAIJson(response) {
 // ============================================================
 
 export async function generateLesson(topic, difficulty = 'beginner', userContext = {}) {
-  const systemPrompt = `You are MentorAI, an expert programming tutor. Create engaging, practical lessons.
+  // Create fallback lesson function for error cases
+  const createFallbackLesson = () => ({
+    title: `Introduction to ${topic}`,
+    introduction: `Let's explore ${topic} together! This is a fundamental concept in programming.`,
+    content: `${topic} is an important topic in software development. Understanding it will help you become a better programmer.\n\nThis topic covers essential concepts that every developer should know. Whether you're building web applications, mobile apps, or backend services, mastering ${topic} will give you a solid foundation.\n\nPractice regularly and don't be afraid to experiment! The best way to learn is by doing.`,
+    keyPoints: [
+      `${topic} is essential for modern development`,
+      'Practice makes perfect - try building small projects',
+      'Start with basics, then advance to complex concepts',
+      'Build real projects to solidify your learning'
+    ],
+    codeExample: {
+      language: 'javascript',
+      code: `// Start your ${topic} journey here\nconsole.log("Learning ${topic}!");\n\n// Try experimenting with this code\nconst learning = "${topic}";\nconsole.log(\`I'm excited to learn \${learning}!\`);`,
+      explanation: 'A simple starting point for your learning journey. Try modifying this code!'
+    },
+    practiceChallenge: {
+      task: `Research 3 real-world applications of ${topic} and try to implement a simple example`,
+      hint: 'Look at popular open source projects on GitHub for inspiration'
+    },
+    nextSteps: `Continue exploring advanced ${topic} concepts and build a small project to apply what you've learned`,
+    funFact: `${topic} is used by millions of developers worldwide and continues to evolve!`
+  });
+
+  try {
+    const systemPrompt = `You are MentorAI, an expert programming tutor. Create engaging, practical lessons.
 
 Your teaching style:
 - Use simple analogies and real-world examples
@@ -105,7 +130,7 @@ Difficulty levels:
 - intermediate: Assume basic understanding, go deeper
 - advanced: Assume strong foundation, cover edge cases and optimizations`;
 
-  const userPrompt = `Create a ${difficulty} level lesson about "${topic}".
+    const userPrompt = `Create a ${difficulty} level lesson about "${topic}".
 
 ${userContext.previousTopics ? 'Student has learned: ' + userContext.previousTopics.join(', ') : ''}
 ${userContext.struggles ? 'Student struggles with: ' + userContext.struggles : ''}
@@ -129,41 +154,26 @@ Return ONLY valid JSON:
   "funFact": "An interesting fact about this topic"
 }`;
 
-  const response = await generateWithAI(systemPrompt, userPrompt, { 
-    maxTokens: 2000, 
-    temperature: 0.7,
-    jsonMode: true 
-  });
+    const response = await generateWithAI(systemPrompt, userPrompt, { 
+      maxTokens: 2000, 
+      temperature: 0.7,
+      jsonMode: true 
+    });
 
-  const parsed = parseAIJson(response);
-  
-  if (parsed) {
-    return parsed;
+    const parsed = parseAIJson(response);
+    
+    if (parsed) {
+      return parsed;
+    }
+
+    // AI didn't return valid JSON, use fallback
+    console.log('AI response could not be parsed, using fallback lesson for:', topic);
+    return createFallbackLesson();
+
+  } catch (error) {
+    console.error('Error generating lesson:', error.message);
+    return createFallbackLesson();
   }
-
-  // Fallback lesson
-  return {
-    title: `Introduction to ${topic}`,
-    introduction: `Let's explore ${topic} together! This is a fundamental concept in programming.`,
-    content: `${topic} is an important topic in software development. Understanding it will help you become a better programmer. Practice regularly and don't be afraid to experiment!`,
-    keyPoints: [
-      `${topic} is essential for modern development`,
-      'Practice makes perfect',
-      'Start with basics, then advance',
-      'Build projects to solidify learning'
-    ],
-    codeExample: {
-      language: 'javascript',
-      code: '// Start your ' + topic + ' journey here\nconsole.log("Learning ' + topic + '!");',
-      explanation: 'A simple starting point for your learning'
-    },
-    practiceChallenge: {
-      task: 'Research 3 real-world uses of ' + topic,
-      hint: 'Look at popular open source projects'
-    },
-    nextSteps: 'Continue exploring advanced ' + topic + ' concepts',
-    funFact: topic + ' is used by millions of developers worldwide!'
-  };
 }
 
 // ============================================================

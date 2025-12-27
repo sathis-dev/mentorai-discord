@@ -23,32 +23,76 @@ export const POPULAR_TOPICS = [
  * Get a lesson on any topic using AI
  */
 export async function getLesson(topic, difficulty = 'beginner', user = null) {
-  // Get user context for personalization
-  const userContext = user ? {
-    previousTopics: user.topicsStudied || [],
-    level: user.level || 1,
-    struggles: user.weakAreas || []
-  } : {};
+  try {
+    // Get user context for personalization
+    const userContext = user ? {
+      previousTopics: user.topicsStudied || [],
+      level: user.level || 1,
+      struggles: user.weakAreas || []
+    } : {};
 
-  // Generate lesson using AI
-  const lesson = await generateLesson(topic, difficulty, userContext);
+    // Generate lesson using AI
+    const lesson = await generateLesson(topic, difficulty, userContext);
 
-  // Calculate XP reward
-  const difficultyMultiplier = { beginner: 1, intermediate: 1.5, advanced: 2 };
-  const xpEarned = Math.floor(XP_REWARDS.LESSON_COMPLETE * (difficultyMultiplier[difficulty] || 1));
+    // Ensure lesson is valid
+    if (!lesson || typeof lesson !== 'object') {
+      throw new Error('Invalid lesson returned from AI');
+    }
 
-  // Track learning progress
-  if (user) {
-    trackLearningProgress(user.discordId, topic, 'lesson');
+    // Calculate XP reward
+    const difficultyMultiplier = { beginner: 1, intermediate: 1.5, advanced: 2 };
+    const xpEarned = Math.floor(XP_REWARDS.LESSON_COMPLETE * (difficultyMultiplier[difficulty] || 1));
+
+    // Track learning progress
+    if (user) {
+      trackLearningProgress(user.discordId, topic, 'lesson');
+    }
+
+    return {
+      lesson,
+      xpEarned,
+      leveledUp: false,
+      newLevel: user?.level || 1,
+      achievements: []
+    };
+  } catch (error) {
+    console.error('Error in getLesson:', error.message);
+    
+    // Return a fallback lesson so the command doesn't fail
+    const fallbackLesson = {
+      title: `Introduction to ${topic}`,
+      introduction: `Let's explore ${topic} together! This is a great topic to learn.`,
+      content: `${topic} is an important area in software development. Understanding it will help you become a better programmer.\n\nThis lesson covers the fundamentals to get you started on your learning journey.`,
+      keyPoints: [
+        `${topic} is essential for modern development`,
+        'Practice makes perfect',
+        'Start with basics, then advance',
+        'Build projects to solidify learning'
+      ],
+      codeExample: {
+        language: 'javascript',
+        code: `// Start learning ${topic}\nconsole.log("Hello ${topic}!");`,
+        explanation: 'A simple starting point for your learning'
+      },
+      practiceChallenge: {
+        task: `Research 3 real-world uses of ${topic}`,
+        hint: 'Look at popular open source projects'
+      },
+      nextSteps: `Continue exploring advanced ${topic} concepts`,
+      funFact: `${topic} is used by developers worldwide!`
+    };
+
+    const difficultyMultiplier = { beginner: 1, intermediate: 1.5, advanced: 2 };
+    const xpEarned = Math.floor(XP_REWARDS.LESSON_COMPLETE * (difficultyMultiplier[difficulty] || 1));
+
+    return {
+      lesson: fallbackLesson,
+      xpEarned,
+      leveledUp: false,
+      newLevel: user?.level || 1,
+      achievements: []
+    };
   }
-
-  return {
-    lesson,
-    xpEarned,
-    leveledUp: false,
-    newLevel: user?.level || 1,
-    achievements: []
-  };
 }
 
 /**
