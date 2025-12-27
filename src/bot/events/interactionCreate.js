@@ -460,7 +460,13 @@ async function handleHelpCategorySelect(interaction, category) {
 }
 
 async function handleHelpButton(interaction, action, params) {
-  if (action === 'quickstart') {
+  if (action === 'main') {
+    // Show main help menu
+    const welcomeEmbed = createWelcomeEmbed(interaction);
+    const statsEmbed = createStatsEmbed(interaction);
+    const components = createHelpComponents();
+    await interaction.update({ embeds: [welcomeEmbed, statsEmbed], components });
+  } else if (action === 'quickstart') {
     const embed = createQuickStartEmbed();
     await interaction.update({ embeds: [embed], components: [createHelpBackButton()] });
   } else if (action === 'popular') {
@@ -624,17 +630,26 @@ async function handleExecuteButton(interaction, action, params) {
     'streak': 'streak',
     'achievements': 'achievements',
     'leaderboard': 'leaderboard',
-    'topics': 'topics'
+    'topics': 'topics',
+    'learn': 'learn',
+    'quiz': 'quiz',
+    'help': 'help'
   };
   
   const commandName = commandMap[action];
-  if (!commandName) return;
+  if (!commandName) {
+    // If not a command, show a helpful message
+    return interaction.reply({ 
+      content: `Use \`/${action}\` to access this feature!`, 
+      flags: 64 // Ephemeral flag
+    });
+  }
   
   const command = interaction.client.commands.get(commandName);
   if (!command) {
     return interaction.reply({ 
       content: `❌ Command not found. Use \`/${commandName}\` directly.`, 
-      ephemeral: true 
+      flags: 64 // Ephemeral flag instead of deprecated ephemeral
     });
   }
   
