@@ -149,8 +149,9 @@ router.get('/users/recent', async (req, res) => {
       .limit(limit)
       .lean();
     
-    res.json({ users: users.map(u => ({ ...u, banned: bannedUsers.has(u.discordId) })) });
+    res.json({ users: users.map(u => ({ ...u, banned: u.banned || false })) });
   } catch (e) {
+    console.error('Failed to fetch recent users:', e);
     res.status(500).json({ error: 'Failed to fetch recent users', users: [] });
   }
 });
