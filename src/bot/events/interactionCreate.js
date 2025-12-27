@@ -502,32 +502,53 @@ async function showQuizTopicSelector(interaction) {
   const embed = new EmbedBuilder()
     .setTitle('🎯 Choose a Quiz Topic')
     .setColor(COLORS.SUCCESS)
-    .setDescription('**Select a topic to start your quiz!**\n\nEach quiz gives you XP based on performance.');
+    .setDescription('**Select a topic to start your quiz!**\n\nEach quiz gives you XP based on performance.')
+    .addFields({
+      name: '🏆 Earn XP',
+      value: 'Correct answers earn you XP and help build your streak!',
+      inline: false
+    });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('quiz_topic_select')
       .setPlaceholder('🎯 Select a topic...')
       .addOptions([
-        { label: 'JavaScript', value: 'javascript', emoji: '🟨' },
-        { label: 'Python', value: 'python', emoji: '🐍' },
-        { label: 'React', value: 'react', emoji: '⚛️' },
-        { label: 'Node.js', value: 'nodejs', emoji: '🟢' },
-        { label: 'HTML & CSS', value: 'html css', emoji: '🌐' },
-        { label: 'SQL', value: 'sql', emoji: '🗄️' },
-        { label: 'Git', value: 'git', emoji: '📦' }
+        { label: 'JavaScript', value: 'JavaScript', emoji: '🟨', description: 'Test your JS skills' },
+        { label: 'Python', value: 'Python', emoji: '🐍', description: 'Python programming quiz' },
+        { label: 'React', value: 'React', emoji: '⚛️', description: 'React & components' },
+        { label: 'Node.js', value: 'Node.js', emoji: '🟢', description: 'Backend JS quiz' },
+        { label: 'HTML & CSS', value: 'HTML and CSS', emoji: '🌐', description: 'Web fundamentals' },
+        { label: 'SQL', value: 'SQL', emoji: '🗄️', description: 'Database quiz' },
+        { label: 'Git', value: 'Git', emoji: '📦', description: 'Version control' },
+        { label: 'TypeScript', value: 'TypeScript', emoji: '🔷', description: 'Typed JavaScript' },
+        { label: 'APIs', value: 'APIs', emoji: '🔌', description: 'API concepts' },
+        { label: 'General Programming', value: 'Programming', emoji: '💻', description: 'Mixed topics' }
       ])
   );
 
   const backButton = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('help_back_main')
+      .setCustomId('help_main')
       .setLabel('Back to Help')
       .setEmoji('◀️')
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+  const payload = { embeds: [embed], components: [topicMenu, backButton] };
+  
+  // Handle both update (from help menu) and reply (from execute button)
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply(payload);
+    } else if (interaction.message) {
+      await interaction.update(payload);
+    } else {
+      await interaction.reply(payload);
+    }
+  } catch (error) {
+    await interaction.reply(payload);
+  }
 }
 
 // Show learn topic selector for help feature button
@@ -535,32 +556,53 @@ async function showLearnTopicSelector(interaction) {
   const embed = new EmbedBuilder()
     .setTitle('📚 Choose a Learning Topic')
     .setColor(COLORS.PRIMARY)
-    .setDescription('**Select a topic to get an AI-generated lesson!**\n\nLearn anything with personalized explanations.');
+    .setDescription('**Select a topic to get an AI-generated lesson!**\n\nLearn anything with personalized explanations.')
+    .addFields({
+      name: '💡 Tip',
+      value: 'You can learn about anything! Use `/learn topic:YourTopic` for custom topics.',
+      inline: false
+    });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('learn_topic_select')
       .setPlaceholder('📚 Select a topic...')
       .addOptions([
-        { label: 'JavaScript Basics', value: 'javascript-basics', emoji: '🟨' },
-        { label: 'Python Fundamentals', value: 'python-basics', emoji: '🐍' },
-        { label: 'Web Development', value: 'webdev', emoji: '🌐' },
-        { label: 'Data Structures', value: 'datastructures', emoji: '🔢' },
-        { label: 'APIs & REST', value: 'apis', emoji: '🔗' },
-        { label: 'Databases', value: 'databases', emoji: '🗄️' },
-        { label: 'Algorithms', value: 'algorithms', emoji: '🧮' }
+        { label: 'JavaScript', value: 'JavaScript', emoji: '🟨', description: 'Web programming fundamentals' },
+        { label: 'Python', value: 'Python', emoji: '🐍', description: 'Versatile & beginner-friendly' },
+        { label: 'React', value: 'React', emoji: '⚛️', description: 'Modern UI development' },
+        { label: 'Node.js', value: 'Node.js', emoji: '🟢', description: 'Server-side JavaScript' },
+        { label: 'HTML & CSS', value: 'HTML and CSS', emoji: '🌐', description: 'Web basics' },
+        { label: 'SQL', value: 'SQL', emoji: '🗄️', description: 'Database queries' },
+        { label: 'Git & GitHub', value: 'Git and GitHub', emoji: '📚', description: 'Version control' },
+        { label: 'TypeScript', value: 'TypeScript', emoji: '🔷', description: 'Typed JavaScript' },
+        { label: 'REST APIs', value: 'REST APIs', emoji: '🔌', description: 'API fundamentals' },
+        { label: 'Data Structures', value: 'Data Structures', emoji: '📊', description: 'CS fundamentals' }
       ])
   );
 
   const backButton = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
-      .setCustomId('help_back_main')
+      .setCustomId('help_main')
       .setLabel('Back to Help')
       .setEmoji('◀️')
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+  const payload = { embeds: [embed], components: [topicMenu, backButton] };
+  
+  // Handle both update (from help menu) and reply (from execute button)
+  try {
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply(payload);
+    } else if (interaction.message) {
+      await interaction.update(payload);
+    } else {
+      await interaction.reply(payload);
+    }
+  } catch (error) {
+    await interaction.reply(payload);
+  }
 }
 
 function createWelcomeEmbed(interaction) {
@@ -717,90 +759,6 @@ async function handleExecuteButton(interaction, action, params) {
       });
     }
   }
-}
-
-// Show topic selector for /learn command
-async function showLearnTopicSelector(interaction) {
-  const embed = new EmbedBuilder()
-    .setTitle('📚 Start Learning')
-    .setColor(0x3498DB)
-    .setDescription('**Choose a topic to learn about!**\n\nSelect from popular topics below, or use `/learn topic:YourTopic` for any custom topic.')
-    .addFields({
-      name: '💡 Tip',
-      value: 'You can learn about anything! Try topics like:\n`JavaScript`, `Python`, `React`, `APIs`, `Git`, etc.',
-      inline: false
-    })
-    .setFooter({ text: '🎓 MentorAI - AI-Powered Learning' });
-
-  const topicSelect = new StringSelectMenuBuilder()
-    .setCustomId('learn_topic_select')
-    .setPlaceholder('🎯 Choose a topic to learn...')
-    .addOptions([
-      { label: 'JavaScript', description: 'Web programming fundamentals', emoji: '🟨', value: 'JavaScript' },
-      { label: 'Python', description: 'Versatile & beginner-friendly', emoji: '🐍', value: 'Python' },
-      { label: 'React', description: 'Modern UI development', emoji: '⚛️', value: 'React' },
-      { label: 'Node.js', description: 'Server-side JavaScript', emoji: '🟢', value: 'Node.js' },
-      { label: 'TypeScript', description: 'Typed JavaScript', emoji: '🔷', value: 'TypeScript' },
-      { label: 'HTML & CSS', description: 'Web basics', emoji: '🌐', value: 'HTML and CSS' },
-      { label: 'SQL', description: 'Database queries', emoji: '🗄️', value: 'SQL' },
-      { label: 'Git & GitHub', description: 'Version control', emoji: '📚', value: 'Git and GitHub' },
-      { label: 'REST APIs', description: 'API fundamentals', emoji: '🔌', value: 'REST APIs' },
-      { label: 'Data Structures', description: 'CS fundamentals', emoji: '📊', value: 'Data Structures' }
-    ]);
-
-  const row = new ActionRowBuilder().addComponents(topicSelect);
-  
-  const backButton = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('help_main')
-      .setLabel('Back to Help')
-      .setEmoji('◀️')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  await interaction.reply({ embeds: [embed], components: [row, backButton], ephemeral: false });
-}
-
-// Show topic selector for /quiz command
-async function showQuizTopicSelector(interaction) {
-  const embed = new EmbedBuilder()
-    .setTitle('🎯 Take a Quiz')
-    .setColor(0xE91E63)
-    .setDescription('**Test your knowledge!**\n\nSelect a topic below to start a quiz, or use `/quiz topic:YourTopic` for any custom topic.')
-    .addFields({
-      name: '🏆 Earn XP',
-      value: 'Correct answers earn you XP and help build your streak!',
-      inline: false
-    })
-    .setFooter({ text: '🎓 MentorAI - Quiz Master' });
-
-  const topicSelect = new StringSelectMenuBuilder()
-    .setCustomId('quiz_topic_select')
-    .setPlaceholder('🎯 Choose a topic for your quiz...')
-    .addOptions([
-      { label: 'JavaScript', description: 'Test your JS skills', emoji: '🟨', value: 'JavaScript' },
-      { label: 'Python', description: 'Python programming quiz', emoji: '🐍', value: 'Python' },
-      { label: 'React', description: 'React & component basics', emoji: '⚛️', value: 'React' },
-      { label: 'Node.js', description: 'Backend JS quiz', emoji: '🟢', value: 'Node.js' },
-      { label: 'TypeScript', description: 'TypeScript concepts', emoji: '🔷', value: 'TypeScript' },
-      { label: 'HTML & CSS', description: 'Web fundamentals', emoji: '🌐', value: 'HTML and CSS' },
-      { label: 'SQL', description: 'Database quiz', emoji: '🗄️', value: 'SQL' },
-      { label: 'Git', description: 'Version control quiz', emoji: '📚', value: 'Git' },
-      { label: 'APIs', description: 'API concepts', emoji: '🔌', value: 'APIs' },
-      { label: 'General Programming', description: 'Mixed topics', emoji: '💻', value: 'Programming' }
-    ]);
-
-  const row = new ActionRowBuilder().addComponents(topicSelect);
-  
-  const backButton = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('help_main')
-      .setLabel('Back to Help')
-      .setEmoji('◀️')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  await interaction.reply({ embeds: [embed], components: [row, backButton], ephemeral: false });
 }
 
 // Helper function to execute any command from a button
