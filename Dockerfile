@@ -2,6 +2,17 @@ FROM node:18-alpine
 
 WORKDIR /app
 
+# Install build dependencies for canvas
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    cairo-dev \
+    pango-dev \
+    jpeg-dev \
+    giflib-dev \
+    librsvg-dev
+
 # Copy package files
 COPY package*.json ./
 
