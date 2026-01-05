@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MentorAI - Your AI-Powered Coding Mentor on Discord</title>
+  <meta name="description" content="Learn to code with AI-generated lessons, quizzes, and gamification. Level up your programming skills directly in Discord!">
+  <meta name="theme-color" content="#5865F2">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="MentorAI - AI-Powered Coding Mentor">
+  <meta property="og:description" content="Transform your coding journey into an exciting adventure with AI-generated lessons and gamification.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="/images/og-image.png">
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root {
+      --primary: #5865F2;
+      --primary-dark: #4752c4;
+      --secondary: #7289da;
+      --success: #57F287;
+      --warning: #FEE75C;
+      --error: #ED4245;
+      --gold: #FFD700;
+      --bg-dark: #0f0f1a;
+      --bg-darker: #0a0a0f;
+      --bg-card: rgba(30, 30, 45, 0.8);
+      --text: #ffffff;
+      --text-muted: #99AAB5;
+      --border: rgba(88, 101, 242, 0.2);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-dark);
+      color: var(--text);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* Animated Background */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: 
+        radial-gradient(ellipse at 20% 80%, rgba(88, 101, 242, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(87, 242, 135, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(88, 101, 242, 0.05) 0%, transparent 70%);
+    }
+
+    .floating-shapes {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .shape {
+      position: absolute;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(88, 101, 242, 0.1), rgba(114, 137, 218, 0.05));
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .shape:nth-child(1) { width: 400px; height: 400px; top: 10%; left: 5%; animation-delay: 0s; }
+    .shape:nth-child(2) { width: 300px; height: 300px; top: 60%; right: 5%; animation-delay: -5s; }
+    .shape:nth-child(3) { width: 200px; height: 200px; bottom: 20%; left: 30%; animation-delay: -10s; }
+    .shape:nth-child(4) { width: 150px; height: 150px; top: 30%; right: 20%; animation-delay: -15s; }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-40px) rotate(180deg); }
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      background: rgba(15, 15, 26, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 30px;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(88, 101, 242, 0.5);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(88, 101, 242, 0.2);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 5% 80px;
+      text-align: center;
+    }
+
+    .hero-content {
+      max-width: 900px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(87, 242, 135, 0.1);
+      border: 1px solid rgba(87, 242, 135, 0.3);
+      border-radius: 50px;
+      font-size: 0.9rem;
+      color: var(--success);
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, var(--text) 0%, var(--primary) 50%, var(--success) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.3rem;
+      color: var(--text-muted);
+      margin-bottom: 40px;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 60px;
+      justify-content: center;
+      margin-top: 60px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 100px 5%;
+      background: linear-gradient(180deg, transparent, rgba(88, 101, 242, 0.05));
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .section-title h2 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .section-title p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--primary);
+      box-shadow: 0 10px 40px rgba(88, 101, 242, 0.2);
+    }
+
+    .feature-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
+    }
+
+    .feature-card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* Commands Section */
+    .commands {
+      padding: 100px 5%;
+    }
+
+    .commands-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .command-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: all 0.3s;
+    }
+
+    .command-card:hover {
+      border-color: var(--primary);
+      background: rgba(88, 101, 242, 0.1);
+    }
+
+    .command-icon {
+      font-size: 24px;
+    }
+
+    .command-info h4 {
+      font-size: 1rem;
+      margin-bottom: 4px;
+    }
+
+    .command-info p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* How It Works */
+    .how-it-works {
+      padding: 100px 5%;
+      background: linear-gradient(180deg, rgba(88, 101, 242, 0.05), transparent);
+    }
+
+    .steps {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      max-width: 1000px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      text-align: center;
+      max-width: 280px;
+    }
+
+    .step-number {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin: 0 auto 20px;
+    }
+
+    .step h3 {
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+
+    .step p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    /* CTA Section */
+    .cta {
+      padding: 100px 5%;
+      text-align: center;
+    }
+
+    .cta-box {
+      background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(114, 137, 218, 0.1));
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 60px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .cta h2 {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      margin-bottom: 32px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 60px 5% 30px;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 40px;
+      max-width: 1200px;
+      margin: 0 auto 40px;
+    }
+
+    .footer-brand {
+      max-width: 300px;
+    }
+
+    .footer-brand p {
+      color: var(--text-muted);
+      margin-top: 16px;
+      font-size: 0.9rem;
+    }
+
+    .footer-links h4 {
+      font-size: 1rem;
+      margin-bottom: 16px;
+      color: var(--text);
+    }
+
+    .footer-links a {
+      display: block;
+      color: var(--text-muted);
+      text-decoration: none;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+    }
+
+    .footer-links a:hover {
+      color: var(--primary);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+
+      .hero p {
+        font-size: 1.1rem;
+      }
+
+      .nav-links {
+        display: none;
+      }
+
+      .hero-stats {
+        gap: 30px;
+      }
+
+      .steps {
+        gap: 40px;
+      }
+
+      .cta-box {
+        padding: 40px 20px;
+      }
+    }
+
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate {
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+  </style>
+</head>
+<body>
+  <div class="bg-animation"></div>
+  <div class="floating-shapes">
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+    <div class="shape"></div>
+  </div>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="/" class="logo">
+      <div class="logo-icon">🎓</div>
+      MentorAI
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#commands">Commands</a>
+      <a href="#how-it-works">How It Works</a>
+      <a href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147483648&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+        <i class="fab fa-discord"></i> Add to Discord
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-badge animate">
+        <i class="fas fa-sparkles"></i>
+        AI-Powered Learning
+      </div>
+      <h1 class="animate delay-1">Learn to Code with Your AI Mentor</h1>
+      <p class="animate delay-2">
+        Transform your coding journey into an exciting adventure. Get AI-generated lessons, 
+        take interactive quizzes, run code directly in Discord, and level up your skills!
+      </p>
+      <div class="hero-buttons animate delay-3">
+        <a href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147483648&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+          <i class="fab fa-discord"></i> Add to Discord
+        </a>
+        <a href="#features" class="btn btn-secondary">
+          <i class="fas fa-arrow-down"></i> Learn More
+        </a>
+      </div>
+      <div class="hero-stats animate delay-3">
+        <div class="stat">
+          <div class="stat-value">15+</div>
+          <div class="stat-label">Languages Supported</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">29</div>
+          <div class="stat-label">Commands</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">∞</div>
+          <div class="stat-label">AI Topics</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="section-title">
+      <h2>🚀 Powerful Features</h2>
+      <p>Everything you need to become a better programmer, directly in Discord</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🖥️</div>
+        <h3>Live Code Execution</h3>
+        <p>Run Python, JavaScript, C++, and 12+ languages directly in Discord. See your output instantly!</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🤖</div>
+        <h3>AI-Generated Lessons</h3>
+        <p>Get personalized lessons on any programming topic powered by GPT-4. Learn at your own pace.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Interactive Quizzes</h3>
+        <p>Test your knowledge with AI-generated quizzes that adapt to your skill level.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>AI Code Review</h3>
+        <p>Get instant feedback on your code with bug detection, performance tips, and best practices.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎮</div>
+        <h3>Gamification System</h3>
+        <p>Earn XP, level up, unlock achievements, and compete on leaderboards with other learners.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🏆</div>
+        <h3>Certificates & Progress</h3>
+        <p>Generate beautiful certificates and visual progress charts to showcase your learning journey.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Commands Section -->
+  <section class="commands" id="commands">
+    <div class="section-title">
+      <h2>💻 Popular Commands</h2>
+      <p>Start learning with these powerful slash commands</p>
+    </div>
+    <div class="commands-grid">
+      <div class="command-card">
+        <span class="command-icon">📚</span>
+        <div class="command-info">
+          <h4>/learn</h4>
+          <p>Get AI-generated lessons on any topic</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">🖥️</span>
+        <div class="command-info">
+          <h4>/run</h4>
+          <p>Execute code in 15+ languages</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">❓</span>
+        <div class="command-info">
+          <h4>/quiz</h4>
+          <p>Take interactive quizzes</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">🔍</span>
+        <div class="command-info">
+          <h4>/review</h4>
+          <p>Get AI code review & feedback</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">🎓</span>
+        <div class="command-info">
+          <h4>/certificate</h4>
+          <p>Generate completion certificates</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">📊</span>
+        <div class="command-info">
+          <h4>/progress</h4>
+          <p>View your learning stats</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">🏆</span>
+        <div class="command-info">
+          <h4>/leaderboard</h4>
+          <p>See top learners</p>
+        </div>
+      </div>
+      <div class="command-card">
+        <span class="command-icon">🔥</span>
+        <div class="command-info">
+          <h4>/streak</h4>
+          <p>Check your daily streak</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works" id="how-it-works">
+    <div class="section-title">
+      <h2>🎯 How It Works</h2>
+      <p>Start learning in three simple steps</p>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Add to Your Server</h3>
+        <p>Click the button above to invite MentorAI to your Discord server. It takes just seconds!</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Start Learning</h3>
+        <p>Use /learn to get lessons, /quiz to test yourself, or /run to execute code instantly.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Level Up!</h3>
+        <p>Earn XP, maintain streaks, unlock achievements, and climb the leaderboard!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta">
+    <div class="cta-box">
+      <h2>🚀 Ready to Start Learning?</h2>
+      <p>Join thousands of developers improving their skills with MentorAI. It's free!</p>
+      <a href="https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=2147483648&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+        <i class="fab fa-discord"></i> Add MentorAI to Discord
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <a href="/" class="logo">
+          <div class="logo-icon">🎓</div>
+          MentorAI
+        </a>
+        <p>Your AI-powered coding mentor. Learn, practice, and level up your programming skills directly in Discord.</p>
+      </div>
+      <div class="footer-links">
+        <h4>Quick Links</h4>
+        <a href="#features">Features</a>
+        <a href="#commands">Commands</a>
+        <a href="#how-it-works">How It Works</a>
+      </div>
+      <div class="footer-links">
+        <h4>Legal</h4>
+        <a href="/privacy-policy.html">Privacy Policy</a>
+        <a href="/terms-of-service.html">Terms of Service</a>
+      </div>
+      <div class="footer-links">
+        <h4>Connect</h4>
+        <a href="https://github.com/yourusername/mentorai" target="_blank">
+          <i class="fab fa-github"></i> GitHub
+        </a>
+        <a href="https://discord.gg/yourserver" target="_blank">
+          <i class="fab fa-discord"></i> Support Server
+        </a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2025 MentorAI. Built for Discord Buildathon 2025. Made with ❤️ and AI.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Smooth scroll for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+          behavior: 'smooth'
+        });
+      });
+    });
+
+    // Animation on scroll
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.feature-card, .command-card, .step').forEach(el => {
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>

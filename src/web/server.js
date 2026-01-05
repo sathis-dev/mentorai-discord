@@ -57,6 +57,11 @@ app.use('/api', authMiddleware, apiRoutes);
 // Pages - serve directly with no cache
 app.get('/', (req, res) => {
   res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 

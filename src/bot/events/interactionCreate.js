@@ -127,6 +127,18 @@ async function handleButton(interaction) {
       return;
     }
     
+    // Handle run code buttons
+    if (category === 'run') {
+      await handleRunButton(interaction, action, params);
+      return;
+    }
+    
+    // Handle review buttons
+    if (category === 'review') {
+      await handleReviewButton(interaction, action, params);
+      return;
+    }
+    
     if (category === 'quiz') {
       await handleQuizButton(interaction, action, params);
     } else if (category === 'help') {
@@ -1318,6 +1330,19 @@ async function handleChallengeButton(interaction, action, params) {
 }
 
 async function handleAutocomplete(interaction) {
+  const command = interaction.client.commands.get(interaction.commandName);
+  
+  // If command has its own autocomplete handler, use it
+  if (command?.autocomplete) {
+    try {
+      await command.autocomplete(interaction);
+      return;
+    } catch (error) {
+      logger.error('Autocomplete error:', error);
+    }
+  }
+  
+  // Default topic autocomplete
   const focused = interaction.options.getFocused(true);
   if (focused.name === 'topic') {
     const topics = ['JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'HTML', 'CSS', 'SQL', 'Git', 'Docker', 'APIs', 'Algorithms'];
@@ -1326,7 +1351,133 @@ async function handleAutocomplete(interaction) {
   }
 }
 
+// Handle run code buttons
+async function handleRunButton(interaction, action, params) {
+  const { resolveLanguage, getCodeTemplate, LANGUAGES } = await import('../../services/codeExecutionService.js');
+  const { createLanguagesEmbed } = await import('../commands/run.js');
+  
+  if (action === 'again') {
+    // Show modal to enter new code
+    const language = params[0];
+    const langConfig = resolveLanguage(language);
+    
+    if (!langConfig) {
+      return interaction.reply({ content: '❌ Unknown language', ephemeral: true });
+    }
+    
+    const { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } = await import('discord.js');
+    
+    const modal = new ModalBuilder()
+      .setCustomId(`run_code_${langConfig.language}`)
+      .setTitle(`${langConfig.emoji} ${langConfig.name} Code`);
+
+    const codeInput = new TextInputBuilder()
+      .setCustomId('code')
+      .setLabel('Enter your code')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder(getCodeTemplate(language).substring(0, 100) + '...')
+      .setRequired(true)
+      .setMaxLength(4000);
+
+    const stdinInput = new TextInputBuilder()
+      .setCustomId('stdin')
+      .setLabel('Input (stdin) - Optional')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Input to pass to your program')
+      .setRequired(false)
+      .setMaxLength(1000);
+
+    modal.addComponents(
+      new ActionRowBuilder().addComponents(codeInput),
+      new ActionRowBuilder().addComponents(stdinInput)
+    );
+
+    return interaction.showModal(modal);
+  }
+  
+  if (action === 'template') {
+    // Run the template code
+    const language = params[0];
+    const langConfig = resolveLanguage(language);
+    
+    if (!langConfig) {
+      return interaction.reply({ content: '❌ Unknown language', ephemeral: true });
+    }
+    
+    await interaction.deferReply();
+    
+    const { executeAndRespond } = await import('../commands/run.js');
+    const template = getCodeTemplate(language);
+    await executeAndRespond(interaction, langConfig, template, '');
+    return;
+  }
+  
+  if (action === 'help') {
+    // Show languages list
+    const embed = createLanguagesEmbed();
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+}
+
+// Handle review buttons
+async function handleReviewButton(interaction, action, params) {
+  if (action === 'new') {
+    // Show language selection for new review
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.PRIMARY)
+      .setTitle('🔍 Start New Code Review')
+      .setDescription('Use `/review` command to submit new code for review!\n\nExample: `/review language:python`');
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+  
+  if (action === 'improve' || action === 'explain') {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.INFO)
+      .setTitle(action === 'improve' ? '✨ Improved Code' : '📖 Issue Explanation')
+      .setDescription('This feature is coming soon! For now, you can:\n\n• Use `/explain` to get explanations for any code concept\n• Use `/learn` to study the topics related to the issues found');
+    await interaction.reply({ embeds: [embed], ephemeral: true });
+    return;
+  }
+}
+
 async function handleModal(interaction) {
+  // Handle code execution modal
+  if (interaction.customId.startsWith('run_code_')) {
+    const language = interaction.customId.replace('run_code_', '');
+    const code = interaction.fields.getTextInputValue('code');
+    const stdin = interaction.fields.getTextInputValue('stdin') || '';
+    
+    await interaction.deferReply();
+    
+    const { executeAndRespond } = await import('../commands/run.js');
+    const { resolveLanguage } = await import('../../services/codeExecutionService.js');
+    const langConfig = resolveLanguage(language);
+    
+    if (langConfig) {
+      await executeAndRespond(interaction, langConfig, code, stdin);
+    } else {
+      await interaction.editReply({ content: '❌ Unknown language', ephemeral: true });
+    }
+    return;
+  }
+  
+  // Handle code review modal
+  if (interaction.customId.startsWith('review_code_')) {
+    const parts = interaction.customId.replace('review_code_', '').split('_');
+    const language = parts[0];
+    const focus = parts[1] || 'general';
+    const code = interaction.fields.getTextInputValue('code');
+    const context = interaction.fields.getTextInputValue('context') || '';
+    
+    await interaction.deferReply();
+    
+    const { performCodeReview } = await import('../commands/review.js');
+    await performCodeReview(interaction, language, focus, code, context);
+    return;
+  }
+  
   if (interaction.customId === 'modal_feedback') {
     const rating = interaction.fields.getTextInputValue('feedback_rating');
     logger.info('Feedback from ' + interaction.user.tag + ': ' + rating + ' stars');
