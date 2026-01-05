@@ -1,20 +1,28 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
 import { Quiz } from '../../database/models/Quiz.js';
 import { Lesson } from '../../database/models/Lesson.js';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  📊 V4 DESIGN SYSTEM - PREMIUM GLOBAL STATS
+//  Beautiful visualization of platform statistics
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export const data = new SlashCommandBuilder()
   .setName('stats')
-  .setDescription('View global MentorAI statistics');
+  .setDescription('📊 View global MentorAI platform statistics');
 
 export async function execute(interaction) {
   await interaction.deferReply();
   
   try {
+    // ═══ Gather Statistics ═══
     let userCount = 0;
     let quizCount = 0;
     let lessonCount = 0;
     let totalXP = 0;
+    let avgLevel = 0;
+    let topStreak = 0;
     
     try {
       userCount = await User.countDocuments() || 0;
@@ -22,39 +30,104 @@ export async function execute(interaction) {
       lessonCount = await Lesson.countDocuments() || 0;
       
       const xpResult = await User.aggregate([
-        { $group: { _id: null, total: { $sum: '$xp' } } }
+        { $group: { _id: null, total: { $sum: '$xp' }, avgLvl: { $avg: '$level' }, maxStreak: { $max: '$streak' } } }
       ]);
       totalXP = xpResult[0]?.total || 0;
+      avgLevel = Math.round(xpResult[0]?.avgLvl || 1);
+      topStreak = xpResult[0]?.maxStreak || 0;
     } catch (dbError) {
       console.error('Database error in stats:', dbError);
     }
-    
+
+    const serverCount = interaction.client.guilds.cache.size;
+    const uptime = formatUptime(interaction.client.uptime);
+
+    // ═══ Create Stats Panel ═══
+    const statsPanel = `\`\`\`ansi
+\u001b[1;36m╔═══════════════════════════════════════════════════╗\u001b[0m
+\u001b[1;36m║\u001b[0m          \u001b[1;37m📊 MENTORAI GLOBAL STATISTICS\u001b[0m          \u001b[1;36m║\u001b[0m
+\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  \u001b[1;33m👥 COMMUNITY\u001b[0m                                    \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  ├─ Total Learners:    \u001b[1;32m${String(userCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  ├─ Active Servers:    \u001b[1;35m${String(serverCount).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  └─ Average Level:     \u001b[1;36m${String(avgLevel).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  \u001b[1;33m📚 CONTENT\u001b[0m                                      \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  ├─ Quizzes Created:   \u001b[1;34m${String(quizCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  └─ Lessons Generated: \u001b[1;34m${String(lessonCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  \u001b[1;33m✨ ACHIEVEMENTS\u001b[0m                                 \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  ├─ Total XP Earned:   \u001b[1;33m${String(totalXP.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m  └─ Highest Streak:    \u001b[1;31m${String(topStreak + ' days').padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
+\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
+\u001b[1;36m╚═══════════════════════════════════════════════════╝\u001b[0m
+\`\`\``;
+
+    // ═══ Main Embed ═══
     const embed = new EmbedBuilder()
-      .setTitle('📊 MentorAI Global Stats')
       .setColor(0x5865F2)
+      .setTitle('📊 MentorAI Platform Statistics')
+      .setDescription(statsPanel)
       .addFields(
-        { name: '👥 Total Learners', value: `${userCount.toLocaleString()}`, inline: true },
-        { name: '📝 Quizzes Created', value: `${quizCount.toLocaleString()}`, inline: true },
-        { name: '📚 Lessons Generated', value: `${lessonCount.toLocaleString()}`, inline: true },
-        { name: '✨ Total XP Earned', value: `${totalXP.toLocaleString()}`, inline: true },
-        { name: '🌐 Servers', value: `${interaction.client.guilds.cache.size}`, inline: true },
-        { name: '⏱️ Uptime', value: formatUptime(interaction.client.uptime), inline: true },
+        {
+          name: '⏱️ Bot Status',
+          value: `\`\`\`\n🟢 Online • Uptime: ${uptime}\n\`\`\``,
+          inline: false
+        },
+        {
+          name: '🌟 Fun Facts',
+          value: generateFunFact(userCount, totalXP, quizCount, lessonCount),
+          inline: false
+        }
       )
-      .setTimestamp()
-      .setFooter({ text: '🎓 MentorAI - Learn & Level Up!' });
+      .setFooter({ 
+        text: '🎓 MentorAI • Growing Together',
+        iconURL: interaction.client.user?.displayAvatarURL()
+      })
+      .setTimestamp();
+
+    // ═══ Action Buttons ═══
+    const buttons = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('exec_leaderboard')
+        .setLabel('Leaderboard')
+        .setEmoji('🏆')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('exec_profile')
+        .setLabel('My Profile')
+        .setEmoji('👤')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setLabel('Invite Bot')
+        .setEmoji('📨')
+        .setStyle(ButtonStyle.Link)
+        .setURL('https://discord.com/oauth2/authorize?client_id=' + interaction.client.user.id + '&permissions=277025770560&scope=bot%20applications.commands')
+    );
     
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed], components: [buttons] });
+    
   } catch (error) {
     console.error('Stats command error:', error);
     
     const errorEmbed = new EmbedBuilder()
       .setTitle('❌ Error')
-      .setDescription('Failed to load stats. Please try again!')
-      .setColor(0xED4245);
+      .setDescription('Failed to load platform stats. Please try again!')
+      .setColor(0xED4245)
+      .setFooter({ text: '🎓 MentorAI' });
     
     await interaction.editReply({ embeds: [errorEmbed] });
   }
 }
+
+// ═══════════════════════════════════════════════════════════
+// 🛠️ HELPER FUNCTIONS
+// ═══════════════════════════════════════════════════════════
 
 function formatUptime(ms) {
   if (!ms) return 'N/A';
@@ -64,8 +137,33 @@ function formatUptime(ms) {
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
   
-  if (days > 0) return `${days}d ${hours % 24}h`;
+  if (days > 0) return `${days}d ${hours % 24}h ${minutes % 60}m`;
   if (hours > 0) return `${hours}h ${minutes % 60}m`;
   if (minutes > 0) return `${minutes}m ${seconds % 60}s`;
   return `${seconds}s`;
+}
+
+function generateFunFact(users, xp, quizzes, lessons) {
+  const facts = [];
+  
+  if (xp > 1000000) {
+    facts.push(`💫 Over **${(xp / 1000000).toFixed(1)}M XP** earned collectively!`);
+  } else if (xp > 100000) {
+    facts.push(`💫 Over **${(xp / 1000).toFixed(0)}K XP** earned collectively!`);
+  } else {
+    facts.push(`💫 Community has earned **${xp.toLocaleString()} XP** together!`);
+  }
+  
+  if (quizzes > 100) {
+    facts.push(`📝 That's **${(quizzes / users).toFixed(1)}** quizzes per learner on average!`);
+  }
+  
+  if (lessons > 50) {
+    facts.push(`📚 **${lessons}** unique lessons generated by AI!`);
+  }
+  
+  const avgXP = users > 0 ? Math.round(xp / users) : 0;
+  facts.push(`✨ Average learner has **${avgXP.toLocaleString()} XP**!`);
+  
+  return facts.slice(0, 3).join('\n') || '🚀 Growing every day!';
 }

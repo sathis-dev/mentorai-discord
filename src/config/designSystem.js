@@ -153,70 +153,63 @@ export function createPremiumEmbed(options = {}) {
   return embed;
 }
 
-// Quiz Question Embed with Premium UI
+// Quiz Question Embed with Premium V4 UI
 export function createQuizQuestionEmbed(question, questionNum, totalQuestions, topic, difficulty) {
   const difficultyColors = {
-    easy: 0x57F287,
-    medium: 0xFEE75C,
-    hard: 0xED4245
+    easy: 0x22C55E,
+    medium: 0xF59E0B,
+    hard: 0xEF4444
   };
   
   const difficultyInfo = {
-    easy: { emoji: '🟢', label: 'Easy', xp: '+20 XP' },
-    medium: { emoji: '🟡', label: 'Medium', xp: '+25 XP' },
-    hard: { emoji: '🔴', label: 'Hard', xp: '+35 XP' }
+    easy: { emoji: '🟢', label: 'EASY', xp: '+20 XP', ansi: '\u001b[1;32m' },
+    medium: { emoji: '🟡', label: 'MEDIUM', xp: '+25 XP', ansi: '\u001b[1;33m' },
+    hard: { emoji: '🔴', label: 'HARD', xp: '+35 XP', ansi: '\u001b[1;31m' }
   };
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
-  const progressBar = createProgressBar(questionNum, totalQuestions, 10, 'blocks');
+  const progressPercent = Math.round((questionNum / totalQuestions) * 100);
+  const progressBar = createProgressBar(questionNum, totalQuestions, 12, 'blocks');
   
-  // Format question text - handle code blocks
+  // Format question text
   let questionText = question.question || 'Loading question...';
-  const hasCode = questionText.includes('```') || questionText.includes('`');
   
-  // Create styled question display
-  const questionDisplay = hasCode 
-    ? questionText 
-    : `\`\`\`\n${questionText}\n\`\`\``;
+  // Create styled header
+  const header = `\`\`\`ansi
+\u001b[1;35m╔══════════════════════════════════════════════════╗\u001b[0m
+\u001b[1;35m║\u001b[0m  ${diffData.ansi}${diffData.emoji} ${diffData.label}\u001b[0m • Question \u001b[1;37m${questionNum}/${totalQuestions}\u001b[0m • ${diffData.ansi}${diffData.xp}\u001b[0m    \u001b[1;35m║\u001b[0m
+\u001b[1;35m╚══════════════════════════════════════════════════╝\u001b[0m
+\`\`\``;
 
   const embed = new EmbedBuilder()
     .setColor(difficultyColors[difficulty] || COLORS.QUIZ_PINK)
-    .setAuthor({ 
-      name: `📚 ${topic} Quiz`, 
-      iconURL: 'https://cdn.discordapp.com/emojis/1234567890.png' 
-    })
-    .setTitle(`❓ Question ${questionNum} of ${totalQuestions}`)
-    .setDescription(`
-${questionDisplay}
-
-${diffData.emoji} **Difficulty:** ${diffData.label} | ${diffData.xp}
-${progressBar} \`${Math.round((questionNum/totalQuestions)*100)}%\`
-`)
+    .setTitle(`📚 ${topic}`)
+    .setDescription(`${header}\n**❓ ${questionText}**\n\n${progressBar} \`${progressPercent}%\``)
     .addFields(
       {
-        name: '🅰️ Option A',
-        value: `\`\`\`${question.options?.[0] || 'N/A'}\`\`\``,
+        name: '🅰️',
+        value: `\`${question.options?.[0] || 'N/A'}\``,
         inline: true
       },
       {
-        name: '🅱️ Option B',
-        value: `\`\`\`${question.options?.[1] || 'N/A'}\`\`\``,
+        name: '🅱️',
+        value: `\`${question.options?.[1] || 'N/A'}\``,
         inline: true
       },
       { name: '\u200B', value: '\u200B', inline: false },
       {
-        name: '🅲 Option C',
-        value: `\`\`\`${question.options?.[2] || 'N/A'}\`\`\``,
+        name: '🅲',
+        value: `\`${question.options?.[2] || 'N/A'}\``,
         inline: true
       },
       {
-        name: '🅳 Option D',
-        value: `\`\`\`${question.options?.[3] || 'N/A'}\`\`\``,
+        name: '🅳',
+        value: `\`${question.options?.[3] || 'N/A'}\``,
         inline: true
       }
     )
     .setFooter({ 
-      text: '🎓 MentorAI | Click A, B, C, or D to answer • Think carefully!',
+      text: '🎓 MentorAI • Select A, B, C, or D to answer',
     })
     .setTimestamp();
   
@@ -451,41 +444,73 @@ export function createProgressEmbed(user, avatarURL) {
   return embed;
 }
 
-// Leaderboard Embed
+// Leaderboard Embed - Premium V4 Styling
 export function createLeaderboardEmbed(users, page = 1) {
   const medals = ['🥇', '🥈', '🥉'];
   const startRank = (page - 1) * 10;
   
-  let description = '';
+  // Create header
+  let description = '```ansi\n';
+  description += '\u001b[1;33m╔═══════════════════════════════════════╗\u001b[0m\n';
+  description += '\u001b[1;33m║\u001b[0m      \u001b[1;37m🏆 GLOBAL LEADERBOARD 🏆\u001b[0m        \u001b[1;33m║\u001b[0m\n';
+  description += '\u001b[1;33m╚═══════════════════════════════════════╝\u001b[0m\n';
+  description += '```\n\n';
+  
   users.forEach((user, index) => {
     const rank = startRank + index + 1;
-    const medal = medals[rank - 1] || '**#' + rank + '**';
+    const medal = medals[rank - 1] || `**#${rank}**`;
     const tierEmoji = getTierEmoji(user.level || 1);
+    const streakDisplay = (user.streak || 0) > 0 ? `🔥${user.streak}` : '';
     
-    description += medal + ' ' + tierEmoji + ' **' + (user.username || 'Unknown') + '**\n';
-    description += '   └ Level **' + (user.level || 1) + '** • **' + (user.xp || 0).toLocaleString() + '** XP • 🔥 **' + (user.streak || 0) + '**\n\n';
+    if (rank <= 3) {
+      // Top 3 with special styling
+      description += `${medal} ${tierEmoji} **${user.username || 'Unknown'}**\n`;
+      description += `   ├─ Level **${user.level || 1}** • **${(user.xp || 0).toLocaleString()}** XP\n`;
+      description += `   └─ ${streakDisplay || 'No streak'}\n\n`;
+    } else {
+      // Regular entries
+      description += `\`#${String(rank).padStart(2, '0')}\` ${tierEmoji} **${user.username || 'Unknown'}** — Lv.${user.level || 1} • ${(user.xp || 0).toLocaleString()} XP ${streakDisplay}\n`;
+    }
   });
   
+  if (!users || users.length === 0) {
+    description += '> *No users yet! Be the first to start learning!*';
+  }
+  
   const embed = new EmbedBuilder()
-    .setTitle('🏆 Global Leaderboard')
+    .setTitle('🏆 Top Learners')
     .setColor(COLORS.XP_GOLD)
-    .setDescription(description || 'No users yet! Be the first to start learning!')
-    .setFooter({ text: '🎓 MentorAI | Page ' + page })
+    .setDescription(description)
+    .addFields({
+      name: '💡 How to Climb',
+      value: '> Complete quizzes, lessons, and maintain streaks to earn XP!',
+      inline: false
+    })
+    .setFooter({ text: `🎓 MentorAI • Page ${page} • Keep learning!` })
     .setTimestamp();
   
   return embed;
 }
 
-// Daily Bonus Embed
+// Daily Bonus Embed - Premium V4 Styling
 export function createDailyBonusEmbed(result, motivation, dailyTip) {
+  // Create XP breakdown panel
+  let xpPanel = '```ansi\n';
+  xpPanel += '\u001b[1;33m╔═══════════════════════════════════════╗\u001b[0m\n';
+  xpPanel += '\u001b[1;33m║\u001b[0m     \u001b[1;37m🎁 DAILY BONUS CLAIMED! 🎁\u001b[0m       \u001b[1;33m║\u001b[0m\n';
+  xpPanel += '\u001b[1;33m╠═══════════════════════════════════════╣\u001b[0m\n';
+  xpPanel += `\u001b[1;33m║\u001b[0m  💰 Base XP:       \u001b[1;32m+${String(result.baseXp || 75).padStart(4)}\u001b[0m           \u001b[1;33m║\u001b[0m\n`;
+  xpPanel += `\u001b[1;33m║\u001b[0m  🔥 Streak Bonus:  \u001b[1;31m+${String(result.streakBonus || 0).padStart(4)}\u001b[0m           \u001b[1;33m║\u001b[0m\n`;
+  xpPanel += '\u001b[1;33m╠═══════════════════════════════════════╣\u001b[0m\n';
+  xpPanel += `\u001b[1;33m║\u001b[0m  ✨ TOTAL EARNED:  \u001b[1;33m+${String(result.xpEarned).padStart(4)} XP\u001b[0m        \u001b[1;33m║\u001b[0m\n`;
+  xpPanel += '\u001b[1;33m╚═══════════════════════════════════════╝\u001b[0m\n';
+  xpPanel += '```';
+
   const embed = new EmbedBuilder()
     .setTitle('🎁 Daily Bonus Claimed!')
     .setColor(COLORS.XP_GOLD)
-    .setDescription('```diff\n+ Welcome back! Here are your rewards:\n```')
+    .setDescription(xpPanel)
     .addFields(
-      { name: '✨ Base XP', value: '+' + (result.baseXp || 75), inline: true },
-      { name: '🔥 Streak Bonus', value: '+' + (result.streakBonus || 0), inline: true },
-      { name: '💰 Total XP', value: '**+' + result.xpEarned + '**', inline: true },
       { 
         name: '🔥 Current Streak', 
         value: createStreakDisplay(result.streak), 
@@ -496,7 +521,7 @@ export function createDailyBonusEmbed(result, motivation, dailyTip) {
   if (result.leveledUp) {
     embed.addFields({
       name: '🆙 LEVEL UP!',
-      value: '```diff\n+ Congratulations! You reached Level ' + result.newLevel + '!\n```',
+      value: '```ansi\n\u001b[1;32m🎉 Congratulations! You reached Level ' + result.newLevel + '! 🎉\u001b[0m\n```',
       inline: false
     });
   }

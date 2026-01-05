@@ -139,6 +139,19 @@ async function handleButton(interaction) {
       return;
     }
     
+    // NEW V4: Handle help_action buttons from new help menu
+    if (category === 'help' && action === 'action') {
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleButton(interaction, params[0]);
+      return;
+    }
+    
+    // NEW V4: Handle exec_ buttons (execute commands directly)
+    if (category === 'exec') {
+      await handleExecButton(interaction, action, params);
+      return;
+    }
+    
     if (category === 'quiz') {
       await handleQuizButton(interaction, action, params);
     } else if (category === 'help') {
@@ -307,6 +320,10 @@ async function handleSelectMenu(interaction) {
       await handleHelpCategorySelect(interaction, value);
     } else if (customId === 'help_category') {
       // NEW: Handle new help category menu
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleCategorySelect(interaction, value);
+    } else if (customId === 'help_category_v4') {
+      // NEW V4: Handle help category menu from V4 design
       const helpModule = await import('../commands/help.js');
       await helpModule.handleCategorySelect(interaction, value);
     } else if (customId === 'quiz_topic_select') {
@@ -825,6 +842,94 @@ async function executeCommandFromButton(interaction, commandName) {
   }
 }
 
+// NEW V4: Handle exec_ buttons from V4 help menu
+async function handleExecButton(interaction, action, params) {
+  // Map of actions to command names
+  const commandMap = {
+    'daily': 'daily',
+    'profile': 'profile',
+    'progress': 'progress',
+    'streak': 'streak',
+    'achievements': 'achievements',
+    'leaderboard': 'leaderboard',
+    'topics': 'topics',
+    'help': 'help',
+    'stats': 'stats',
+    'challenge': 'challenge',
+    'weekly': 'weekly',
+    'funfact': 'funfact',
+    'path': 'path',
+    'share': 'share'
+  };
+  
+  // Special commands that need topic selection
+  if (action === 'quiz' || action === 'learn') {
+    if (action === 'quiz') {
+      return showQuizTopicSelector(interaction);
+    } else {
+      return showLearnTopicSelector(interaction);
+    }
+  }
+  
+  const commandName = commandMap[action];
+  if (!commandName) {
+    return interaction.reply({ 
+      content: `✨ Use \`/${action}\` to access this feature!`, 
+      ephemeral: true 
+    });
+  }
+  
+  const command = interaction.client.commands.get(commandName);
+  if (!command) {
+    return interaction.reply({ 
+      content: `❌ Command not found. Use \`/${commandName}\` directly.`, 
+      ephemeral: true
+    });
+  }
+  
+  try {
+    await interaction.deferReply();
+    let hasResponded = false;
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: commandName,
+      options: {
+        getString: () => null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null,
+        getBoolean: () => null
+      },
+      replied: true,
+      deferred: true,
+      reply: async (opts) => {
+        if (hasResponded) return interaction.followUp(opts);
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      deferReply: async () => {},
+      editReply: async (opts) => {
+        hasResponded = true;
+        return interaction.editReply(opts);
+      },
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await command.execute(fakeInteraction);
+  } catch (error) {
+    logger.error(`Exec button error (${action}):`, error);
+    if (interaction.deferred) {
+      await interaction.editReply({ content: `❌ Failed. Try \`/${commandName}\` directly.` });
+    } else {
+      await interaction.reply({ content: `❌ Failed. Try \`/${commandName}\` directly.`, ephemeral: true });
+    }
+  }
+}
+
 function createHelpComponents() {
   const categoryMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -1158,6 +1263,15 @@ async function handleProfileButton(interaction, action, params) {
   const username = interaction.user.username;
   
   try {
+    // NEW V4: Use profile module's handleButton for V4 actions
+    if (action === 'achievements' || action === 'stats' || action === 'share') {
+      const profileModule = await import('../commands/profile.js');
+      if (profileModule.handleButton) {
+        await profileModule.handleButton(interaction, action, params);
+        return;
+      }
+    }
+    
     const user = await getOrCreateUser(userId, username);
     
     switch(action) {
