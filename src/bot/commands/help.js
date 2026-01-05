@@ -50,23 +50,17 @@ export async function execute(interaction) {
       .setTitle(`${ICONS.LOGO} Welcome, ${interaction.user.username}!`)
       .setDescription(
         `${tier.emoji} **${tier.title}** • Level ${user.level || 1}\n\n` +
-        `### 🌟 Your AI-Powered Learning Journey\n\n` +
+        `**🌟 Your AI-Powered Learning Journey**\n` +
         `MentorAI transforms coding education into an exciting adventure with:\n\n` +
-        `${ICONS.BRAIN} **AI-Generated Lessons** — Learn any topic\n` +
-        `${ICONS.TARGET} **Smart Quizzes** — Test your knowledge\n` +
-        `${ICONS.XP} **XP & Levels** — Track your progress\n` +
+        `${ICONS.BRAIN} **AI Lessons** — Learn any topic\n` +
+        `${ICONS.TARGET} **Quizzes** — Test knowledge\n` +
+        `${ICONS.XP} **XP & Levels** — Track progress\n` +
         `${ICONS.STREAK} **Streaks** — Stay consistent\n` +
         `${ICONS.TROPHY} **Achievements** — Collect badges\n` +
-        `${ICONS.SWORD} **Quiz Battles** — Challenge friends`
+        `${ICONS.SWORD} **Battles** — Challenge friends\n\n` +
+        `**🚀 Quick Start** — Select an action below!`
       )
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .addFields(
-        {
-          name: `${LAYOUT.DIVIDER_THIN}`,
-          value: '**🚀 Quick Start** — Select an action below!',
-          inline: false
-        }
-      )
       .setFooter({ 
         text: `${ICONS.LOGO} MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
         iconURL: interaction.user.displayAvatarURL()
@@ -377,16 +371,16 @@ async function showProfilePanel(interaction) {
     .setTitle(`${tier.emoji} ${interaction.user.username}'s Profile`)
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
     .setDescription(
-      `${tier.aura}\n**${tier.title}**\n${tier.aura}\n\n` +
-      `**Level ${user.level || 1}** Progress:\n${xpProgress}`
+      `**${tier.title}** • Level ${user.level || 1}\n\n` +
+      `**XP Progress:**\n${xpProgress}`
     )
     .addFields(
       { name: '⭐ Level', value: `**${user.level || 1}**`, inline: true },
-      { name: '💎 Total XP', value: `**${(user.totalXp || user.xp || 0).toLocaleString()}**`, inline: true },
+      { name: '💎 XP', value: `**${(user.xp || 0).toLocaleString()}**`, inline: true },
       { name: '🔥 Streak', value: `**${user.streak || 0}** days`, inline: true },
       { name: '📝 Quizzes', value: `**${user.quizzesTaken || 0}**`, inline: true },
       { name: '🎯 Accuracy', value: `**${user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0}%**`, inline: true },
-      { name: '🏆 Achievements', value: `**${user.achievements?.length || 0}**`, inline: true }
+      { name: '🏆 Badges', value: `**${user.achievements?.length || 0}**`, inline: true }
     )
     .setFooter({ text: `${ICONS.LOGO} MentorAI • ${tier.badge}` });
 
@@ -603,23 +597,17 @@ async function showMainMenu(interaction) {
       .setTitle(`${ICONS.LOGO} Welcome, ${interaction.user.username}!`)
       .setDescription(
         `${tier.emoji} **${tier.title}** • Level ${user.level || 1}\n\n` +
-        `### 🌟 Your AI-Powered Learning Journey\n\n` +
+        `**🌟 Your AI-Powered Learning Journey**\n` +
         `MentorAI transforms coding education into an exciting adventure with:\n\n` +
-        `${ICONS.BRAIN} **AI-Generated Lessons** — Learn any topic\n` +
-        `${ICONS.TARGET} **Smart Quizzes** — Test your knowledge\n` +
-        `${ICONS.XP} **XP & Levels** — Track your progress\n` +
+        `${ICONS.BRAIN} **AI Lessons** — Learn any topic\n` +
+        `${ICONS.TARGET} **Quizzes** — Test knowledge\n` +
+        `${ICONS.XP} **XP & Levels** — Track progress\n` +
         `${ICONS.STREAK} **Streaks** — Stay consistent\n` +
         `${ICONS.TROPHY} **Achievements** — Collect badges\n` +
-        `${ICONS.SWORD} **Quiz Battles** — Challenge friends`
+        `${ICONS.SWORD} **Battles** — Challenge friends\n\n` +
+        `**🚀 Quick Start** — Select an action below!`
       )
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .addFields(
-        {
-          name: `${LAYOUT.DIVIDER_THIN}`,
-          value: '**🚀 Quick Start** — Select an action below!',
-          inline: false
-        }
-      )
       .setFooter({ 
         text: `${ICONS.LOGO} MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
         iconURL: interaction.user.displayAvatarURL()
