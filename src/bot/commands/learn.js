@@ -1,6 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getLesson, getRecommendedTopic } from '../../services/learningService.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
+import { 
+  BRAND, COLORS, EMOJIS, VISUALS, 
+  getRank, formatNumber, getTopicEmoji, getTopicColor 
+} from '../../config/brandSystem.js';
+import { animateLoading } from '../../utils/animations.js';
 
 export const data = new SlashCommandBuilder()
   .setName('learn')
@@ -24,34 +29,43 @@ export async function execute(interaction) {
 
   const topic = interaction.options.getString('topic');
   const difficulty = interaction.options.getString('difficulty') || 'beginner';
+  const topicEmoji = getTopicEmoji(topic);
+  const topicColor = getTopicColor(topic);
 
   try {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     await user.updateStreak();
 
-    // Show loading message
-    const loadingEmbed = new EmbedBuilder()
-      .setTitle('📚 Generating Your Personalized Lesson...')
-      .setDescription('🤖 **AI is crafting a lesson just for you!**\n\n' +
-        '**Topic:** ' + topic + '\n' +
-        '**Difficulty:** ' + difficulty.charAt(0).toUpperCase() + difficulty.slice(1) + '\n\n' +
-        '_This usually takes 5-10 seconds..._')
-      .setColor(0x5865F2)
-      .setFooter({ text: '🎓 MentorAI - Powered by GPT' });
-
-    await interaction.editReply({ embeds: [loadingEmbed] });
+    // Animated loading sequence
+    await animateLoading(interaction, {
+      title: `${EMOJIS.learn} Generating Your Lesson`,
+      color: topicColor,
+      duration: 4000,
+      style: 'brain',
+      stages: [
+        { text: 'Connecting to AI...', status: `${EMOJIS.lightning} Initializing` },
+        { text: `Analyzing topic: **${topic}**`, status: `${EMOJIS.brain} Processing` },
+        { text: `Crafting ${difficulty} lesson...`, status: `${EMOJIS.code} Creating` },
+        { text: 'Adding examples & exercises...', status: `${EMOJIS.sparkle} Finalizing` }
+      ]
+    });
 
     // Generate lesson with AI
     const result = await getLesson(topic, difficulty, user);
     const lesson = result.lesson;
+    const rank = getRank(user.level || 1);
 
     // Create main lesson embed
     const lessonEmbed = new EmbedBuilder()
-      .setTitle('📚 ' + (lesson.title || topic))
-      .setColor(0x3498DB)
-      .setDescription(lesson.introduction || '')
+      .setTitle(`${topicEmoji} ${lesson.title || topic}`)
+      .setColor(topicColor)
+      .setDescription(
+        `${VISUALS.separators.fancy}\n` +
+        `${lesson.introduction || ''}\n` +
+        `${VISUALS.separators.fancy}`
+      )
       .setTimestamp()
-      .setFooter({ text: '🎓 MentorAI | +' + result.xpEarned + ' XP earned!' });
+      .setFooter({ text: `${EMOJIS.brain} ${BRAND.name} | +${formatNumber(result.xpEarned)} XP earned!` });
 
     // Add main content
     if (lesson.content) {
@@ -59,7 +73,7 @@ export async function execute(interaction) {
         ? lesson.content.substring(0, 1000) + '...' 
         : lesson.content;
       lessonEmbed.addFields({
-        name: '📖 Lesson Content',
+        name: `${EMOJIS.learn} Lesson Content`,
         value: content,
         inline: false
       });
@@ -68,8 +82,8 @@ export async function execute(interaction) {
     // Add key points
     if (lesson.keyPoints && lesson.keyPoints.length > 0) {
       lessonEmbed.addFields({
-        name: '🔑 Key Points',
-        value: lesson.keyPoints.map(p => '• ' + p).join('\n'),
+        name: `${EMOJIS.target} Key Points`,
+        value: lesson.keyPoints.map(p => `${EMOJIS.check} ${p}`).join('\n'),
         inline: false
       });
     }
@@ -79,12 +93,12 @@ export async function execute(interaction) {
 
     if (lesson.codeExample && lesson.codeExample.code) {
       const codeEmbed = new EmbedBuilder()
-        .setTitle('💻 Code Example')
-        .setColor(0x2ECC71)
+        .setTitle(`${EMOJIS.code} Code Example`)
+        .setColor(COLORS.QUIZ_GREEN)
         .setDescription('```' + (lesson.codeExample.language || 'javascript') + '\n' + 
           lesson.codeExample.code.substring(0, 1500) + '\n```')
         .addFields({
-          name: '📝 Explanation',
+          name: `${EMOJIS.tip} Explanation`,
           value: lesson.codeExample.explanation || 'Study this example carefully!',
           inline: false
         });
@@ -94,18 +108,18 @@ export async function execute(interaction) {
     // Add practice challenge if exists
     if (lesson.practiceChallenge) {
       const challengeEmbed = new EmbedBuilder()
-        .setTitle('🎯 Practice Challenge')
-        .setColor(0xE91E63)
-        .setDescription('**' + lesson.practiceChallenge.task + '**')
+        .setTitle(`${EMOJIS.quiz} Practice Challenge`)
+        .setColor(COLORS.QUIZ_PINK)
+        .setDescription(`**${lesson.practiceChallenge.task}**`)
         .addFields({
-          name: '💡 Hint',
+          name: `${EMOJIS.tip} Hint`,
           value: lesson.practiceChallenge.hint || 'Take your time and think it through!',
           inline: false
         });
       
       if (lesson.nextSteps) {
         challengeEmbed.addFields({
-          name: '🚀 Next Steps',
+          name: `${EMOJIS.rocket} Next Steps`,
           value: lesson.nextSteps,
           inline: false
         });
@@ -113,7 +127,7 @@ export async function execute(interaction) {
 
       if (lesson.funFact) {
         challengeEmbed.addFields({
-          name: '🎉 Fun Fact',
+          name: `${EMOJIS.party} Fun Fact`,
           value: lesson.funFact,
           inline: false
         });
@@ -127,15 +141,18 @@ export async function execute(interaction) {
     const actionRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('quiz_start_' + safeTopic)
-        .setLabel('🎯 Take Quiz')
+        .setLabel('Take Quiz')
+        .setEmoji(EMOJIS.quiz)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('lesson_next_' + safeTopic)
-        .setLabel('📚 Next Lesson')
+        .setLabel('Next Lesson')
+        .setEmoji(EMOJIS.learn)
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('help_main')
-        .setLabel('🏠 Menu')
+        .setLabel('Menu')
+        .setEmoji(EMOJIS.home)
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -157,12 +174,16 @@ export async function execute(interaction) {
 
     // Send level up notification if applicable
     if (levelResult.leveledUp) {
+      const newRank = getRank(levelResult.newLevel);
       const levelUpEmbed = new EmbedBuilder()
-        .setTitle('🎉 LEVEL UP!')
-        .setColor(0xFFD700)
-        .setDescription('**Congratulations ' + interaction.user.username + '!**\n\n' +
-          'You reached **Level ' + levelResult.newLevel + '**! 🌟\n\n' +
-          'Keep learning to unlock more achievements!')
+        .setTitle(`${EMOJIS.levelup} LEVEL UP!`)
+        .setColor(COLORS.XP_GOLD)
+        .setDescription(
+          `**Congratulations ${interaction.user.username}!**\n\n` +
+          `You reached **Level ${levelResult.newLevel}**! ${EMOJIS.party}\n` +
+          `${newRank.emoji} **${newRank.name}**\n\n` +
+          `Keep learning to unlock more achievements!`
+        )
         .setTimestamp();
       
       await interaction.followUp({ embeds: [levelUpEmbed] });
@@ -172,16 +193,18 @@ export async function execute(interaction) {
     console.error('Learn command error:', error);
 
     const errorEmbed = new EmbedBuilder()
-      .setTitle('❌ Lesson Generation Failed')
-      .setDescription('Sorry, I could not generate a lesson right now.\n\n' +
-        '**Possible reasons:**\n' +
-        '• AI service is temporarily busy\n' +
-        '• The topic might be too specific\n\n' +
-        '**Try:**\n' +
-        '• A more common topic like "JavaScript" or "Python"\n' +
-        '• Waiting a moment and trying again')
-      .setColor(0xED4245)
-      .setFooter({ text: '🎓 MentorAI' });
+      .setTitle(`${EMOJIS.error} Lesson Generation Failed`)
+      .setDescription(
+        `Sorry, I could not generate a lesson right now.\n\n` +
+        `**Possible reasons:**\n` +
+        `• AI service is temporarily busy\n` +
+        `• The topic might be too specific\n\n` +
+        `**Try:**\n` +
+        `• A more common topic like "JavaScript" or "Python"\n` +
+        `• Waiting a moment and trying again`
+      )
+      .setColor(COLORS.ERROR)
+      .setFooter({ text: `${EMOJIS.brain} ${BRAND.name}` });
 
     await interaction.editReply({ embeds: [errorEmbed] });
   }

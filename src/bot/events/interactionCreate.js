@@ -146,6 +146,19 @@ async function handleButton(interaction) {
       return;
     }
     
+    // NEW V5: Handle help_quickstart buttons for new user onboarding
+    if (category === 'help' && action === 'quickstart') {
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleQuickStartButton(interaction, params[0]);
+      return;
+    }
+    
+    // NEW V5: Handle help_topic selection from new user flow  
+    if (category === 'help' && action === 'topic') {
+      // This is handled in select menu handler
+      return;
+    }
+    
     // NEW V4: Handle exec_ buttons (execute commands directly)
     if (category === 'exec') {
       await handleExecButton(interaction, action, params);
@@ -1568,7 +1581,14 @@ async function shareProfile(interaction, user) {
 }
 
 async function handleLeaderboardButton(interaction, action, params) {
-  // Execute leaderboard command directly
+  // Handle pagination
+  if (action === 'page') {
+    const { handleButton } = await import('../commands/leaderboard.js');
+    await handleButton(interaction, action, params);
+    return;
+  }
+  
+  // Default: Execute leaderboard command directly
   await executeCommandFromButton(interaction, 'leaderboard');
 }
 

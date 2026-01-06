@@ -2,11 +2,12 @@ import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { createQuizSession, getCurrentQuestion } from '../../services/quizService.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { 
+  BRAND, COLORS, EMOJIS, VISUALS,
+  getTopicEmoji, getDifficultyColor, getDifficultyEmoji,
   createQuizQuestionEmbed, 
   createQuizAnswerButtons, 
-  createQuizControlButtons,
-  COLORS 
-} from '../../config/designSystem.js';
+  createQuizControlButtons
+} from '../../config/brandSystem.js';
 import { animateLoading, LOADING_FRAMES } from '../../utils/animations.js';
 
 export const data = new SlashCommandBuilder()
@@ -87,23 +88,26 @@ export async function execute(interaction) {
           { name: '💡 Try These Topics', value: '`JavaScript` `Python` `React` `Node.js` `HTML` `CSS`', inline: false },
           { name: '🔧 Or Try', value: '• A more specific topic\n• Different difficulty\n• Fewer questions', inline: false }
         )
-        .setFooter({ text: '🎓 MentorAI' });
+        .setFooter({ text: `${EMOJIS.brain} ${BRAND.name}` });
 
       await interaction.editReply({ embeds: [errorEmbed] });
       return;
     }
 
     // Show ready message briefly
+    const topicEmoji = getTopicEmoji(topic);
+    const diffEmoji = getDifficultyEmoji(difficulty);
+    
     const readyEmbed = new EmbedBuilder()
-      .setTitle('✅ Quiz Ready!')
+      .setTitle(`${EMOJIS.check} Quiz Ready!`)
       .setColor(COLORS.SUCCESS)
-      .setDescription('```\n🎮 Get ready to test your knowledge!\n```')
+      .setDescription(`\`\`\`\n${EMOJIS.quiz} Get ready to test your knowledge!\n\`\`\``)
       .addFields(
-        { name: '📚 Topic', value: topic, inline: true },
-        { name: '❓ Questions', value: String(numQuestions), inline: true },
-        { name: '📊 Difficulty', value: difficulty.charAt(0).toUpperCase() + difficulty.slice(1), inline: true }
+        { name: `${topicEmoji} Topic`, value: topic, inline: true },
+        { name: `${EMOJIS.code} Questions`, value: String(numQuestions), inline: true },
+        { name: `${diffEmoji} Difficulty`, value: difficulty.charAt(0).toUpperCase() + difficulty.slice(1), inline: true }
       )
-      .setFooter({ text: '🎓 Starting in 2 seconds...' });
+      .setFooter({ text: `${EMOJIS.brain} Starting in 2 seconds...` });
 
     await interaction.editReply({ embeds: [readyEmbed] });
     await new Promise(r => setTimeout(r, 2000));
@@ -123,7 +127,7 @@ export async function execute(interaction) {
     // Add timer field if timed mode
     if (timed) {
       questionEmbed.addFields({
-        name: '⏱️ Time Limit',
+        name: `${EMOJIS.clock} Time Limit`,
         value: '30 seconds per question',
         inline: false
       });
@@ -141,10 +145,10 @@ export async function execute(interaction) {
     console.error('Quiz command error:', error);
 
     const errorEmbed = new EmbedBuilder()
-      .setTitle('❌ Error')
+      .setTitle(`${EMOJIS.error} Error`)
       .setColor(COLORS.ERROR)
       .setDescription('Something went wrong while creating your quiz.')
-      .setFooter({ text: '🎓 MentorAI' });
+      .setFooter({ text: `${EMOJIS.brain} ${BRAND.name}` });
 
     await interaction.editReply({ embeds: [errorEmbed], components: [] });
   }

@@ -1,7 +1,7 @@
 /**
  * ╔══════════════════════════════════════════════════════════════════════════════╗
- * ║   MentorAI Help Command - Premium UI V4.0                                    ║
- * ║   Beautiful, Intuitive, Mobile-Friendly Command Center                       ║
+ * ║   MentorAI Help Command - ULTIMATE V5.0                                      ║
+ * ║   Gateway Experience with New vs Returning User Flows                        ║
  * ╚══════════════════════════════════════════════════════════════════════════════╝
  */
 
@@ -14,20 +14,21 @@ import {
   StringSelectMenuBuilder 
 } from 'discord.js';
 import {
+  BRAND,
   COLORS,
-  ICONS,
-  LAYOUT,
+  EMOJIS,
+  VISUALS,
+  RANKS,
+  getRank,
+  getNextRank,
   createProgressBar,
-  getTier,
-} from '../../config/designSystemV4.js';
+  createXPBar,
+  xpForLevel,
+  formatNumber,
+  getStreakMultiplier,
+  createTopicSelectMenu
+} from '../../config/brandSystem.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
-
-// Helper to pad text to exact width (34 chars for inner box content)
-const pad = (text, width = 34) => (String(text) + ' '.repeat(width)).slice(0, width);
-// Pad with 1 emoji prefix (emoji takes 2 visual chars, so text gets 31 chars + 1 space)
-const pad1 = (emoji, text) => emoji + ' ' + (String(text) + ' '.repeat(31)).slice(0, 31);
-// Pad with 2 emoji prefix (2 emojis = 4 visual chars, text gets 28 chars + 2 spaces)  
-const pad2 = (e1, e2, text) => e1 + ' ' + e2 + ' ' + (String(text) + ' '.repeat(28)).slice(0, 28);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
@@ -38,188 +39,57 @@ export const data = new SlashCommandBuilder()
   .setDescription('📖 Discover all MentorAI features and commands');
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// MAIN EXECUTE - Premium Welcome Screen
+// UTILITY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function isNewUser(user) {
+  return (user.lessonsCompleted || 0) === 0 && 
+         (user.quizzesTaken || 0) === 0 && 
+         (user.level || 1) <= 1;
+}
+
+function getUserJourneyStage(user) {
+  const lessons = user.lessonsCompleted || 0;
+  const quizzes = user.quizzesTaken || 0;
+  const level = user.level || 1;
+  const streak = user.streak || 0;
+  
+  if (lessons === 0 && quizzes === 0) return 'new';
+  if (lessons < 5 && level < 3) return 'exploring';
+  if (level < 10 && streak < 3) return 'learning';
+  if (level < 20) return 'progressing';
+  if (level < 35) return 'advanced';
+  return 'mastery';
+}
+
+function getNextAction(user) {
+  const stage = getUserJourneyStage(user);
+  const actions = {
+    new: { text: 'Take your first quiz!', command: 'quiz', emoji: '🎯' },
+    exploring: { text: 'Try a coding lesson!', command: 'learn', emoji: '📖' },
+    learning: { text: 'Build your streak!', command: 'daily', emoji: '🔥' },
+    progressing: { text: 'Challenge a friend!', command: 'challenge', emoji: '⚔️' },
+    advanced: { text: 'Check the leaderboard!', command: 'leaderboard', emoji: '🏆' },
+    mastery: { text: 'Run some code!', command: 'run', emoji: '💻' }
+  };
+  return actions[stage] || actions.exploring;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN EXECUTE - Gateway Experience
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function execute(interaction) {
   try {
     // Get user data for personalization
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
-    const tier = getTier(user.level || 1);
     
-    // Calculate XP progress
-    const currentXP = (user.xp || 0) % 1000;
-    const xpNeeded = 1000;
-    const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
-    const progressLength = 20;
-    const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
-    const emptyBars = progressLength - filledBars;
-    const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
-    
-    // Stats
-    const streak = user.streak || 0;
-    const lessonsCompleted = user.lessonsCompleted || 0;
-    const quizzesTaken = user.quizzesTaken || 0;
-    const achievements = user.achievements?.length || 0;
-    
-    // Create premium RPG-style embed
-    const mainEmbed = new EmbedBuilder()
-      .setColor(COLORS.BRAND_PRIMARY)
-      .setAuthor({ 
-        name: '✦ MENTOR AI ✦', 
-        iconURL: interaction.client.user.displayAvatarURL() 
-      })
-      .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .setDescription(
-`\`\`\`
-============================================
-          M E N T O R   A I
-       Next-Gen Learning Platform
-============================================
-\`\`\`
-
-# 👋 Welcome, ${interaction.user.username}!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### 🎮 PLAYER PROFILE
-
-> 🏆 **${tier.title.toUpperCase()}** • Level **${user.level || 1}**
-> ✨ Total XP: **${(user.xp || 0).toLocaleString()}**
-
-\`${progressBar}\` **${xpPercent}%**
-*${currentXP}/1000 XP to next level*
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### 📊 STATISTICS
-
-> 🔥 **${streak}** day streak
-> 📚 **${lessonsCompleted}** lessons completed
-> ✅ **${quizzesTaken}** quizzes passed
-> 🏆 **${achievements}** badges earned
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### ⚡ GAME MODES
-
-> 📖 **Lessons** — AI-powered learning
-> 🎯 **Quizzes** — Test your knowledge
-> ⚔️ **Battles** — 1v1 challenges
-> 🏆 **Rankings** — Climb leaderboards
-> 🎖️ **Badges** — Unlock achievements
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-\`\`\`
-============================================
-      🚀 SELECT AN ACTION BELOW 🚀
-============================================
-\`\`\``
-      )
-      .setFooter({ 
-        text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
-        iconURL: interaction.user.displayAvatarURL()
-      })
-      .setTimestamp();
-
-    // Category select menu - clean and organized
-    const categoryMenu = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('help_category_v4')
-        .setPlaceholder('📂 Explore command categories...')
-        .addOptions([
-          { 
-            label: 'Learning', 
-            description: 'AI lessons, explanations, topics', 
-            value: 'learning', 
-            emoji: '📚' 
-          },
-          { 
-            label: 'Quizzes & Challenges', 
-            description: 'Test knowledge, quiz battles', 
-            value: 'quizzes', 
-            emoji: '🎯' 
-          },
-          { 
-            label: 'Progress & Stats', 
-            description: 'XP, levels, achievements', 
-            value: 'progress', 
-            emoji: '📊' 
-          },
-          { 
-            label: 'Social', 
-            description: 'Leaderboards, study parties', 
-            value: 'social', 
-            emoji: '👥' 
-          },
-          { 
-            label: 'Daily & Streaks', 
-            description: 'Daily bonus, streak rewards', 
-            value: 'daily', 
-            emoji: '🔥' 
-          },
-          { 
-            label: 'All Commands', 
-            description: 'Complete command reference', 
-            value: 'all', 
-            emoji: '📋' 
-          }
-        ])
-    );
-
-    // Primary action buttons - Fixed colors per design spec
-    const primaryButtons = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_action_quiz')
-        .setLabel('Quick Quiz')
-        .setEmoji('🎯')
-        .setStyle(ButtonStyle.Primary),  // Blue
-      new ButtonBuilder()
-        .setCustomId('help_action_learn')
-        .setLabel('Start Lesson')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Success),  // Green
-      new ButtonBuilder()
-        .setCustomId('help_action_daily')
-        .setLabel('Daily Bonus')
-        .setEmoji('🎁')
-        .setStyle(ButtonStyle.Danger),   // Red - catches attention!
-      new ButtonBuilder()
-        .setCustomId('help_action_profile')
-        .setLabel('My Profile')
-        .setEmoji('👤')
-        .setStyle(ButtonStyle.Secondary) // Gray
-    );
-
-    // Secondary action buttons
-    const secondaryButtons = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_action_leaderboard')
-        .setLabel('Rankings')
-        .setEmoji('🏆')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_achievements')
-        .setLabel('Badges')
-        .setEmoji('🎖️')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_streak')
-        .setLabel('Streak')
-        .setEmoji('🔥')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_topics')
-        .setLabel('Topics')
-        .setEmoji('📖')
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await interaction.reply({ 
-      embeds: [mainEmbed], 
-      components: [categoryMenu, primaryButtons, secondaryButtons] 
-    });
+    // Route to appropriate experience
+    if (isNewUser(user)) {
+      await showNewUserWelcome(interaction, user);
+    } else {
+      await showReturningUserDashboard(interaction, user);
+    }
     
   } catch (error) {
     console.error('Help command error:', error);
@@ -228,6 +98,204 @@ export async function execute(interaction) {
       ephemeral: true
     });
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW USER WELCOME - First Time Experience
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function showNewUserWelcome(interaction, user) {
+  const welcomeEmbed = new EmbedBuilder()
+    .setColor(COLORS.PRIMARY)
+    .setAuthor({ 
+      name: `${EMOJIS.sparkle} Welcome to ${BRAND.name}!`, 
+      iconURL: interaction.client.user.displayAvatarURL() 
+    })
+    .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+# ${EMOJIS.rocket} Hey ${interaction.user.username}!
+
+**Ready to level up your coding skills?**
+
+${BRAND.name} is your AI-powered coding mentor that makes learning fun with:
+
+${EMOJIS.learn} **Interactive Lessons** — AI explains any topic
+${EMOJIS.quiz} **Smart Quizzes** — Test & earn XP
+${EMOJIS.streak} **Daily Streaks** — Build consistency
+${EMOJIS.achievement} **Achievements** — Unlock badges
+${EMOJIS.challenge} **Challenges** — Compete with friends
+
+${VISUALS.separators.thin}
+
+### ${EMOJIS.target} Quick Start Guide
+
+**Step 1:** Take a quick quiz to test your level
+**Step 2:** Learn something new with /learn
+**Step 3:** Come back daily for streak bonuses!
+
+${VISUALS.separators.fancy}
+    `)
+    .setFooter({ 
+      text: `${EMOJIS.hint} ${BRAND.tagline}`,
+      iconURL: interaction.user.displayAvatarURL()
+    })
+    .setTimestamp();
+
+  // Quick Start Action Buttons
+  const quickStartRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_quickstart_quiz')
+      .setLabel('🎯 Take First Quiz')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('help_quickstart_learn')
+      .setLabel('📖 Start Learning')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_quickstart_explore')
+      .setLabel('🗺️ Explore Features')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  // Topic Selection for new users
+  const topicRow = createTopicSelectMenu('help_topic');
+
+  await interaction.reply({ 
+    embeds: [welcomeEmbed], 
+    components: [quickStartRow, topicRow] 
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RETURNING USER DASHBOARD - Personalized Hub
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function showReturningUserDashboard(interaction, user) {
+  const rank = getRank(user.level || 1);
+  const nextRank = getNextRank(user.level || 1);
+  const xpNeeded = xpForLevel(user.level + 1);
+  const xpProgress = user.xp || 0;
+  const progressPercent = Math.min(Math.round((xpProgress / xpNeeded) * 100), 100);
+  const streak = user.streak || 0;
+  const streakMultiplier = getStreakMultiplier(streak);
+  const nextAction = getNextAction(user);
+  
+  // Calculate stats
+  const accuracy = user.totalQuestions > 0 
+    ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+    : 0;
+
+  const dashboardEmbed = new EmbedBuilder()
+    .setColor(rank.color)
+    .setAuthor({ 
+      name: `${EMOJIS.crown} ${BRAND.name} Command Center`, 
+      iconURL: interaction.client.user.displayAvatarURL() 
+    })
+    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+# ${EMOJIS.rocket} Welcome back, ${interaction.user.username}!
+
+${VISUALS.separators.thin}
+
+### ${rank.emoji} ${rank.name.toUpperCase()} • Level ${user.level || 1}
+
+\`${createProgressBar(xpProgress, xpNeeded, 14)}\` **${progressPercent}%**
+${EMOJIS.xp} \`${formatNumber(xpProgress)} / ${formatNumber(xpNeeded)} XP\` to Level ${(user.level || 1) + 1}
+
+${VISUALS.separators.thin}
+
+### ${EMOJIS.stats} Your Stats
+
+> ${EMOJIS.streak} **${streak}** day streak ${streakMultiplier > 1 ? `(${streakMultiplier}x XP!)` : ''}
+> ${EMOJIS.learn} **${user.lessonsCompleted || 0}** lessons completed
+> ${EMOJIS.quiz} **${user.quizzesTaken || 0}** quizzes taken
+> ${EMOJIS.target} **${accuracy}%** accuracy
+> ${EMOJIS.achievement} **${user.achievements?.length || 0}** achievements
+
+${VISUALS.separators.thin}
+
+### ${EMOJIS.lightning} Suggested Next Step
+> ${nextAction.emoji} **${nextAction.text}** — Use \`/${nextAction.command}\`
+
+${VISUALS.separators.fancy}
+    `)
+    .setFooter({ 
+      text: `⚡ ${BRAND.name} • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
+      iconURL: interaction.user.displayAvatarURL()
+    })
+    .setTimestamp();
+
+  // Category select menu
+  const categoryMenu = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('help_category_v4')
+      .setPlaceholder('📂 Explore command categories...')
+      .addOptions([
+        { label: 'Learning', description: 'AI lessons, explanations, topics', value: 'learning', emoji: '📚' },
+        { label: 'Quizzes & Challenges', description: 'Test knowledge, quiz battles', value: 'quizzes', emoji: '🎯' },
+        { label: 'Progress & Stats', description: 'XP, levels, achievements', value: 'progress', emoji: '📊' },
+        { label: 'Social', description: 'Leaderboards, study parties', value: 'social', emoji: '👥' },
+        { label: 'Daily & Streaks', description: 'Daily bonus, streak rewards', value: 'daily', emoji: '🔥' },
+        { label: 'All Commands', description: 'Complete command reference', value: 'all', emoji: '📋' }
+      ])
+  );
+
+  // Primary action buttons
+  const primaryButtons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_action_quiz')
+      .setLabel('Quick Quiz')
+      .setEmoji('🎯')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_action_learn')
+      .setLabel('Start Lesson')
+      .setEmoji('📚')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('help_action_daily')
+      .setLabel('Daily Bonus')
+      .setEmoji('🎁')
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('help_action_profile')
+      .setLabel('My Profile')
+      .setEmoji('👤')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  // Secondary action buttons
+  const secondaryButtons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_action_leaderboard')
+      .setLabel('Rankings')
+      .setEmoji('🏆')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_action_achievements')
+      .setLabel('Badges')
+      .setEmoji('🎖️')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_action_streak')
+      .setLabel('Streak')
+      .setEmoji('🔥')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_action_topics')
+      .setLabel('Topics')
+      .setEmoji('📖')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply({ 
+    embeds: [dashboardEmbed], 
+    components: [categoryMenu, primaryButtons, secondaryButtons] 
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -254,34 +322,54 @@ export async function handleButton(interaction, action) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// QUICK START HANDLERS - New User Onboarding
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function handleQuickStartButton(interaction, action) {
+  if (action === 'quiz') {
+    await showQuizPanel(interaction);
+  } else if (action === 'learn') {
+    await showLearnPanel(interaction);
+  } else if (action === 'explore') {
+    const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+    await showReturningUserDashboard({ ...interaction, reply: interaction.update.bind(interaction) }, user);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // QUIZ PANEL - Start a Quiz
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function showQuizPanel(interaction) {
   const embed = new EmbedBuilder()
-    .setColor(COLORS.QUIZ)
-    .setAuthor({ name: '🎯 QUIZ COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### 🎮 TEST YOUR KNOWLEDGE
+    .setColor(COLORS.QUIZ_PINK)
+    .setAuthor({ name: `${EMOJIS.quiz} QUIZ CENTER`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### ${EMOJIS.target} Test Your Knowledge
+
+${VISUALS.separators.thin}
 
 **📋 COMMANDS**
 
-> **/quiz [topic]** — Start a 5-question quiz
-> **/quiz [topic] [difficulty]** — Choose: easy, medium, hard
-> **/quickquiz** — Random topic, instant start!
-> **/challenge @user** — Battle a friend!
+> \`/quiz [topic]\` — Start a 5-question quiz
+> \`/quiz [topic] [difficulty]\` — Choose difficulty
+> \`/quickquiz\` — Random topic, instant start!
+> \`/challenge @user\` — Battle a friend!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
 **💎 XP REWARDS**
 
-> 🟢 Easy = **+20 XP** per correct
-> 🟡 Medium = **+30 XP** per correct
-> 🔴 Hard = **+45 XP** per correct
+> 🟢 Easy = **+15 XP** per correct
+> 🟡 Medium = **+25 XP** per correct  
+> 🔴 Hard = **+40 XP** per correct
+> 💯 Perfect Score = **+100 XP** bonus!
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Select a topic below' });
+    .setFooter({ text: `${EMOJIS.hint} Select a topic below to begin!` });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -289,31 +377,33 @@ async function showQuizPanel(interaction) {
       .setPlaceholder('🎯 Choose a quiz topic...')
       .addOptions([
         { label: 'Random Mix', description: 'Surprise me with random topics!', value: 'random', emoji: '🎲' },
-        { label: 'JavaScript', description: 'Web development fundamentals', value: 'javascript', emoji: '🟨' },
-        { label: 'Python', description: 'General programming & AI', value: 'python', emoji: '🐍' },
-        { label: 'TypeScript', description: 'Typed JavaScript', value: 'typescript', emoji: '🔷' },
-        { label: 'React', description: 'Frontend framework', value: 'react', emoji: '⚛️' },
-        { label: 'Node.js', description: 'Backend development', value: 'nodejs', emoji: '🟢' },
-        { label: 'HTML & CSS', description: 'Web design basics', value: 'html-css', emoji: '🌐' },
-        { label: 'SQL', description: 'Database queries', value: 'sql', emoji: '🗄️' },
-        { label: 'Git', description: 'Version control', value: 'git', emoji: '📦' },
-        { label: 'Data Structures', description: 'Arrays, trees, graphs', value: 'data-structures', emoji: '🔢' }
+        { label: 'JavaScript', description: 'Web development fundamentals', value: 'javascript', emoji: EMOJIS.javascript },
+        { label: 'Python', description: 'General programming & AI', value: 'python', emoji: EMOJIS.python },
+        { label: 'TypeScript', description: 'Typed JavaScript', value: 'typescript', emoji: EMOJIS.typescript },
+        { label: 'React', description: 'Frontend framework', value: 'react', emoji: EMOJIS.react },
+        { label: 'Node.js', description: 'Backend development', value: 'nodejs', emoji: EMOJIS.node },
+        { label: 'HTML & CSS', description: 'Web design basics', value: 'html-css', emoji: EMOJIS.html },
+        { label: 'SQL', description: 'Database queries', value: 'sql', emoji: EMOJIS.sql },
+        { label: 'Git', description: 'Version control', value: 'git', emoji: EMOJIS.git },
+        { label: 'Algorithms', description: 'Problem solving', value: 'algorithms', emoji: EMOJIS.algorithms }
       ])
   );
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_quickquiz')
-      .setLabel('⚡ Quick Quiz')
+      .setLabel('Quick Quiz')
+      .setEmoji(EMOJIS.lightning)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('exec_challenge')
-      .setLabel('⚔️ Challenge Friend')
+      .setLabel('Challenge Friend')
+      .setEmoji(EMOJIS.challenge)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -326,61 +416,67 @@ async function showQuizPanel(interaction) {
 
 async function showLearnPanel(interaction) {
   const embed = new EmbedBuilder()
-    .setColor(COLORS.LESSON)
-    .setAuthor({ name: '📖 LEARNING COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### 📚 AI-POWERED LEARNING
+    .setColor(COLORS.LESSON_BLUE)
+    .setAuthor({ name: `${EMOJIS.learn} LEARNING CENTER`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### ${EMOJIS.book} AI-Powered Learning
+
+${VISUALS.separators.thin}
 
 **📋 COMMANDS**
 
-> **/learn [topic]** — Start an AI lesson
-> **/explain [concept]** — Get explanations
-> **/path browse** — Learning paths
-> **/topics** — See all topics
+> \`/learn [topic]\` — Start an AI lesson
+> \`/explain [concept]\` — Get detailed explanations  
+> \`/path browse\` — Structured learning paths
+> \`/topics\` — Browse all available topics
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**✨ WHAT YOU GET**
+**${EMOJIS.sparkle} WHAT YOU GET**
 
-> ✅ Clear explanations
-> ✅ Code examples
-> ✅ Key concepts
-> ✅ Practice challenges
+> ${EMOJIS.correct} Clear, beginner-friendly explanations
+> ${EMOJIS.run} Real code examples you can try
+> ${EMOJIS.brain} Key concepts highlighted
+> ${EMOJIS.target} Practice challenges to test yourself
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Select a topic to begin' });
+    .setFooter({ text: `${EMOJIS.hint} Select a topic below to start learning!` });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
       .setCustomId('learn_topic_select_v4')
       .setPlaceholder('📚 Choose a learning topic...')
       .addOptions([
-        { label: 'JavaScript Basics', description: 'Variables, functions, loops', value: 'javascript-basics', emoji: '🟨' },
-        { label: 'Python Fundamentals', description: 'Core Python concepts', value: 'python-basics', emoji: '🐍' },
-        { label: 'Web Development', description: 'HTML, CSS, JS together', value: 'webdev', emoji: '🌐' },
-        { label: 'React Essentials', description: 'Components, hooks, state', value: 'react', emoji: '⚛️' },
-        { label: 'Data Structures', description: 'Arrays, objects, maps', value: 'datastructures', emoji: '🔢' },
-        { label: 'APIs & REST', description: 'Working with APIs', value: 'apis', emoji: '🔗' },
-        { label: 'Databases', description: 'SQL & NoSQL basics', value: 'databases', emoji: '🗄️' },
-        { label: 'Algorithms', description: 'Problem solving', value: 'algorithms', emoji: '🧮' },
-        { label: 'Custom Topic', description: 'Ask AI anything', value: 'custom', emoji: '🤖' }
+        { label: 'JavaScript Basics', description: 'Variables, functions, loops', value: 'javascript-basics', emoji: EMOJIS.javascript },
+        { label: 'Python Fundamentals', description: 'Core Python concepts', value: 'python-basics', emoji: EMOJIS.python },
+        { label: 'Web Development', description: 'HTML, CSS, JS together', value: 'webdev', emoji: EMOJIS.html },
+        { label: 'React Essentials', description: 'Components, hooks, state', value: 'react', emoji: EMOJIS.react },
+        { label: 'Data Structures', description: 'Arrays, objects, maps', value: 'datastructures', emoji: EMOJIS.datastructures },
+        { label: 'APIs & REST', description: 'Working with APIs', value: 'apis', emoji: EMOJIS.api },
+        { label: 'Databases', description: 'SQL & NoSQL basics', value: 'databases', emoji: EMOJIS.sql },
+        { label: 'Algorithms', description: 'Problem solving', value: 'algorithms', emoji: EMOJIS.algorithms },
+        { label: 'Custom Topic', description: 'Ask AI anything!', value: 'custom', emoji: EMOJIS.brain }
       ])
   );
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_explain')
-      .setLabel('❓ Explain Concept')
+      .setLabel('Explain Concept')
+      .setEmoji(EMOJIS.explain)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_path')
-      .setLabel('🛤️ Learning Paths')
+      .setLabel('Learning Paths')
+      .setEmoji('🛤️')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -392,47 +488,63 @@ async function showLearnPanel(interaction) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function showDailyPanel(interaction) {
+  const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+  const streak = user.streak || 0;
+  const multiplier = getStreakMultiplier(streak);
+  const baseXP = 75;
+  const bonusXP = Math.floor(baseXP * multiplier);
+  
   const embed = new EmbedBuilder()
     .setColor(COLORS.XP_GOLD)
-    .setAuthor({ name: '🎁 DAILY REWARDS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### ✨ DAILY BONUS CENTER
+    .setAuthor({ name: `${EMOJIS.gift} DAILY REWARDS`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### ${EMOJIS.sparkle} Daily Bonus Center
 
 Come back every day to earn bonus XP!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**🎁 STREAK REWARDS**
+**${EMOJIS.streak} YOUR CURRENT STREAK: ${streak} days**
+${streak > 0 ? EMOJIS.streak.repeat(Math.min(streak, 7)) : '❄️ Start your streak today!'}
 
-> 💫 Base Reward: **+75 XP**
-> 🔥 3+ days = **1.25x** XP
-> 🔥 7+ days = **1.5x** XP
-> 🔥 14+ days = **1.75x** XP
-> 🔥 30+ days = **2x** XP
+${VISUALS.separators.thin}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**${EMOJIS.gift} STREAK MULTIPLIERS**
 
-> ✨ *Plus: AI-powered daily tips & fun facts!*
+> ${EMOJIS.xp} Base Reward: **+${baseXP} XP**
+> ${EMOJIS.streak} 3+ days = **1.1x** XP
+> ${EMOJIS.streak} 7+ days = **1.25x** XP
+> ${EMOJIS.streak} 14+ days = **1.5x** XP
+> ${EMOJIS.streak} 30+ days = **2.0x** XP
+
+**Your current bonus: +${bonusXP} XP (${multiplier}x)**
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Resets at midnight UTC' });
+    .setFooter({ text: `${EMOJIS.clock} Resets at midnight UTC` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_daily')
-      .setLabel('🎁 Claim Now')
+      .setLabel('Claim Now')
+      .setEmoji(EMOJIS.gift)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('exec_streak')
-      .setLabel('🔥 View Streak')
+      .setLabel('View Streak')
+      .setEmoji(EMOJIS.streak)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_funfact')
-      .setLabel('🎲 Fun Fact')
+      .setLabel('Fun Fact')
+      .setEmoji('🎲')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -445,61 +557,65 @@ Come back every day to earn bonus XP!
 
 async function showProfilePanel(interaction) {
   const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
-  const tier = getTier(user.level || 1);
+  const rank = getRank(user.level || 1);
+  const xpNeeded = xpForLevel((user.level || 1) + 1);
+  const xpProgress = user.xp || 0;
+  const progressPercent = Math.min(Math.round((xpProgress / xpNeeded) * 100), 100);
   
-  // Calculate XP progress
-  const currentXP = (user.xp || 0) % 1000;
-  const xpNeeded = 1000;
-  const progressLength = 16;
-  const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
-  const emptyBars = progressLength - filledBars;
-  const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
-  
-  const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
+  const accuracy = user.totalQuestions > 0 
+    ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+    : 0;
   
   const embed = new EmbedBuilder()
-    .setColor(tier.color)
+    .setColor(rank.color)
     .setAuthor({ name: '👤 YOUR PROFILE', iconURL: interaction.client.user.displayAvatarURL() })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-    .setDescription(
-`### 🏆 ${tier.title.toUpperCase()}
-### ⭐ Level ${user.level || 1} • ${(user.xp || 0).toLocaleString()} Total XP
+    .setDescription(`
+${VISUALS.separators.fancy}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### ${rank.emoji} ${rank.name.toUpperCase()}
+### ${EMOJIS.star} Level ${user.level || 1} • ${formatNumber(user.xp || 0)} Total XP
 
-**📈 PROGRESS TO NEXT LEVEL**
+${VISUALS.separators.thin}
 
-\`${progressBar}\` **${xpPercent}%**
-*${currentXP}/1000 XP to next level*
+**${EMOJIS.progress} PROGRESS TO NEXT LEVEL**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\`${createProgressBar(xpProgress, xpNeeded, 16)}\` **${progressPercent}%**
+${EMOJIS.xp} \`${formatNumber(xpProgress)} / ${formatNumber(xpNeeded)} XP\`
 
-**📊 YOUR STATS**
+${VISUALS.separators.thin}
 
-> 🔥 **${user.streak || 0}** day streak
-> 📝 **${user.quizzesTaken || 0}** quizzes taken
-> 🎯 **${user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0}%** accuracy
-> 🏆 **${user.achievements?.length || 0}** achievements
+**${EMOJIS.stats} YOUR STATS**
+
+> ${EMOJIS.streak} **${user.streak || 0}** day streak
+> ${EMOJIS.quiz} **${user.quizzesTaken || 0}** quizzes taken
+> ${EMOJIS.target} **${accuracy}%** accuracy  
+> ${EMOJIS.achievement} **${user.achievements?.length || 0}** achievements
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: `⚡ MentorAI • ${tier.badge || tier.title}` });
+    .setFooter({ text: `${EMOJIS.lightning} ${BRAND.name} • ${rank.badge}` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_profile')
-      .setLabel('📊 Full Profile')
+      .setLabel('Full Profile')
+      .setEmoji(EMOJIS.stats)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_progress')
-      .setLabel('📈 Detailed Stats')
+      .setLabel('Detailed Stats')
+      .setEmoji(EMOJIS.progress)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('exec_achievements')
-      .setLabel('🏆 Achievements')
+      .setLabel('Achievements')
+      .setEmoji(EMOJIS.achievement)
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -512,41 +628,47 @@ async function showProfilePanel(interaction) {
 
 async function showLeaderboardPanel(interaction) {
   const embed = new EmbedBuilder()
-    .setColor(COLORS.LEADERBOARD)
-    .setAuthor({ name: '🏆 LEADERBOARD', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### 🏅 COMPETE & CLIMB RANKS
+    .setColor(COLORS.XP_GOLD)
+    .setAuthor({ name: `${EMOJIS.leaderboard} LEADERBOARD`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### ${EMOJIS.trophy} Compete & Climb Ranks
 
 Compete with learners worldwide!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**📊 RANKING CRITERIA**
+**${EMOJIS.stats} RANKING CRITERIA**
 
-> 🏆 Total XP earned
-> ⬆️ Level progression
-> 🔥 Learning streak
-> 🎯 Quiz accuracy
+> ${EMOJIS.xp} Total XP earned
+> ${EMOJIS.level} Level progression
+> ${EMOJIS.streak} Learning streak
+> ${EMOJIS.target} Quiz accuracy
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-> 🚀 *Complete quizzes & lessons to rise up!*
+> ${EMOJIS.rocket} *Complete quizzes & lessons to rise up!*
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Rise to the top!' });
+    .setFooter({ text: `${EMOJIS.crown} Rise to the top!` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_leaderboard')
-      .setLabel('🌍 Global Rankings')
+      .setLabel('Global Rankings')
+      .setEmoji('🌍')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_weekly')
-      .setLabel('🏆 Weekly Challenge')
+      .setLabel('Weekly Challenge')
+      .setEmoji(EMOJIS.trophy)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -558,44 +680,58 @@ Compete with learners worldwide!
 // ═══════════════════════════════════════════════════════════════════════════════
 
 async function showAchievementsPanel(interaction) {
+  const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+  const unlockedCount = user.achievements?.length || 0;
+  const totalCount = 30; // Total achievements available
+  
   const embed = new EmbedBuilder()
     .setColor(COLORS.ACHIEVEMENT)
-    .setAuthor({ name: '🏅 ACHIEVEMENTS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### 🏆 UNLOCK ACHIEVEMENTS
+    .setAuthor({ name: `${EMOJIS.achievement} ACHIEVEMENTS`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
 
-Collect badges and earn bonus XP!
+### ${EMOJIS.trophy} Collect Badges & Earn XP!
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+**Your Progress: ${unlockedCount}/${totalCount} unlocked**
+\`${createProgressBar(unlockedCount, totalCount, 14)}\`
 
-**🏅 AVAILABLE BADGES**
+${VISUALS.separators.thin}
 
-> 🎯 **First Steps** — First quiz
-> 🔥 **On Fire** — 7-day streak
-> 🎯 **Sharpshooter** — 100% quiz
-> 📖 **Bookworm** — 10 lessons
-> 🏆 **Champion** — Level 10
-> 💎 **Diamond Mind** — Level 30
+**${EMOJIS.medal} ACHIEVEMENT CATEGORIES**
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+> ${EMOJIS.learn} **Learning** — Complete lessons
+> ${EMOJIS.quiz} **Quizzes** — Ace your tests
+> ${EMOJIS.streak} **Streaks** — Stay consistent
+> ${EMOJIS.level} **Levels** — Level up
+> ${EMOJIS.challenge} **Social** — Compete with friends
 
-> ✨ *Each achievement grants bonus XP!*
+${VISUALS.separators.thin}
+
+**${EMOJIS.star} RARE BADGES**
+
+> 💯 **Perfectionist** — 10 perfect quiz scores
+> 👑 **Legend** — Reach Level 50
+> ⚡ **Speedrunner** — Quiz in under 30s
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Collect them all!' });
+    .setFooter({ text: `${EMOJIS.sparkle} Each achievement grants bonus XP!` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_achievements')
-      .setLabel('🏅 My Achievements')
+      .setLabel('My Achievements')
+      .setEmoji(EMOJIS.medal)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_profile')
-      .setLabel('👤 My Profile')
+      .setLabel('My Profile')
+      .setEmoji('👤')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -609,44 +745,60 @@ Collect badges and earn bonus XP!
 async function showStreakPanel(interaction) {
   const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
   const streak = user.streak || 0;
-  const fires = streak > 0 ? '🔥'.repeat(Math.min(streak, 7)) : '❄️';
+  const longestStreak = user.longestStreak || streak;
+  const multiplier = getStreakMultiplier(streak);
+  const fires = streak > 0 ? EMOJIS.streak.repeat(Math.min(streak, 7)) : '❄️';
+  
+  // Next milestone
+  const milestones = [3, 7, 14, 30, 100];
+  const nextMilestone = milestones.find(m => m > streak) || 'MAX';
   
   const embed = new EmbedBuilder()
     .setColor(COLORS.STREAK_FIRE)
-    .setAuthor({ name: '🔥 STREAK STATUS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### ${fires} KEEP THE FIRE BURNING
+    .setAuthor({ name: `${EMOJIS.streak} STREAK STATUS`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### ${fires} Keep the Fire Burning!
 
 **Current Streak: ${streak} day${streak !== 1 ? 's' : ''}**
+**Longest Streak: ${longestStreak} days** ${EMOJIS.trophy}
+**Current Multiplier: ${multiplier}x XP** ${EMOJIS.xp}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**💎 STREAK BONUSES**
+**${EMOJIS.gem} STREAK MILESTONES**
 
-> 🔥 3 days = **+25%** XP
-> 🔥 7 days = **+50%** XP
-> 🔥 14 days = **+75%** XP
-> 🔥 30 days = **+100%** XP
+> ${streak >= 3 ? EMOJIS.correct : EMOJIS.incomplete} 3 days = **1.1x** XP
+> ${streak >= 7 ? EMOJIS.correct : EMOJIS.incomplete} 7 days = **1.25x** XP  
+> ${streak >= 14 ? EMOJIS.correct : EMOJIS.incomplete} 14 days = **1.5x** XP
+> ${streak >= 30 ? EMOJIS.correct : EMOJIS.incomplete} 30 days = **2.0x** XP
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${nextMilestone !== 'MAX' ? `**Next milestone: ${nextMilestone} days** (${nextMilestone - streak} to go!)` : '**🎉 MAX STREAK ACHIEVED!**'}
 
-> 🎯 *Complete any activity daily to maintain!*
+${VISUALS.separators.thin}
+
+> ${EMOJIS.tip} *Complete any activity daily to maintain your streak!*
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Consistency is key!' });
+    .setFooter({ text: `${EMOJIS.lightning} Consistency is key!` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_streak')
-      .setLabel('🔥 Full Streak Info')
+      .setLabel('Full Streak Info')
+      .setEmoji(EMOJIS.streak)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_daily')
-      .setLabel('🎁 Claim Daily')
+      .setLabel('Claim Daily')
+      .setEmoji(EMOJIS.gift)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -659,55 +811,62 @@ async function showStreakPanel(interaction) {
 
 async function showTopicsPanel(interaction) {
   const embed = new EmbedBuilder()
-    .setColor(COLORS.LESSON)
-    .setAuthor({ name: '📖 AVAILABLE TOPICS', iconURL: interaction.client.user.displayAvatarURL() })
-    .setDescription(
-`### 📚 MASTER THESE TOPICS
+    .setColor(COLORS.LESSON_BLUE)
+    .setAuthor({ name: `${EMOJIS.book} AVAILABLE TOPICS`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setDescription(`
+${VISUALS.separators.fancy}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+### ${EMOJIS.learn} Master These Topics
 
-**💻 PROGRAMMING LANGUAGES**
+${VISUALS.separators.thin}
 
-> 🟨 JavaScript • 🐍 Python • 🔷 TypeScript
+**${EMOJIS.run} PROGRAMMING LANGUAGES**
+
+> ${EMOJIS.javascript} JavaScript • ${EMOJIS.python} Python • ${EMOJIS.typescript} TypeScript
 > ☕ Java • ⚙️ C++ • 🦀 Rust • 🔵 Go
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**🌐 WEB DEVELOPMENT**
+**${EMOJIS.html} WEB DEVELOPMENT**
 
-> ⚛️ React • 💚 Vue.js • 🅰️ Angular
-> 🟢 Node.js • 🎨 CSS • 💨 Tailwind
+> ${EMOJIS.react} React • 💚 Vue.js • 🅰️ Angular
+> ${EMOJIS.node} Node.js • ${EMOJIS.css} CSS • 💨 Tailwind
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-**🗄️ BACKEND & DATA**
+**${EMOJIS.sql} BACKEND & DATA**
 
-> 📊 SQL • 🍃 MongoDB • 🔥 Firebase
-> 🔗 REST APIs • 🔐 Authentication
+> ${EMOJIS.sql} SQL • 🍃 MongoDB • 🔥 Firebase
+> ${EMOJIS.api} REST APIs • 🔐 Authentication
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${VISUALS.separators.thin}
 
-> 🤖 *Or ask about any topic — AI can teach it!*
+> ${EMOJIS.brain} *Or ask about any topic — AI can teach it!*
+
+${VISUALS.separators.fancy}
     `)
-    .setFooter({ text: '⚡ MentorAI • Learn anything!' });
+    .setFooter({ text: `${EMOJIS.rocket} Learn anything!` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_topics')
-      .setLabel('📋 Full Topic List')
+      .setLabel('Full Topic List')
+      .setEmoji('📋')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('help_action_learn')
-      .setLabel('📚 Start Learning')
+      .setLabel('Start Learning')
+      .setEmoji(EMOJIS.learn)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('help_action_quiz')
-      .setLabel('🎯 Take Quiz')
+      .setLabel('Take Quiz')
+      .setEmoji(EMOJIS.quiz)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Back')
-      .setEmoji('◀️')
+      .setEmoji(EMOJIS.back)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -721,150 +880,20 @@ async function showTopicsPanel(interaction) {
 async function showMainMenu(interaction) {
   try {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
-    const tier = getTier(user.level || 1);
     
-    // Calculate XP progress
-    const currentXP = (user.xp || 0) % 1000;
-    const xpNeeded = 1000;
-    const progressLength = 20;
-    const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
-    const emptyBars = progressLength - filledBars;
-    const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
+    // Redirect to the appropriate dashboard
+    const fakeInteraction = {
+      ...interaction,
+      reply: interaction.update.bind(interaction)
+    };
     
-    // Stats
-    const streak = user.streak || 0;
-    const lessonsCompleted = user.lessonsCompleted || 0;
-    const quizzesTaken = user.quizzesTaken || 0;
-    const achievements = user.achievements?.length || 0;
-    
-    const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
-    
-    const mainEmbed = new EmbedBuilder()
-      .setColor(COLORS.BRAND_PRIMARY)
-      .setAuthor({ 
-        name: '✦ MENTOR AI ✦', 
-        iconURL: interaction.client.user.displayAvatarURL() 
-      })
-      .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
-      .setDescription(
-`\`\`\`
-============================================
-          M E N T O R   A I
-       Next-Gen Learning Platform
-============================================
-\`\`\`
-
-# 👋 Welcome, ${interaction.user.username}!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### 🎮 PLAYER PROFILE
-
-> 🏆 **${tier.title.toUpperCase()}** • Level **${user.level || 1}**
-> ✨ Total XP: **${(user.xp || 0).toLocaleString()}**
-
-\`${progressBar}\` **${xpPercent}%**
-*${currentXP}/1000 XP to next level*
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### 📊 STATISTICS
-
-> 🔥 **${streak}** day streak
-> 📚 **${lessonsCompleted}** lessons completed
-> ✅ **${quizzesTaken}** quizzes passed
-> 🏆 **${achievements}** badges earned
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### ⚡ GAME MODES
-
-> 📖 **Lessons** — AI-powered learning
-> 🎯 **Quizzes** — Test your knowledge
-> ⚔️ **Battles** — 1v1 challenges
-> 🏆 **Rankings** — Climb leaderboards
-> 🎖️ **Badges** — Unlock achievements
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-\`\`\`
-============================================
-      🚀 SELECT AN ACTION BELOW 🚀
-============================================
-\`\`\``
-      )
-      .setFooter({ 
-        text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
-        iconURL: interaction.user.displayAvatarURL()
-      })
-      .setTimestamp();
-
-    const categoryMenu = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('help_category_v4')
-        .setPlaceholder('📂 Explore command categories...')
-        .addOptions([
-          { label: 'Learning', description: 'AI lessons, explanations, topics', value: 'learning', emoji: '📚' },
-          { label: 'Quizzes & Challenges', description: 'Test knowledge, quiz battles', value: 'quizzes', emoji: '🎯' },
-          { label: 'Progress & Stats', description: 'XP, levels, achievements', value: 'progress', emoji: '📊' },
-          { label: 'Social', description: 'Leaderboards, study parties', value: 'social', emoji: '👥' },
-          { label: 'Daily & Streaks', description: 'Daily bonus, streak rewards', value: 'daily', emoji: '🔥' },
-          { label: 'All Commands', description: 'Complete command reference', value: 'all', emoji: '📋' }
-        ])
-    );
-
-    const primaryButtons = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_action_quiz')
-        .setLabel('Quick Quiz')
-        .setEmoji('🎯')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('help_action_learn')
-        .setLabel('Start Lesson')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('help_action_daily')
-        .setLabel('Daily Bonus')
-        .setEmoji('🎁')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId('help_action_profile')
-        .setLabel('My Profile')
-        .setEmoji('👤')
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    const secondaryButtons = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_action_leaderboard')
-        .setLabel('Rankings')
-        .setEmoji('🏆')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_achievements')
-        .setLabel('Badges')
-        .setEmoji('🎖️')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_streak')
-        .setLabel('Streak')
-        .setEmoji('🔥')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_action_topics')
-        .setLabel('Topics')
-        .setEmoji('📖')
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    await interaction.update({ 
-      embeds: [mainEmbed], 
-      components: [categoryMenu, primaryButtons, secondaryButtons] 
-    });
+    if (isNewUser(user)) {
+      await showNewUserWelcome(fakeInteraction, user);
+    } else {
+      await showReturningUserDashboard(fakeInteraction, user);
+    }
   } catch (error) {
-    console.error('Error returning to main menu:', error);
+    console.error('Show main menu error:', error);
   }
 }
 
@@ -902,17 +931,17 @@ export async function handleCategorySelect(interaction, category) {
     new ButtonBuilder()
       .setCustomId('help_action_quiz')
       .setLabel('Quiz')
-      .setEmoji('🎯')
+      .setEmoji(EMOJIS.quiz)
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('help_action_learn')
       .setLabel('Learn')
-      .setEmoji('📚')
+      .setEmoji(EMOJIS.learn)
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('help_action_back')
       .setLabel('Main Menu')
-      .setEmoji('🏠')
+      .setEmoji(EMOJIS.home)
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -925,214 +954,250 @@ export async function handleCategorySelect(interaction, category) {
 
 function createLearningCategoryEmbed() {
   return new EmbedBuilder()
-    .setColor(COLORS.LESSON)
-    .setTitle('📚 Learning Commands')
-    .setDescription(`### Master Any Programming Topic!\n\n`)
+    .setColor(COLORS.LESSON_BLUE)
+    .setTitle(`${EMOJIS.learn} Learning Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Master Any Programming Topic!
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '`/learn [topic]`', 
-        value: '📖 Get an AI-generated lesson on any topic\n*Example: `/learn JavaScript async/await`*', 
+        name: '\`/learn [topic]\`', 
+        value: `${EMOJIS.learn} Get an AI-generated lesson on any topic\n*Example: \`/learn JavaScript async/await\`*`, 
         inline: false 
       },
       { 
-        name: '`/explain [concept]`', 
-        value: '💡 Get detailed explanation with examples\n*Example: `/explain recursion`*', 
+        name: '\`/explain [concept]\`', 
+        value: `${EMOJIS.explain} Get detailed explanation with examples\n*Example: \`/explain recursion\`*`, 
         inline: false 
       },
       { 
-        name: '`/topics`', 
-        value: '📋 Browse all available learning topics', 
+        name: '\`/topics\`', 
+        value: `${EMOJIS.book} Browse all available learning topics`, 
         inline: false 
       },
       { 
-        name: '`/path [subject]`', 
-        value: '🛤️ Follow structured learning paths', 
+        name: '\`/path [subject]\`', 
+        value: `🛤️ Follow structured learning paths`, 
         inline: false 
       },
       { 
-        name: '`/funfact [topic]`', 
-        value: '🎲 Learn fun facts about programming', 
+        name: '\`/funfact [topic]\`', 
+        value: `🎲 Learn fun facts about programming`, 
         inline: false 
       }
     )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • AI-Powered Learning` });
+    .setFooter({ text: `${EMOJIS.brain} ${BRAND.name} • AI-Powered Learning` });
 }
 
 function createQuizzesCategoryEmbed() {
   return new EmbedBuilder()
-    .setColor(COLORS.QUIZ)
-    .setTitle('🎯 Quiz Commands')
-    .setDescription(`### Test Your Knowledge!\n\n`)
+    .setColor(COLORS.QUIZ_PINK)
+    .setTitle(`${EMOJIS.quiz} Quiz Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Test Your Knowledge & Earn XP!
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '`/quiz [topic]`', 
-        value: '🎯 Take an AI-generated quiz\n*Options: questions count, difficulty*', 
+        name: '\`/quiz [topic]\`', 
+        value: `${EMOJIS.target} Take an AI-generated quiz\n*Options: questions count, difficulty*`, 
         inline: false 
       },
       { 
-        name: '`/quickquiz`', 
-        value: '⚡ Instant one-question challenge', 
+        name: '\`/quickquiz\`', 
+        value: `${EMOJIS.lightning} Instant one-question challenge`, 
         inline: false 
       },
       { 
-        name: '`/challenge @user`', 
-        value: '⚔️ Challenge a friend to quiz battle', 
+        name: '\`/challenge @user\`', 
+        value: `${EMOJIS.challenge} Challenge a friend to quiz battle`, 
         inline: false 
       },
       { 
-        name: '`/studyparty start`', 
-        value: '🎉 Start a group study session', 
+        name: '\`/studyparty start\`', 
+        value: `${EMOJIS.party} Start a group study session`, 
         inline: false 
       },
       { 
-        name: '`/weekly`', 
-        value: '🏆 View weekly server challenges', 
+        name: '\`/weekly\`', 
+        value: `${EMOJIS.trophy} View weekly server challenges`, 
         inline: false 
       }
     )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Earn XP through quizzes!` });
+    .setFooter({ text: `${EMOJIS.xp} ${BRAND.name} • Earn XP through quizzes!` });
 }
 
 function createProgressCategoryEmbed() {
   return new EmbedBuilder()
     .setColor(COLORS.XP_GOLD)
-    .setTitle('📊 Progress Commands')
-    .setDescription(`### Track Your Learning Journey!\n\n`)
+    .setTitle(`${EMOJIS.stats} Progress Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Track Your Learning Journey!
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '`/profile`', 
-        value: '👤 View your complete profile and tier', 
+        name: '\`/profile\`', 
+        value: `👤 View your complete profile and rank`, 
         inline: false 
       },
       { 
-        name: '`/progress`', 
-        value: '📈 Detailed statistics and history', 
+        name: '\`/progress\`', 
+        value: `${EMOJIS.progress} Detailed statistics and history`, 
         inline: false 
       },
       { 
-        name: '`/achievements`', 
-        value: '🎖️ View and track achievements', 
+        name: '\`/achievements\`', 
+        value: `${EMOJIS.medal} View and track achievements`, 
         inline: false 
       },
       { 
-        name: '`/stats`', 
-        value: '📊 Global platform statistics', 
+        name: '\`/stats\`', 
+        value: `${EMOJIS.stats} Global platform statistics`, 
         inline: false 
       }
     )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Level up your skills!` });
+    .setFooter({ text: `${EMOJIS.level} ${BRAND.name} • Level up your skills!` });
 }
 
 function createSocialCategoryEmbed() {
   return new EmbedBuilder()
-    .setColor(COLORS.PARTY)
-    .setTitle('👥 Social Commands')
-    .setDescription(`### Learn Together!\n\n`)
+    .setColor(COLORS.PRIMARY)
+    .setTitle(`👥 Social Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Learn Together & Compete!
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '`/leaderboard`', 
-        value: '🏆 View global rankings', 
+        name: '\`/leaderboard\`', 
+        value: `${EMOJIS.leaderboard} View global rankings`, 
         inline: false 
       },
       { 
-        name: '`/challenge @user`', 
-        value: '⚔️ 1v1 quiz battle', 
+        name: '\`/challenge @user\`', 
+        value: `${EMOJIS.challenge} 1v1 quiz battle`, 
         inline: false 
       },
       { 
-        name: '`/studyparty`', 
-        value: '🎉 Group study sessions with XP bonus', 
+        name: '\`/studyparty\`', 
+        value: `${EMOJIS.party} Group study sessions with XP bonus`, 
         inline: false 
       },
       { 
-        name: '`/invite`', 
-        value: '📨 Add MentorAI to other servers', 
+        name: '\`/invite\`', 
+        value: `${EMOJIS.invite} Add ${BRAND.name} to other servers`, 
         inline: false 
       },
       { 
-        name: '`/share`', 
-        value: '📤 Share your achievements', 
+        name: '\`/share\`', 
+        value: `${EMOJIS.share} Share your achievements`, 
         inline: false 
       },
       { 
-        name: '`/referral`', 
-        value: '🎁 Invite friends and earn rewards', 
+        name: '\`/referral\`', 
+        value: `${EMOJIS.gift} Invite friends and earn rewards`, 
         inline: false 
       }
     )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Better together!` });
+    .setFooter({ text: `${EMOJIS.party} ${BRAND.name} • Better together!` });
 }
 
 function createDailyCategoryEmbed() {
   return new EmbedBuilder()
     .setColor(COLORS.STREAK_FIRE)
-    .setTitle('🔥 Daily & Streak Commands')
-    .setDescription(`### Stay Consistent!\n\n`)
+    .setTitle(`${EMOJIS.streak} Daily & Streak Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Stay Consistent & Earn Bonus XP!
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '`/daily`', 
-        value: '🎁 Claim daily XP bonus + AI tips', 
+        name: '\`/daily\`', 
+        value: `${EMOJIS.gift} Claim daily XP bonus + AI tips`, 
         inline: false 
       },
       { 
-        name: '`/streak`', 
-        value: '🔥 Check your learning streak', 
+        name: '\`/streak\`', 
+        value: `${EMOJIS.streak} Check your learning streak`, 
         inline: false 
       },
       { 
-        name: '`/weekly`', 
-        value: '🏆 Weekly challenges and rewards', 
+        name: '\`/weekly\`', 
+        value: `${EMOJIS.trophy} Weekly challenges and rewards`, 
         inline: false 
       }
     )
     .addFields({
-      name: '📅 Streak Bonuses',
+      name: `${EMOJIS.calendar} Streak Bonuses`,
       value: 
-        `\`3+ days\` → +25% XP\n` +
-        `\`7+ days\` → +50% XP\n` +
-        `\`14+ days\` → +75% XP\n` +
-        `\`30+ days\` → +100% XP`,
+        `\`3+ days\` → 1.1x XP\n` +
+        `\`7+ days\` → 1.25x XP\n` +
+        `\`14+ days\` → 1.5x XP\n` +
+        `\`30+ days\` → 2.0x XP`,
       inline: false
     })
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Consistency wins!` });
+    .setFooter({ text: `${EMOJIS.streak} ${BRAND.name} • Consistency wins!` });
 }
 
 function createAllCommandsEmbed() {
   return new EmbedBuilder()
-    .setColor(COLORS.BRAND_PRIMARY)
-    .setTitle('📋 All Commands')
-    .setDescription(`### Complete Command Reference\n`)
+    .setColor(COLORS.PRIMARY)
+    .setTitle(`📋 All Commands`)
+    .setDescription(`
+${VISUALS.separators.fancy}
+
+### Complete Command Reference
+
+${VISUALS.separators.thin}
+    `)
     .addFields(
       { 
-        name: '📚 Learning', 
-        value: '`/learn` `/explain` `/topics` `/path` `/funfact`', 
+        name: `${EMOJIS.learn} Learning`, 
+        value: '\`/learn\` \`/explain\` \`/topics\` \`/path\` \`/funfact\`', 
         inline: true 
       },
       { 
-        name: '🎯 Quizzes', 
-        value: '`/quiz` `/quickquiz` `/challenge`', 
+        name: `${EMOJIS.quiz} Quizzes`, 
+        value: '\`/quiz\` \`/quickquiz\` \`/challenge\`', 
         inline: true 
       },
       { 
-        name: '📊 Progress', 
-        value: '`/profile` `/progress` `/achievements` `/stats`', 
+        name: `${EMOJIS.stats} Progress`, 
+        value: '\`/profile\` \`/progress\` \`/achievements\` \`/stats\`', 
         inline: true 
       },
       { 
-        name: '🔥 Daily', 
-        value: '`/daily` `/streak` `/weekly`', 
+        name: `${EMOJIS.streak} Daily`, 
+        value: '\`/daily\` \`/streak\` \`/weekly\`', 
         inline: true 
       },
       { 
         name: '👥 Social', 
-        value: '`/leaderboard` `/studyparty` `/invite` `/share` `/referral`', 
+        value: '\`/leaderboard\` \`/studyparty\` \`/invite\` \`/share\` \`/referral\`', 
         inline: true 
       },
       { 
         name: '⚙️ Utility', 
-        value: '`/help` `/ping` `/feedback` `/setup` `/run`', 
+        value: '\`/help\` \`/ping\` \`/feedback\` \`/setup\` \`/run\`', 
         inline: true 
       }
     )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Your AI Learning Companion` });
+    .setFooter({ text: `${EMOJIS.brain} ${BRAND.name} • ${BRAND.tagline}` });
 }

@@ -1,8 +1,21 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
+import {
+  BRAND,
+  COLORS,
+  EMOJIS,
+  VISUALS,
+  RANKS,
+  getRank,
+  getNextRank,
+  createProgressBar,
+  xpForLevel,
+  formatNumber,
+  getStreakMultiplier
+} from '../../config/brandSystem.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  🎨 V4 DESIGN SYSTEM - PREMIUM PROFILE CARD
+//  🎨 V5 DESIGN SYSTEM - PREMIUM PROFILE CARD
 //  Beautiful, mobile-optimized, competition-winning UI
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -14,134 +27,36 @@ export const data = new SlashCommandBuilder()
       .setDescription('View another user\'s profile'));
 
 // ═══════════════════════════════════════════════════════════
-// 🏆 TIER SYSTEM - Prestigious rank progression
+// 🏆 TIER SYSTEM - Use brand system
 // ═══════════════════════════════════════════════════════════
-const TIERS = {
-  legend: { 
-    name: 'Legend', 
-    emoji: '👑', 
-    color: 0xFF6B35,
-    gradient: '🔶🟠🟡',
-    minLevel: 50,
-    badge: '◆◆◆◆◆',
-    title: 'LEGENDARY MENTOR',
-    border: '═',
-    glow: '✦'
-  },
-  master: { 
-    name: 'Master', 
-    emoji: '💎', 
-    color: 0x00D4FF,
-    gradient: '🔷💠🔹',
-    minLevel: 40,
-    badge: '◆◆◆◆○',
-    title: 'MASTER CODER',
-    border: '═',
-    glow: '◈'
-  },
-  expert: { 
-    name: 'Expert', 
-    emoji: '🔮', 
-    color: 0xA855F7,
-    gradient: '🟣🔮💜',
-    minLevel: 30,
-    badge: '◆◆◆○○',
-    title: 'EXPERT DEV',
-    border: '─',
-    glow: '◇'
-  },
-  advanced: { 
-    name: 'Advanced', 
-    emoji: '🥇', 
-    color: 0xFFD700,
-    gradient: '🟡⭐🌟',
-    minLevel: 20,
-    badge: '◆◆○○○',
-    title: 'ADVANCED SCHOLAR',
-    border: '─',
-    glow: '★'
-  },
-  intermediate: { 
-    name: 'Intermediate', 
-    emoji: '🥈', 
-    color: 0xC0C0C0,
-    gradient: '⚪🔘⚫',
-    minLevel: 12,
-    badge: '◆○○○○',
-    title: 'RISING STAR',
-    border: '─',
-    glow: '☆'
-  },
-  beginner: { 
-    name: 'Beginner', 
-    emoji: '🥉', 
-    color: 0xCD7F32,
-    gradient: '🟤🟠🔶',
-    minLevel: 5,
-    badge: '○○○○○',
-    title: 'KEEN LEARNER',
-    border: '─',
-    glow: '○'
-  },
-  novice: { 
-    name: 'Novice', 
-    emoji: '🌱', 
-    color: 0x22C55E,
-    gradient: '🟢💚🌿',
-    minLevel: 1,
-    badge: '●○○○○',
-    title: 'NEW EXPLORER',
-    border: '─',
-    glow: '•'
-  }
-};
 
-function getTier(level) {
-  if (level >= 50) return TIERS.legend;
-  if (level >= 40) return TIERS.master;
-  if (level >= 30) return TIERS.expert;
-  if (level >= 20) return TIERS.advanced;
-  if (level >= 12) return TIERS.intermediate;
-  if (level >= 5) return TIERS.beginner;
-  return TIERS.novice;
-}
-
-function getNextTier(level) {
-  const tiers = Object.values(TIERS).sort((a, b) => a.minLevel - b.minLevel);
-  return tiers.find(t => t.minLevel > level) || TIERS.legend;
-}
+// Use getRank and getNextRank from brandSystem instead of local TIERS
 
 // ═══════════════════════════════════════════════════════════
 // 🎨 PREMIUM VISUAL COMPONENTS
 // ═══════════════════════════════════════════════════════════
 
-function createPremiumProgressBar(current, max, length = 16) {
-  const safeMax = Math.max(max, 1);
-  const safeCurrent = Math.max(0, Math.min(current, safeMax));
-  const percentage = Math.round((safeCurrent / safeMax) * 100);
-  const filled = Math.round((percentage / 100) * length);
+function createLevelCard(level, xp, xpNeeded, rank) {
+  const bar = createProgressBar(xp, xpNeeded, 20);
+  const percentage = Math.min(Math.round((xp / (xpNeeded || 1)) * 100), 100);
+  const nextRank = getNextRank(level);
+  const levelsToNext = nextRank.minLevel - level;
   
-  // Premium gradient bar
-  const fillChar = '█';
-  const emptyChar = '░';
-  const bar = fillChar.repeat(filled) + emptyChar.repeat(length - filled);
-  
-  return { bar, percentage };
-}
+  return `
+${VISUALS.separators.fancy}
 
-function createLevelCard(level, xp, xpNeeded, tier) {
-  const { bar, percentage } = createPremiumProgressBar(xp, xpNeeded);
-  const nextTier = getNextTier(level);
-  const levelsToNext = nextTier.minLevel - level;
-  
-  return `\`\`\`
-${tier.glow} LEVEL ${String(level).padStart(2, '0')} ${tier.badge} ${tier.glow}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${bar}
-${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP  (${percentage}%)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${nextTier.emoji} Next: ${nextTier.name} in ${levelsToNext} levels
-\`\`\``;
+### ${rank.emoji} ${rank.title}
+
+**Level ${level}** ${rank.badge}
+
+\`${bar}\` **${percentage}%**
+${EMOJIS.xp} \`${formatNumber(xp)} / ${formatNumber(xpNeeded)} XP\`
+
+${VISUALS.separators.thin}
+
+${nextRank.emoji} **Next Rank:** ${nextRank.name} in **${levelsToNext}** levels
+
+${VISUALS.separators.fancy}`;
 }
 
 function createStatsPanel(stats) {
@@ -157,44 +72,41 @@ function createStatsPanel(stats) {
   else if (accuracy >= 60) { grade = 'C'; }
   else { grade = 'D'; }
 
-  return `\`\`\`
-📊 PERFORMANCE STATS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Quizzes: ${quizzes}    📚 Lessons: ${lessons}
-📂 Topics: ${topics}      🔥 Streak: ${streak}
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📈 Accuracy: ${accuracy}%   Grade: [ ${grade} ]
-🏆 Achievements Unlocked: ${achievements}
-\`\`\``;
+  return `
+**${EMOJIS.stats} PERFORMANCE STATS**
+
+> ${EMOJIS.quiz} Quizzes: **${quizzes}** | ${EMOJIS.learn} Lessons: **${lessons}**
+> ${EMOJIS.book} Topics: **${topics}** | ${EMOJIS.streak} Streak: **${streak}**
+
+${VISUALS.separators.thin}
+
+> ${EMOJIS.target} Accuracy: **${accuracy}%** | Grade: **[${grade}]**
+> ${EMOJIS.achievement} Achievements: **${achievements}**`;
 }
 
 function createStreakIndicator(streak) {
   if (streak === 0) {
-    return '❄️ **No streak** — Start today with `/daily`!';
+    return `❄️ **No streak** — Start today with \`/daily\`!`;
   }
   
   const flames = Math.min(streak, 7);
-  const fireEmoji = '🔥'.repeat(flames);
+  const fireEmoji = EMOJIS.streak.repeat(flames);
+  const multiplier = getStreakMultiplier(streak);
   
-  let status, bonus;
+  let status;
   if (streak >= 30) {
-    status = '**🌟 LEGENDARY STREAK!**';
-    bonus = '`+100% XP`';
+    status = `**${EMOJIS.crown} LEGENDARY STREAK!**`;
   } else if (streak >= 14) {
-    status = '**💫 Epic Streak!**';
-    bonus = '`+75% XP`';
+    status = `**${EMOJIS.gem} Epic Streak!**`;
   } else if (streak >= 7) {
-    status = '**🔥 On Fire!**';
-    bonus = '`+50% XP`';
+    status = `**${EMOJIS.streak} On Fire!**`;
   } else if (streak >= 3) {
-    status = '*Building momentum*';
-    bonus = '`+25% XP`';
+    status = `*Building momentum*`;
   } else {
-    status = '*Just getting started*';
-    bonus = '`+10% XP`';
+    status = `*Just getting started*`;
   }
   
-  return `${fireEmoji} **${streak} day${streak !== 1 ? 's' : ''}** ${status}\n> Bonus: ${bonus}`;
+  return `${fireEmoji} **${streak} day${streak !== 1 ? 's' : ''}** ${status}\n> Bonus: \`${multiplier}x XP\``;
 }
 
 function createAchievementBadges(achievements) {
@@ -273,34 +185,34 @@ export async function execute(interaction) {
     // ═══ Calculate stats with safe defaults ═══
     const level = user?.level || 1;
     const xp = user?.xp || 0;
-    const xpNeeded = typeof user?.xpForNextLevel === 'function' ? user.xpForNextLevel() : (level * 100);
+    const xpNeeded = xpForLevel(level + 1);
     const streak = user?.streak || 0;
     const quizzes = user?.quizzesTaken || 0;
     const totalQ = user?.totalQuestions || 0;
     const correctA = user?.correctAnswers || 0;
     const accuracy = totalQ > 0 ? Math.round((correctA / totalQ) * 100) : 0;
     const achievements = user?.achievements || [];
-    const lessonsCompleted = user?.completedLessons?.length || 0;
+    const lessonsCompleted = user?.completedLessons?.length || user?.lessonsCompleted || 0;
     const topicsStudied = user?.topicsStudied || [];
     const joinDate = user?.createdAt || new Date();
     
-    // ═══ Get tier info ═══
-    const tier = getTier(level);
+    // ═══ Get rank info from brand system ═══
+    const rank = getRank(level);
     const memberDuration = Math.floor((Date.now() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24));
 
     // ═══ Build Premium Profile Embed ═══
     const profileEmbed = new EmbedBuilder()
-      .setColor(tier.color)
+      .setColor(rank.color)
       .setAuthor({
-        name: `${tier.emoji} ${tier.title} ${tier.emoji}`,
+        name: `${rank.emoji} ${rank.title} ${rank.emoji}`,
         iconURL: targetUser.displayAvatarURL({ dynamic: true })
       })
       .setTitle(`${targetUser.displayName || targetUser.username}`)
       .setThumbnail(targetUser.displayAvatarURL({ dynamic: true, size: 512 }))
-      .setDescription(createLevelCard(level, xp, xpNeeded, tier))
+      .setDescription(createLevelCard(level, xp, xpNeeded, rank))
       .addFields(
         {
-          name: '📊 Statistics',
+          name: `${EMOJIS.stats} Statistics`,
           value: createStatsPanel({
             quizzes,
             accuracy,
@@ -312,13 +224,13 @@ export async function execute(interaction) {
           inline: false
         },
         {
-          name: '🔥 Daily Streak',
+          name: `${EMOJIS.streak} Daily Streak`,
           value: createStreakIndicator(streak),
           inline: true
         },
         {
-          name: `${tier.emoji} Current Rank`,
-          value: `**${tier.name}**\n${tier.gradient}`,
+          name: `${rank.emoji} Current Rank`,
+          value: `**${rank.name}**\n${rank.badge}`,
           inline: true
         }
       );
@@ -326,7 +238,7 @@ export async function execute(interaction) {
     // Add achievements field if user has any
     if (achievements.length > 0 || isOwnProfile) {
       profileEmbed.addFields({
-        name: `🏆 Achievements (${achievements.length})`,
+        name: `${EMOJIS.trophy} Achievements (${achievements.length})`,
         value: createAchievementBadges(achievements),
         inline: false
       });
@@ -334,13 +246,13 @@ export async function execute(interaction) {
 
     // Add motivational message
     profileEmbed.addFields({
-      name: '💬 Message',
+      name: `${EMOJIS.tip} Message`,
       value: getMotivationalMessage(level, streak, accuracy),
       inline: false
     });
 
     profileEmbed.setFooter({ 
-      text: `🎓 MentorAI • ${tier.emoji} ${tier.name} • Day ${memberDuration + 1}`,
+      text: `${EMOJIS.brain} ${BRAND.name} • ${rank.emoji} ${rank.name} • Day ${memberDuration + 1}`,
       iconURL: interaction.client.user?.displayAvatarURL()
     });
     profileEmbed.setTimestamp();
@@ -353,11 +265,11 @@ export async function execute(interaction) {
       const moreCount = topicsStudied.length > 10 ? `\n*...+${topicsStudied.length - 10} more*` : '';
       
       const topicsEmbed = new EmbedBuilder()
-        .setColor(0x3B82F6)
-        .setTitle('📚 Your Learning Journey')
+        .setColor(COLORS.LESSON_BLUE)
+        .setTitle(`${EMOJIS.learn} Your Learning Journey`)
         .setDescription(`**Topics Explored:**\n${topicsDisplay}${moreCount}`)
         .addFields({
-          name: '💡 Suggested Next',
+          name: `${EMOJIS.explain} Suggested Next`,
           value: getSuggestedTopics(topicsStudied),
           inline: false
         });
@@ -370,17 +282,17 @@ export async function execute(interaction) {
       new ButtonBuilder()
         .setCustomId(`profile_achievements_${targetUser.id}`)
         .setLabel('Achievements')
-        .setEmoji('🏆')
+        .setEmoji(EMOJIS.trophy)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId(`profile_stats_${targetUser.id}`)
         .setLabel('Full Stats')
-        .setEmoji('📊')
+        .setEmoji(EMOJIS.stats)
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('exec_leaderboard')
         .setLabel('Leaderboard')
-        .setEmoji('🏅')
+        .setEmoji(EMOJIS.leaderboard)
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -388,17 +300,17 @@ export async function execute(interaction) {
       new ButtonBuilder()
         .setCustomId('exec_daily')
         .setLabel('Daily')
-        .setEmoji('📅')
+        .setEmoji(EMOJIS.calendar)
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId('exec_quiz')
         .setLabel('Quiz')
-        .setEmoji('🎯')
+        .setEmoji(EMOJIS.quiz)
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('help_main')
         .setLabel('Menu')
-        .setEmoji('🏠')
+        .setEmoji(EMOJIS.home)
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -412,50 +324,51 @@ export async function execute(interaction) {
     
     // ═══ Fallback Profile ═══
     try {
+      const rank = RANKS.novice;
       const fallbackEmbed = new EmbedBuilder()
-        .setTitle(`👤 ${targetUser?.username || 'User'}'s Profile`)
-        .setColor(0x22C55E)
+        .setTitle(`${EMOJIS.profile} ${targetUser?.username || 'User'}'s Profile`)
+        .setColor(rank.color)
         .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
         .setDescription(`\`\`\`
-🌱 NEW EXPLORER 🌱
-━━━━━━━━━━━━━━━━━━━━
+${rank.emoji} NEW EXPLORER ${rank.emoji}
+${VISUALS.separators.thick}
 Begin your learning journey!
 \`\`\``)
         .addFields(
-          { name: '⭐ Level', value: '`1`', inline: true },
-          { name: '✨ XP', value: '`0`', inline: true },
-          { name: '🔥 Streak', value: '`0`', inline: true },
+          { name: `${EMOJIS.xp} Level`, value: '`1`', inline: true },
+          { name: `${EMOJIS.sparkle} XP`, value: '`0`', inline: true },
+          { name: `${EMOJIS.streak} Streak`, value: '`0`', inline: true },
           { 
-            name: '🚀 Get Started', 
-            value: '> `/learn` — Start a lesson\n> `/quiz` — Test knowledge\n> `/daily` — Claim rewards',
+            name: `${EMOJIS.rocket} Get Started`, 
+            value: `> \`/learn\` — Start a lesson\n> \`/quiz\` — Test knowledge\n> \`/daily\` — Claim rewards`,
             inline: false 
           }
         )
-        .setFooter({ text: '🎓 MentorAI • Begin your journey!' })
+        .setFooter({ text: `${EMOJIS.brain} ${BRAND.name} • Begin your journey!` })
         .setTimestamp();
 
       const fallbackButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('exec_learn')
           .setLabel('Learn')
-          .setEmoji('📚')
+          .setEmoji(EMOJIS.learn)
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setCustomId('exec_quiz')
           .setLabel('Quiz')
-          .setEmoji('🎯')
+          .setEmoji(EMOJIS.quiz)
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('help_main')
           .setLabel('Menu')
-          .setEmoji('🏠')
+          .setEmoji(EMOJIS.home)
           .setStyle(ButtonStyle.Secondary)
       );
 
       await interaction.editReply({ embeds: [fallbackEmbed], components: [fallbackButtons] });
     } catch (fallbackError) {
       console.error('Profile fallback error:', fallbackError);
-      await interaction.editReply({ content: '❌ Could not load profile. Try `/profile` again.' });
+      await interaction.editReply({ content: `${EMOJIS.error} Could not load profile. Try \`/profile\` again.` });
     }
   }
 }
@@ -484,18 +397,18 @@ async function showAchievementsPanel(interaction, userId) {
     const achievements = user?.achievements || [];
     
     const embed = new EmbedBuilder()
-      .setColor(0xFFD700)
-      .setTitle('🏆 All Achievements')
+      .setColor(COLORS.XP_GOLD)
+      .setTitle(`${EMOJIS.trophy} All Achievements`)
       .setDescription(achievements.length > 0 
-        ? achievements.map((a, i) => `${i + 1}. 🏅 **${a}**`).join('\n')
-        : '> No achievements unlocked yet!\n> Complete quizzes and lessons to earn badges.')
+        ? achievements.map((a, i) => `${i + 1}. ${EMOJIS.medal} **${a}**`).join('\n')
+        : `> No achievements unlocked yet!\n> Complete quizzes and lessons to earn badges.`)
       .setFooter({ text: `Total: ${achievements.length} achievements` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error('Achievements panel error:', error);
-    await interaction.reply({ content: '❌ Could not load achievements.', ephemeral: true });
+    await interaction.reply({ content: `${EMOJIS.error} Could not load achievements.`, ephemeral: true });
   }
 }
 
@@ -518,56 +431,62 @@ async function showStatsPanel(interaction, userId) {
     };
     
     const accuracy = stats.totalQ > 0 ? Math.round((stats.correct / stats.totalQ) * 100) : 0;
+    const rank = getRank(stats.level);
 
     const embed = new EmbedBuilder()
-      .setColor(0x3B82F6)
-      .setTitle('📊 Detailed Statistics')
+      .setColor(COLORS.LESSON_BLUE)
+      .setTitle(`${EMOJIS.stats} Detailed Statistics`)
       .setDescription(`\`\`\`
 COMPLETE STATS BREAKDOWN
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⭐ Level:        ${stats.level}
-✨ Total XP:     ${stats.xp}
-🔥 Best Streak:  ${stats.streak} days
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-🎯 Quizzes:      ${stats.quizzes}
-📝 Questions:    ${stats.totalQ}
-✅ Correct:      ${stats.correct}
-📈 Accuracy:     ${accuracy}%
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📚 Lessons:      ${stats.lessons}
-📂 Topics:       ${stats.topics}
-🏆 Achievements: ${stats.achievements}
+${VISUALS.separators.thick}
+${EMOJIS.xp} Level:        ${stats.level}
+${EMOJIS.sparkle} Total XP:     ${formatNumber(stats.xp)}
+${EMOJIS.streak} Best Streak:  ${stats.streak} days
+${VISUALS.separators.thick}
+${EMOJIS.quiz} Quizzes:      ${stats.quizzes}
+${EMOJIS.code} Questions:    ${stats.totalQ}
+${EMOJIS.check} Correct:      ${stats.correct}
+${EMOJIS.stats} Accuracy:     ${accuracy}%
+${VISUALS.separators.thick}
+${EMOJIS.learn} Lessons:      ${stats.lessons}
+${EMOJIS.topics} Topics:       ${stats.topics}
+${EMOJIS.trophy} Achievements: ${stats.achievements}
 \`\`\``)
-      .setFooter({ text: '🎓 MentorAI Statistics' })
+      .addFields({
+        name: `${rank.emoji} Current Rank`,
+        value: `**${rank.name}** - ${rank.title}`,
+        inline: false
+      })
+      .setFooter({ text: `${EMOJIS.brain} ${BRAND.name} Statistics` })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [embed] });
   } catch (error) {
     console.error('Stats panel error:', error);
-    await interaction.reply({ content: '❌ Could not load stats.', ephemeral: true });
+    await interaction.reply({ content: `${EMOJIS.error} Could not load stats.`, ephemeral: true });
   }
 }
 
 async function shareProfile(interaction, userId) {
   try {
     const user = await getOrCreateUser(userId);
-    const tier = getTier(user?.level || 1);
+    const rank = getRank(user?.level || 1);
     
     const shareEmbed = new EmbedBuilder()
-      .setColor(tier.color)
-      .setTitle(`${tier.emoji} Check out my profile!`)
-      .setDescription(`**Level ${user?.level || 1}** • **${user?.xp || 0} XP** • **${user?.streak || 0} day streak** 🔥`)
+      .setColor(rank.color)
+      .setTitle(`${rank.emoji} Check out my profile!`)
+      .setDescription(`**Level ${user?.level || 1}** • **${formatNumber(user?.xp || 0)} XP** • **${user?.streak || 0} day streak** ${EMOJIS.streak}`)
       .addFields(
-        { name: '🏆 Rank', value: tier.name, inline: true },
-        { name: '🎯 Quizzes', value: String(user?.quizzesTaken || 0), inline: true },
-        { name: '📚 Lessons', value: String(user?.completedLessons?.length || 0), inline: true }
+        { name: `${EMOJIS.trophy} Rank`, value: rank.name, inline: true },
+        { name: `${EMOJIS.quiz} Quizzes`, value: String(user?.quizzesTaken || 0), inline: true },
+        { name: `${EMOJIS.learn} Lessons`, value: String(user?.completedLessons?.length || 0), inline: true }
       )
-      .setFooter({ text: '🎓 Learn with MentorAI • /help' })
+      .setFooter({ text: `${EMOJIS.brain} Learn with ${BRAND.name} • /help` })
       .setTimestamp();
 
     await interaction.reply({ embeds: [shareEmbed] });
   } catch (error) {
     console.error('Share profile error:', error);
-    await interaction.reply({ content: '❌ Could not share profile.', ephemeral: true });
+    await interaction.reply({ content: `${EMOJIS.error} Could not share profile.`, ephemeral: true });
   }
 }
