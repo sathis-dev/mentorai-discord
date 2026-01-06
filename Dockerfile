@@ -1,19 +1,20 @@
-FROM node:20-alpine
+FROM node:18-bullseye-slim
 
 WORKDIR /app
 
 # Install build dependencies for canvas
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    libpixman-1-dev \
+    pkg-config \
     python3 \
-    make \
-    g++ \
-    cairo-dev \
-    pango-dev \
-    jpeg-dev \
-    giflib-dev \
-    librsvg-dev \
-    fontconfig \
-    ttf-freefont
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
