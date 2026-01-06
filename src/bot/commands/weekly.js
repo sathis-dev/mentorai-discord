@@ -84,7 +84,6 @@ async function showChallenge(interaction) {
   const embed = new EmbedBuilder()
     .setTitle(challenge.emoji + ' Weekly Challenge: ' + challenge.name)
     .setColor(challenge.color || COLORS.XP_GOLD)
-    .setThumbnail('https://i.imgur.com/AfFp7pu.png')
     .setDescription(
       '```\n' +
       "🏆 THIS WEEK'S GLOBAL CHALLENGE 🏆\n" +
