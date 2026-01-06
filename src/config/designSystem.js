@@ -177,13 +177,13 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   // Format question text
   let questionText = question.question || 'Loading question...';
   
-  // Format answers with quote blocks and consistent colored dots
+  // Format answers with quote blocks
   const options = question.options || ['N/A', 'N/A', 'N/A', 'N/A'];
   const formattedAnswers = [
-    `> 🔵 **A** ║ ${options[0]}`,
-    `> 🟢 **B** ║ ${options[1]}`,
-    `> 🟡 **C** ║ ${options[2]}`,
-    `> 🟣 **D** ║ ${options[3]}`
+    `> 🅰️ **A** ║ ${options[0]}`,
+    `> 🅱️ **B** ║ ${options[1]}`,
+    `> Ⓒ **C** ║ ${options[2]}`,
+    `> Ⓓ **D** ║ ${options[3]}`
   ].join('\n\n');
 
   // Build premium description with diamond separators
@@ -597,30 +597,27 @@ export function createQuizAnswerButtons(disabled = false) {
   const row = new ActionRowBuilder();
   
   // A=Blue (Primary), B=Green (Success), C=Gray (Secondary), D=Gray (Secondary)
-  // With colored circle emojis to match the embed
   row.addComponents(
     new ButtonBuilder()
       .setCustomId('quiz_answer_0')
       .setLabel('A')
-      .setEmoji('🔵')
+      .setEmoji('🅰️')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_1')
       .setLabel('B')
-      .setEmoji('🟢')
+      .setEmoji('🅱️')
       .setStyle(ButtonStyle.Success)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_2')
       .setLabel('C')
-      .setEmoji('🟡')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_3')
       .setLabel('D')
-      .setEmoji('🟣')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled)
   );
