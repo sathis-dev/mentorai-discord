@@ -23,9 +23,11 @@ import {
 import { getOrCreateUser } from '../../services/gamificationService.js';
 
 // Helper to pad text to exact width (34 chars for inner box content)
-const pad = (text, width = 34) => (text + ' '.repeat(width)).slice(0, width);
-// Pad with emoji prefix (emoji takes 2 visual chars, so reduce width by 1)
-const padE = (emoji, text, width = 32) => emoji + ' ' + (text + ' '.repeat(width)).slice(0, width);
+const pad = (text, width = 34) => (String(text) + ' '.repeat(width)).slice(0, width);
+// Pad with 1 emoji prefix (emoji takes 2 visual chars, so text gets 31 chars + 1 space)
+const pad1 = (emoji, text) => emoji + ' ' + (String(text) + ' '.repeat(31)).slice(0, 31);
+// Pad with 2 emoji prefix (2 emojis = 4 visual chars, text gets 28 chars + 2 spaces)  
+const pad2 = (e1, e2, text) => e1 + ' ' + e2 + ' ' + (String(text) + ' '.repeat(28)).slice(0, 28);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
@@ -69,38 +71,45 @@ export async function execute(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`## ⚡ WELCOME TO MENTOR AI ⚡
-
+`\`\`\`
+╔════════════════════════════════════╗
+║  ⚡ WELCOME TO MENTOR AI ⚡       ║
+╚════════════════════════════════════╝
+\`\`\`
 ### 👋 Hey, ${interaction.user.username}!
 
-**🎮 YOUR PROFILE**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ${pad(tier.title.toUpperCase())}│
-│  ${pad('Level ' + (user.level || 1))}│
+│  🎮 YOUR PROFILE                  │
+├────────────────────────────────────┤
+│  ${pad1('🏆', tier.title.toUpperCase())}│
+│  ${pad1('⭐', 'Level ' + (user.level || 1))}│
+├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${pad1('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
-**📊 QUICK STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ${pad(streak + ' day streak')}│
-│  ${pad(lessonsCompleted + ' lessons completed')}│
-│  ${pad(quizzesTaken + ' quizzes passed')}│
-│  ${pad(achievements + ' achievements')}│
+│  📊 QUICK STATS                   │
+├────────────────────────────────────┤
+│  ${pad1('🔥', streak + ' day streak')}│
+│  ${pad1('📚', lessonsCompleted + ' lessons completed')}│
+│  ${pad1('✅', quizzesTaken + ' quizzes passed')}│
+│  ${pad1('🏆', achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
-**⚡ FEATURES**
 \`\`\`
 ┌────────────────────────────────────┐
-│  AI Lessons   - Learn any topic    │
-│  Quizzes      - Test knowledge     │
-│  Battles      - Challenge friends  │
-│  XP & Ranks   - Track progress     │
-│  Achievements - Collect badges     │
+│  ⚡ FEATURES                      │
+├────────────────────────────────────┤
+│  📖 AI Lessons  - Learn any topic │
+│  🎯 Quizzes     - Test knowledge  │
+│  ⚔️ Battles     - Challenge friends│
+│  📈 XP & Ranks  - Track progress  │
+│  🏆 Achievements- Collect badges  │
 └────────────────────────────────────┘
 \`\`\`
 
@@ -463,25 +472,30 @@ async function showProfilePanel(interaction) {
     .setAuthor({ name: '👤 YOUR PROFILE', iconURL: interaction.client.user.displayAvatarURL() })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
     .setDescription(
-`### 🏆 ${tier.title.toUpperCase()}
-
+`\`\`\`
+╔════════════════════════════════════╗
+║  ${pad1('🏆', tier.title.toUpperCase())}║
+╚════════════════════════════════════╝
+\`\`\`
 ### ⭐ Level ${user.level || 1} • ${(user.xp || 0).toLocaleString()} Total XP
 
-**📈 PROGRESS TO NEXT LEVEL**
 \`\`\`
 ┌────────────────────────────────────┐
+│  📈 PROGRESS TO NEXT LEVEL        │
+├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP')}│
+│  ${pad1('✨', currentXP + '/' + xpNeeded + ' XP')}│
 └────────────────────────────────────┘
 \`\`\`
 
-**📊 YOUR STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ${pad((user.streak || 0) + ' day streak')}│
-│  ${pad((user.quizzesTaken || 0) + ' quizzes taken')}│
-│  ${pad((user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
-│  ${pad((user.achievements?.length || 0) + ' achievements')}│
+│  📊 YOUR STATS                    │
+├────────────────────────────────────┤
+│  ${pad1('🔥', (user.streak || 0) + ' day streak')}│
+│  ${pad1('📝', (user.quizzesTaken || 0) + ' quizzes taken')}│
+│  ${pad1('🎯', (user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
+│  ${pad1('🏆', (user.achievements?.length || 0) + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
     `)
@@ -769,38 +783,45 @@ async function showMainMenu(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`## ⚡ WELCOME TO MENTOR AI ⚡
-
+`\`\`\`
+╔════════════════════════════════════╗
+║  ⚡ WELCOME TO MENTOR AI ⚡       ║
+╚════════════════════════════════════╝
+\`\`\`
 ### 👋 Hey, ${interaction.user.username}!
 
-**🎮 YOUR PROFILE**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ${pad(tier.title.toUpperCase())}│
-│  ${pad('Level ' + (user.level || 1))}│
+│  🎮 YOUR PROFILE                  │
+├────────────────────────────────────┤
+│  ${pad1('🏆', tier.title.toUpperCase())}│
+│  ${pad1('⭐', 'Level ' + (user.level || 1))}│
+├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${pad1('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
-**📊 QUICK STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ${pad(streak + ' day streak')}│
-│  ${pad(lessonsCompleted + ' lessons completed')}│
-│  ${pad(quizzesTaken + ' quizzes passed')}│
-│  ${pad(achievements + ' achievements')}│
+│  📊 QUICK STATS                   │
+├────────────────────────────────────┤
+│  ${pad1('🔥', streak + ' day streak')}│
+│  ${pad1('📚', lessonsCompleted + ' lessons completed')}│
+│  ${pad1('✅', quizzesTaken + ' quizzes passed')}│
+│  ${pad1('🏆', achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
-**⚡ FEATURES**
 \`\`\`
 ┌────────────────────────────────────┐
-│  AI Lessons   - Learn any topic    │
-│  Quizzes      - Test knowledge     │
-│  Battles      - Challenge friends  │
-│  XP & Ranks   - Track progress     │
-│  Achievements - Collect badges     │
+│  ⚡ FEATURES                      │
+├────────────────────────────────────┤
+│  📖 AI Lessons  - Learn any topic │
+│  🎯 Quizzes     - Test knowledge  │
+│  ⚔️ Battles     - Challenge friends│
+│  📈 XP & Ranks  - Track progress  │
+│  🏆 Achievements- Collect badges  │
 └────────────────────────────────────┘
 \`\`\`
 
