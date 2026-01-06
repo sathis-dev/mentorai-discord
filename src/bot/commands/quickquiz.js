@@ -182,9 +182,9 @@ export async function execute(interaction) {
               .setEmoji('⚡')
               .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
-              .setCustomId('funfact_learn_' + encodeURIComponent(topic))
-              .setLabel('Learn This Topic')
-              .setEmoji('📚')
+              .setCustomId('help_main')
+              .setLabel('Menu')
+              .setEmoji('🏠')
               .setStyle(ButtonStyle.Secondary)
           );
 

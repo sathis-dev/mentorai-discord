@@ -40,29 +40,72 @@ export async function execute(interaction) {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     const tier = getTier(user.level || 1);
     
-    // Create premium welcome embed
+    // Calculate XP progress
+    const currentXP = (user.xp || 0) % 1000;
+    const xpNeeded = 1000;
+    const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
+    const progressLength = 20;
+    const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
+    const emptyBars = progressLength - filledBars;
+    const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
+    
+    // Stats
+    const streak = user.streak || 0;
+    const lessonsCompleted = user.lessonsCompleted || 0;
+    const quizzesTaken = user.quizzesTaken || 0;
+    const achievements = user.achievements?.length || 0;
+    
+    // Create premium RPG-style embed
     const mainEmbed = new EmbedBuilder()
       .setColor(COLORS.BRAND_PRIMARY)
       .setAuthor({ 
-        name: 'MentorAI Command Center', 
+        name: '✦ MENTOR AI ✦', 
         iconURL: interaction.client.user.displayAvatarURL() 
       })
-      .setTitle(`${ICONS.LOGO} Welcome, ${interaction.user.username}!`)
-      .setDescription(
-        `${tier.emoji} **${tier.title}** • Level ${user.level || 1}\n\n` +
-        `**🌟 Your AI-Powered Learning Journey**\n` +
-        `MentorAI transforms coding education into an exciting adventure with:\n\n` +
-        `${ICONS.BRAIN} **AI Lessons** — Learn any topic\n` +
-        `${ICONS.TARGET} **Quizzes** — Test knowledge\n` +
-        `${ICONS.XP} **XP & Levels** — Track progress\n` +
-        `${ICONS.STREAK} **Streaks** — Stay consistent\n` +
-        `${ICONS.TROPHY} **Achievements** — Collect badges\n` +
-        `${ICONS.SWORD} **Battles** — Challenge friends\n\n` +
-        `**🚀 Quick Start** — Select an action below!`
-      )
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+      .setDescription(
+`\`\`\`ansi
+[2;34m╔════════════════════════════════════════╗[0m
+[2;34m║[0m   [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m          [2;34m║[0m
+[2;34m╚════════════════════════════════════════╝[0m
+\`\`\`
+## 👋 Hey, ${interaction.user.username}!
+
+╭───「 🎮 **YOUR PROFILE** 」──────────╮
+│
+│   ${tier.emoji} **${tier.title.toUpperCase()}**
+│   ⭐ Level **${user.level || 1}**
+│
+│   \`${progressBar}\`
+│   ✨ \`${currentXP}\`/\`${xpNeeded}\` XP to next level
+│
+╰─────────────────────────────────────╯
+
+╭───「 📊 **QUICK STATS** 」──────────╮
+│
+│   🔥 **${streak}** day streak
+│   📚 **${lessonsCompleted}** lessons completed
+│   ✅ **${quizzesTaken}** quizzes passed
+│   🏆 **${achievements}** achievements
+│
+╰─────────────────────────────────────╯
+
+╭───「 ⚡ **FEATURES** 」─────────────╮
+│
+│   📖 **AI Lessons** — Learn any topic
+│   🎯 **Quizzes** — Test knowledge
+│   ⚔️ **Battles** — Challenge friends
+│   📈 **XP & Ranks** — Track progress
+│   🏆 **Achievements** — Collect badges
+│
+╰─────────────────────────────────────╯
+
+\`\`\`ansi
+[2;33m🚀 Select an action below to start![0m
+\`\`\``
+      )
       .setFooter({ 
-        text: `${ICONS.LOGO} MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
+        text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
         iconURL: interaction.user.displayAvatarURL()
       })
       .setTimestamp();
@@ -112,28 +155,28 @@ export async function execute(interaction) {
         ])
     );
 
-    // Primary action buttons - most used features
+    // Primary action buttons - Fixed colors per design spec
     const primaryButtons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('help_action_quiz')
         .setLabel('Quick Quiz')
         .setEmoji('🎯')
-        .setStyle(ButtonStyle.Success),
+        .setStyle(ButtonStyle.Primary),  // Blue
       new ButtonBuilder()
         .setCustomId('help_action_learn')
         .setLabel('Start Lesson')
         .setEmoji('📚')
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Success),  // Green
       new ButtonBuilder()
         .setCustomId('help_action_daily')
         .setLabel('Daily Bonus')
         .setEmoji('🎁')
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Danger),   // Red - catches attention!
       new ButtonBuilder()
         .setCustomId('help_action_profile')
         .setLabel('My Profile')
         .setEmoji('👤')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary) // Gray
     );
 
     // Secondary action buttons
@@ -145,7 +188,7 @@ export async function execute(interaction) {
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('help_action_achievements')
-        .setLabel('Achievements')
+        .setLabel('Badges')
         .setEmoji('🎖️')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
@@ -204,17 +247,42 @@ export async function handleButton(interaction, action) {
 async function showQuizPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.QUIZ)
-    .setTitle('🎯 Quiz Center')
+    .setAuthor({ name: '🎯 QUIZ COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Test Your Knowledge!\n\n` +
-      `Choose a topic and difficulty to start your quiz.\n` +
-      `Each correct answer earns you **XP** based on difficulty:\n\n` +
-      `🟢 **Easy** — +20 XP per question\n` +
-      `🟡 **Medium** — +30 XP per question\n` +
-      `🔴 **Hard** — +45 XP per question\n\n` +
-      `*💡 Tip: Complete quizzes to unlock achievements!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Select a topic below` });
+`\`\`\`ansi
+[2;34m╔════════════════════════════════════╗[0m
+[2;34m║[0m      [1;37m🎯 TEST YOUR KNOWLEDGE[0m       [2;34m║[0m
+[2;34m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+### 🎮 Commands
+
+> **/quiz [topic]**
+> Start a 5-question quiz
+> Example: \`/quiz react\`
+
+> **/quiz [topic] [difficulty]**
+> Choose difficulty: easy, medium, hard
+> Example: \`/quiz python hard\`
+
+> **/quickquiz**
+> Random topic, instant start!
+
+> **/challenge @user**
+> Battle a friend in a quiz duel!
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**🏆 XP Rewards:**
+\`\`\`
+🟢 Easy   │ +20 XP per correct
+🟡 Medium │ +30 XP per correct  
+🔴 Hard   │ +45 XP per correct
+\`\`\`
+    `)
+    .setFooter({ text: '⚡ MentorAI • Select a topic below' });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -260,21 +328,45 @@ async function showQuizPanel(interaction) {
 async function showLearnPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.LESSON)
-    .setTitle('📚 Learning Center')
+    .setAuthor({ name: '📖 LEARNING COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### AI-Powered Lessons\n\n` +
-      `Get personalized lessons on any programming topic!\n\n` +
-      `**What you'll get:**\n` +
-      `${ICONS.CHECK} Clear explanations\n` +
-      `${ICONS.CHECK} Code examples\n` +
-      `${ICONS.CHECK} Key concepts\n` +
-      `${ICONS.CHECK} Practice challenges\n\n` +
-      `**Difficulty Levels:**\n` +
-      `🌱 **Beginner** — Start from scratch\n` +
-      `🌿 **Intermediate** — Build on basics\n` +
-      `🌳 **Advanced** — Deep dive`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Select a topic to begin` });
+`\`\`\`ansi
+[2;32m╔════════════════════════════════════╗[0m
+[2;32m║[0m    [1;37m📖 AI-POWERED LEARNING[0m         [2;32m║[0m
+[2;32m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+### 📚 Commands
+
+> **/learn [topic]**
+> Start an AI-powered lesson on any topic
+> Example: \`/learn javascript basics\`
+
+> **/explain [concept]**
+> Get a detailed explanation
+> Example: \`/explain recursion\`
+
+> **/path browse**
+> Structured learning paths
+> Example: \`/path browse\`
+
+> **/topics**
+> See all available topics
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+╭───「 💡 **WHAT YOU GET** 」──────╮
+│
+│   ✅ Clear explanations
+│   ✅ Code examples
+│   ✅ Key concepts
+│   ✅ Practice challenges
+│
+╰─────────────────────────────────╯
+    `)
+    .setFooter({ text: '⚡ MentorAI • Select a topic to begin' });
 
   const topicMenu = new ActionRowBuilder().addComponents(
     new StringSelectMenuBuilder()
@@ -319,19 +411,36 @@ async function showLearnPanel(interaction) {
 async function showDailyPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.XP_GOLD)
-    .setTitle('🎁 Daily Bonus Center')
+    .setAuthor({ name: '🎁 DAILY REWARDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Claim Your Daily Rewards!\n\n` +
-      `Come back every day to earn bonus XP and build your streak!\n\n` +
-      `**Base Reward:** +75 XP\n\n` +
-      `**Streak Multipliers:**\n` +
-      `🔥 3+ days — **1.25x** XP\n` +
-      `🔥 7+ days — **1.5x** XP\n` +
-      `🔥 14+ days — **1.75x** XP\n` +
-      `🔥 30+ days — **2x** XP\n\n` +
-      `*Plus: AI-powered daily tips & fun facts!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Resets at midnight UTC` });
+`\`\`\`ansi
+[2;33m╔════════════════════════════════════╗[0m
+[2;33m║[0m    [1;37m🎁 DAILY BONUS CENTER[0m          [2;33m║[0m
+[2;33m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+### ✨ Claim Your Daily Rewards!
+
+Come back every day to earn bonus XP and build your streak!
+
+╭───「 🎁 **REWARDS** 」──────────────╮
+│
+│   **Base Reward:** +75 XP
+│
+│   🔥 3+ days — **1.25x** XP
+│   🔥 7+ days — **1.5x** XP
+│   🔥 14+ days — **1.75x** XP
+│   🔥 30+ days — **2x** XP
+│
+╰─────────────────────────────────────╯
+
+*✨ Plus: AI-powered daily tips & fun facts!*
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+    `)
+    .setFooter({ text: '⚡ MentorAI • Resets at midnight UTC' });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -363,26 +472,42 @@ async function showDailyPanel(interaction) {
 async function showProfilePanel(interaction) {
   const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
   const tier = getTier(user.level || 1);
-  const xpNeeded = user.xpForNextLevel ? user.xpForNextLevel() : 100;
-  const xpProgress = createProgressBar(user.xp || 0, xpNeeded, 12, 'xp');
+  
+  // Calculate XP progress
+  const currentXP = (user.xp || 0) % 1000;
+  const xpNeeded = 1000;
+  const progressLength = 16;
+  const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
+  const emptyBars = progressLength - filledBars;
+  const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
   
   const embed = new EmbedBuilder()
     .setColor(tier.color)
-    .setTitle(`${tier.emoji} ${interaction.user.username}'s Profile`)
+    .setAuthor({ name: '👤 YOUR PROFILE', iconURL: interaction.client.user.displayAvatarURL() })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
     .setDescription(
-      `**${tier.title}** • Level ${user.level || 1}\n\n` +
-      `**XP Progress:**\n${xpProgress}`
-    )
-    .addFields(
-      { name: '⭐ Level', value: `**${user.level || 1}**`, inline: true },
-      { name: '💎 XP', value: `**${(user.xp || 0).toLocaleString()}**`, inline: true },
-      { name: '🔥 Streak', value: `**${user.streak || 0}** days`, inline: true },
-      { name: '📝 Quizzes', value: `**${user.quizzesTaken || 0}**`, inline: true },
-      { name: '🎯 Accuracy', value: `**${user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0}%**`, inline: true },
-      { name: '🏆 Badges', value: `**${user.achievements?.length || 0}**`, inline: true }
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • ${tier.badge}` });
+`╭───「 ${tier.emoji} **${tier.title.toUpperCase()}** 」─────╮
+│
+│   ⭐ Level **${user.level || 1}**
+│   ✨ **${(user.xp || 0).toLocaleString()}** Total XP
+│
+│   \`${progressBar}\`
+│   ✨ \`${currentXP}\`/\`${xpNeeded}\` to next level
+│
+╰──────────────────────────────╯
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+╭───「 📊 **STATS** 」────────────╮
+│
+│   🔥 **${user.streak || 0}** day streak
+│   📝 **${user.quizzesTaken || 0}** quizzes taken
+│   🎯 **${user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0}%** accuracy
+│   🏆 **${user.achievements?.length || 0}** achievements
+│
+╰──────────────────────────────╯
+    `)
+    .setFooter({ text: `⚡ MentorAI • ${tier.badge || tier.title}` });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -414,17 +539,30 @@ async function showProfilePanel(interaction) {
 async function showLeaderboardPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.LEADERBOARD)
-    .setTitle('🏆 Leaderboard Center')
+    .setAuthor({ name: '🏆 LEADERBOARD', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Compete with Other Learners!\n\n` +
-      `See who's at the top and climb the ranks!\n\n` +
-      `**Rankings based on:**\n` +
-      `🥇 Total XP earned\n` +
-      `📈 Level progression\n` +
-      `🔥 Learning streak\n\n` +
-      `*Complete quizzes and lessons to rise up!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Rise to the top!` });
+`\`\`\`ansi
+[2;33m╔════════════════════════════════════╗[0m
+[2;33m║[0m    [1;37m🏆 COMPETE & CLIMB RANKS[0m       [2;33m║[0m
+[2;33m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+╭───「 🏅 **RANKINGS** 」─────────╮
+│
+│   🥇 Total XP earned
+│   📈 Level progression
+│   🔥 Learning streak
+│   ✅ Quiz accuracy
+│
+╰──────────────────────────────╯
+
+*🚀 Complete quizzes & lessons to rise up!*
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+    `)
+    .setFooter({ text: '⚡ MentorAI • Rise to the top!' });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -452,25 +590,37 @@ async function showLeaderboardPanel(interaction) {
 async function showAchievementsPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.ACHIEVEMENT)
-    .setTitle('🎖️ Achievement Gallery')
+    .setAuthor({ name: '🏅 ACHIEVEMENTS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Unlock Achievements!\n\n` +
-      `Complete challenges to earn badges and bonus XP.\n\n` +
-      `**Sample Achievements:**\n\n` +
-      `🌟 **First Steps** — Complete your first quiz\n` +
-      `🔥 **On Fire** — Achieve 7-day streak\n` +
-      `🎯 **Sharpshooter** — Score 100% on a quiz\n` +
-      `📚 **Bookworm** — Complete 10 lessons\n` +
-      `👑 **Champion** — Reach level 10\n` +
-      `💎 **Diamond Mind** — Reach level 30\n\n` +
-      `*Each achievement grants bonus XP!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Collect them all!` });
+`\`\`\`ansi
+[2;35m╔════════════════════════════════════╗[0m
+[2;35m║[0m    [1;37m🏅 UNLOCK ACHIEVEMENTS[0m        [2;35m║[0m
+[2;35m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+╭───「 🏆 **BADGES** 」───────────╮
+│
+│   🌟 **First Steps** — First quiz
+│   🔥 **On Fire** — 7-day streak
+│   🎯 **Sharpshooter** — 100% quiz
+│   📚 **Bookworm** — 10 lessons
+│   👑 **Champion** — Level 10
+│   💎 **Diamond Mind** — Level 30
+│
+╰──────────────────────────────────╯
+
+*✨ Each achievement grants bonus XP!*
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+    `)
+    .setFooter({ text: '⚡ MentorAI • Collect them all!' });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('exec_achievements')
-      .setLabel('🎖️ My Achievements')
+      .setLabel('🏅 My Achievements')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
       .setCustomId('exec_profile')
@@ -497,19 +647,32 @@ async function showStreakPanel(interaction) {
   
   const embed = new EmbedBuilder()
     .setColor(COLORS.STREAK_FIRE)
-    .setTitle('🔥 Streak Status')
+    .setAuthor({ name: '🔥 STREAK STATUS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Keep the Fire Burning!\n\n` +
-      `${fires}\n` +
-      `**Current Streak:** ${streak} day${streak !== 1 ? 's' : ''}\n\n` +
-      `**Streak Bonuses:**\n` +
-      `📅 3 days → **+25%** XP\n` +
-      `📅 7 days → **+50%** XP\n` +
-      `📅 14 days → **+75%** XP\n` +
-      `📅 30 days → **+100%** XP\n\n` +
-      `*Complete any activity daily to maintain your streak!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Consistency is key!` });
+`\`\`\`ansi
+[2;31m╔════════════════════════════════════╗[0m
+[2;31m║[0m    [1;37m🔥 KEEP THE FIRE BURNING[0m       [2;31m║[0m
+[2;31m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+${fires}
+
+**Current Streak:** ${streak} day${streak !== 1 ? 's' : ''}
+
+╭───「 ✨ **BONUSES** 」───────────╮
+│
+│   📅 3 days → **+25%** XP
+│   📅 7 days → **+50%** XP
+│   📅 14 days → **+75%** XP
+│   📅 30 days → **+100%** XP
+│
+╰──────────────────────────────╯
+
+*Complete any activity daily to maintain!*
+    `)
+    .setFooter({ text: '⚡ MentorAI • Consistency is key!' });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -537,24 +700,34 @@ async function showStreakPanel(interaction) {
 async function showTopicsPanel(interaction) {
   const embed = new EmbedBuilder()
     .setColor(COLORS.LESSON)
-    .setTitle('📖 Available Topics')
+    .setAuthor({ name: '📖 AVAILABLE TOPICS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-      `### Master These Programming Topics\n\n` +
-      `**💻 Languages**\n` +
-      `🟨 JavaScript • 🐍 Python • 🔷 TypeScript\n` +
-      `☕ Java • 🔵 C++ • 🦀 Rust • 🐹 Go\n\n` +
-      `**🌐 Web Development**\n` +
-      `⚛️ React • 💚 Vue.js • 🅰️ Angular\n` +
-      `🟢 Node.js • 🎨 CSS/Tailwind • 📱 Responsive\n\n` +
-      `**🗄️ Backend & Data**\n` +
-      `🗃️ SQL • 🍃 MongoDB • 🔥 Firebase\n` +
-      `📦 REST APIs • 🔒 Authentication\n\n` +
-      `**🧠 Computer Science**\n` +
-      `🔢 Data Structures • 🧮 Algorithms\n` +
-      `🤖 Machine Learning • ☁️ Cloud Computing\n\n` +
-      `*Or ask about any topic — AI can teach it!*`
-    )
-    .setFooter({ text: `${ICONS.LOGO} MentorAI • Learn anything!` });
+`\`\`\`ansi
+[2;32m╔════════════════════════════════════╗[0m
+[2;32m║[0m    [1;37m📖 MASTER THESE TOPICS[0m        [2;32m║[0m
+[2;32m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+╭───「 💻 **LANGUAGES** 」────────╮
+│   🟨 JavaScript • 🐍 Python • 🔷 TypeScript
+│   ☕ Java • 🔵 C++ • 🦀 Rust • 🐹 Go
+╰──────────────────────────────╯
+
+╭───「 🌐 **WEB DEV** 」───────────╮
+│   ⚛️ React • 💚 Vue.js • 🅰️ Angular
+│   🟢 Node.js • 🎨 CSS/Tailwind
+╰──────────────────────────────╯
+
+╭───「 🗄️ **BACKEND & DATA** 」────╮
+│   🗃️ SQL • 🍃 MongoDB • 🔥 Firebase
+│   📦 REST APIs • 🔒 Auth
+╰──────────────────────────────╯
+
+*🤖 Or ask about any topic — AI can teach it!*
+    `)
+    .setFooter({ text: '⚡ MentorAI • Learn anything!' });
 
   const buttons = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -588,28 +761,70 @@ async function showMainMenu(interaction) {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     const tier = getTier(user.level || 1);
     
+    // Calculate XP progress
+    const currentXP = (user.xp || 0) % 1000;
+    const xpNeeded = 1000;
+    const progressLength = 20;
+    const filledBars = Math.floor((currentXP / xpNeeded) * progressLength);
+    const emptyBars = progressLength - filledBars;
+    const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
+    
+    // Stats
+    const streak = user.streak || 0;
+    const lessonsCompleted = user.lessonsCompleted || 0;
+    const quizzesTaken = user.quizzesTaken || 0;
+    const achievements = user.achievements?.length || 0;
+    
     const mainEmbed = new EmbedBuilder()
       .setColor(COLORS.BRAND_PRIMARY)
       .setAuthor({ 
-        name: 'MentorAI Command Center', 
+        name: '✦ MENTOR AI ✦', 
         iconURL: interaction.client.user.displayAvatarURL() 
       })
-      .setTitle(`${ICONS.LOGO} Welcome, ${interaction.user.username}!`)
-      .setDescription(
-        `${tier.emoji} **${tier.title}** • Level ${user.level || 1}\n\n` +
-        `**🌟 Your AI-Powered Learning Journey**\n` +
-        `MentorAI transforms coding education into an exciting adventure with:\n\n` +
-        `${ICONS.BRAIN} **AI Lessons** — Learn any topic\n` +
-        `${ICONS.TARGET} **Quizzes** — Test knowledge\n` +
-        `${ICONS.XP} **XP & Levels** — Track progress\n` +
-        `${ICONS.STREAK} **Streaks** — Stay consistent\n` +
-        `${ICONS.TROPHY} **Achievements** — Collect badges\n` +
-        `${ICONS.SWORD} **Battles** — Challenge friends\n\n` +
-        `**🚀 Quick Start** — Select an action below!`
-      )
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
+      .setDescription(
+`\`\`\`ansi
+[2;34m╔════════════════════════════════════════╗[0m
+[2;34m║[0m   [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m          [2;34m║[0m
+[2;34m╚════════════════════════════════════════╝[0m
+\`\`\`
+## 👋 Hey, ${interaction.user.username}!
+
+╭───「 🎮 **YOUR PROFILE** 」──────────╮
+│
+│   ${tier.emoji} **${tier.title.toUpperCase()}**
+│   ⭐ Level **${user.level || 1}**
+│
+│   \`${progressBar}\`
+│   ✨ \`${currentXP}\`/\`${xpNeeded}\` XP to next level
+│
+╰─────────────────────────────────────╯
+
+╭───「 📊 **QUICK STATS** 」──────────╮
+│
+│   🔥 **${streak}** day streak
+│   📚 **${lessonsCompleted}** lessons completed
+│   ✅ **${quizzesTaken}** quizzes passed
+│   🏆 **${achievements}** achievements
+│
+╰─────────────────────────────────────╯
+
+╭───「 ⚡ **FEATURES** 」─────────────╮
+│
+│   📖 **AI Lessons** — Learn any topic
+│   🎯 **Quizzes** — Test knowledge
+│   ⚔️ **Battles** — Challenge friends
+│   📈 **XP & Ranks** — Track progress
+│   🏆 **Achievements** — Collect badges
+│
+╰─────────────────────────────────────╯
+
+\`\`\`ansi
+[2;33m🚀 Select an action below to start![0m
+\`\`\``
+      )
       .setFooter({ 
-        text: `${ICONS.LOGO} MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
+        text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
         iconURL: interaction.user.displayAvatarURL()
       })
       .setTimestamp();
@@ -633,17 +848,17 @@ async function showMainMenu(interaction) {
         .setCustomId('help_action_quiz')
         .setLabel('Quick Quiz')
         .setEmoji('🎯')
-        .setStyle(ButtonStyle.Success),
+        .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('help_action_learn')
         .setLabel('Start Lesson')
         .setEmoji('📚')
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
         .setCustomId('help_action_daily')
         .setLabel('Daily Bonus')
         .setEmoji('🎁')
-        .setStyle(ButtonStyle.Primary),
+        .setStyle(ButtonStyle.Danger),
       new ButtonBuilder()
         .setCustomId('help_action_profile')
         .setLabel('My Profile')
@@ -659,7 +874,7 @@ async function showMainMenu(interaction) {
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('help_action_achievements')
-        .setLabel('Achievements')
+        .setLabel('Badges')
         .setEmoji('🎖️')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()

@@ -1,201 +1,85 @@
-🎯 MentorAI MAXIMUM Discord UI (Within Real Limits)
+# 🚀 MentorAI PREMIUM Help Command UI
 
-## Discord Embed Limitations:
-- ❌ No custom CSS/fonts
-- ❌ No custom HTML
-- ✅ Unicode characters
-- ✅ Discord markdown (**bold**, *italic*, `code`, ```codeblock```)
-- ✅ Embed color (left border)
-- ✅ Author, Title, Description, Fields, Footer, Thumbnail, Image
-- ✅ Buttons (5 per row, max 5 rows)
-- ✅ Emojis
-
----
-
-## 🔥 MAXIMUM IMPRESSIVE DESIGNS
-
-### DESIGN 1: Clean Premium
-```javascript
-const embed = new EmbedBuilder()
-  .setColor(0xED4245) // Red for HARD
-  .setAuthor({ 
-    name: '⚡ MENTOR AI QUIZ', 
-    iconURL: 'YOUR_ICON_URL' 
-  })
-  .setTitle('📚 ALGORITHMS')
-  .setDescription(`
-\`\`\`ansi
-[2;31m█ HARD [0m  [2;36m💎 +35 XP[0m  [2;33m⏱ 30s[0m
-\`\`\`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**❓ Which of the following is the most accurate description of DFS vs BFS in graph traversal?**
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🔵 **A** ┃ DFS uses less memory, slower for shortest paths
-
-> 🟢 **B** ┃ BFS uses less memory, slower for deep targets
-
-> 🟡 **C** ┃ Equal time complexity, BFS uses less memory
-
-> 🟣 **D** ┃ Equal space complexity, DFS always faster
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━
-\`\`\`
-████████░░░░░░░░░░░░░░░░░░░░  1/5
-\`\`\`
-  `)
-  .setFooter({ text: '⚡ Select A, B, C, or D • MentorAI' })
-  .setTimestamp();
+## Current Issues:
 ```
-
-**Preview:**
-```
-┌─────────────────────────────────────────────┐
-│ ⚡ MENTOR AI QUIZ                            │
-├─────────────────────────────────────────────┤
-│ 📚 ALGORITHMS                               │
-│                                             │
-│ ┌─────────────────────────────────────────┐ │
-│ │ █ HARD   💎 +35 XP   ⏱ 30s             │ │
-│ └─────────────────────────────────────────┘ │
-│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│                                             │
-│ ❓ Which of the following is the most       │
-│    accurate description of DFS vs BFS?      │
-│                                             │
-│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│                                             │
-│ ▎🔵 A ┃ DFS uses less memory, slower...    │
-│                                             │
-│ ▎🟢 B ┃ BFS uses less memory, slower...    │
-│                                             │
-│ ▎🟡 C ┃ Equal time complexity, BFS...      │
-│                                             │
-│ ▎🟣 D ┃ Equal space complexity, DFS...     │
-│                                             │
-│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
-│ ████████░░░░░░░░░░░░░░░░░░░░  1/5          │
-│                                             │
-│ ⚡ Select A, B, C, or D • MentorAI          │
-└─────────────────────────────────────────────┘
+❌ Plain list of features (boring)
+❌ No visual hierarchy
+❌ No progress visualization
+❌ Feels like every other bot
+❌ No personality/brand feel
 ```
 
 ---
 
-### DESIGN 2: Using Fields for Structure
+## ✨ UPGRADED DESIGNS
+
+### DESIGN 1: Premium Dashboard Style
+
 ```javascript
-const embed = new EmbedBuilder()
-  .setColor(0xED4245)
-  .setAuthor({ 
-    name: '🎮 MENTOR AI', 
-    iconURL: 'ICON_URL' 
-  })
-  .setTitle('`  📚 ALGORITHMS  `')
-  .addFields(
-    { 
-      name: '⠀', // invisible character for spacing
-      value: '```ansi\n[2;31m█ HARD[0m   💎 +35 XP   ⏱️ 30s   🔥 x3\n```',
-      inline: false 
-    },
-    { 
-      name: '❓ Question', 
-      value: 'Which is the most accurate description of **DFS vs BFS** in graph traversal, considering space and time complexity?',
-      inline: false 
-    },
-    { 
-      name: '⠀',
-      value: '>>> 🔵 **A** │ DFS uses less memory, slower for shortest paths\n\n🟢 **B** │ BFS uses less memory, slower for deep targets\n\n🟡 **C** │ Equal time, BFS uses less memory\n\n🟣 **D** │ Equal space, DFS always faster',
-      inline: false 
-    },
-    {
-      name: '📊 Progress',
-      value: '`▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱` **1/5**',
-      inline: false
-    }
-  )
-  .setFooter({ text: 'Select A, B, C, or D to answer' })
-  .setTimestamp();
-```
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 
----
-
-### DESIGN 3: Compact Gaming Style
-```javascript
-const description = `
-**\`🎯 ALGORITHMS\`** ─ 🔴 HARD
-╭───────────────────────────╮
-│ 💎 \`+35 XP\`  ⏱️ \`30s\`  🔥 \`x3\`  │
-╰───────────────────────────╯
-
-> **❓ Which describes DFS vs BFS most accurately?**
-
-╭─ **ANSWERS** ─────────────────╮
-│                               │
-│ 🅰️ DFS less memory, slower    │
-│    for shortest paths         │
-│                               │
-│ 🅱️ BFS less memory, slower    │
-│    for deep targets           │
-│                               │
-│ 🅲 Equal time, BFS less mem   │
-│                               │
-│ 🅳 Equal space, DFS faster    │
-│                               │
-╰───────────────────────────────╯
-
-\`▓▓▓▓░░░░░░░░░░░░░░░░\` **1**/5
-`;
-```
-
----
-
-### DESIGN 4: Ultra Clean (RECOMMENDED)
-```javascript
-function createQuizEmbed(data) {
-  const diffConfig = {
-    easy: { color: 0x57F287, emoji: '🟢', bar: '░' },
-    medium: { color: 0xFEE75C, emoji: '🟡', bar: '▒' },
-    hard: { color: 0xED4245, emoji: '🔴', bar: '▓' }
+function createHelpEmbed(user, userData) {
+  // Calculate level progress
+  const currentXP = userData.xp % 1000; // XP needed per level
+  const progressPercent = Math.floor((currentXP / 1000) * 100);
+  const progressBar = '█'.repeat(Math.floor(progressPercent / 5)) + '░'.repeat(20 - Math.floor(progressPercent / 5));
+  
+  // Rank badges
+  const rankBadges = {
+    bronze: '🥉',
+    silver: '🥈', 
+    gold: '🥇',
+    platinum: '💎',
+    diamond: '💠',
+    master: '👑'
   };
-  
-  const diff = diffConfig[data.difficulty];
-  
-  // Progress bar
-  const filled = Math.floor((data.current / data.total) * 20);
-  const progress = '█'.repeat(filled) + '░'.repeat(20 - filled);
-  
+
   const embed = new EmbedBuilder()
-    .setColor(diff.color)
+    .setColor(0x5865F2)
     .setAuthor({ 
-      name: '⚡ MENTOR AI QUIZ ⚡', 
-      iconURL: 'YOUR_ICON' 
+      name: '⚡ MENTOR AI ⚡', 
+      iconURL: 'BOT_ICON_URL' 
     })
+    .setThumbnail('BOT_ICON_URL')
     .setDescription(`
-**\` 📚 ${data.topic.toUpperCase()} \`**
+# Welcome back, ${user.username}! 👋
 
-${diff.emoji} **${data.difficulty.toUpperCase()}** ◈ 💎 **+${data.xp} XP** ◈ ⏱️ **${data.time}s**
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+╭─────────────────────────────────────╮
+│                                     │
+│  ${rankBadges[userData.rank]} **${userData.rank.toUpperCase()} LEARNER**  •  Level **${userData.level}**
+│                                     │
+│  \`${progressBar}\` **${progressPercent}%**
+│  ✨ ${currentXP}/${1000} XP to next level
+│                                     │
+╰─────────────────────────────────────╯
 
-**❓ ${data.question}**
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+## 🎯 Quick Stats
 
-> 🔵 **A** ║ ${data.answers[0]}
+> 🔥 **${userData.streak}** day streak
+> 📚 **${userData.lessonsCompleted}** lessons completed  
+> ✅ **${userData.quizzesCompleted}** quizzes passed
+> 🏆 **${userData.achievements}** achievements
 
-> 🟢 **B** ║ ${data.answers[1]}
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
-> 🟡 **C** ║ ${data.answers[2]}
+## ⚡ Features
 
-> 🟣 **D** ║ ${data.answers[3]}
+╭──────────────────────────────────────╮
+│ 📖 **Lessons** — AI-powered learning │
+│ 🎯 **Quizzes** — Test your knowledge │
+│ ⚔️ **Battles** — Challenge friends   │
+│ 🏆 **Ranks** — Climb leaderboards    │
+╰──────────────────────────────────────╯
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-\`${progress}\` **${data.current}/${data.total}**
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🚀 **Select an action below to begin!**
     `)
     .setFooter({ 
-      text: '💡 Use buttons below to answer', 
-      iconURL: 'YOUR_ICON' 
+      text: `⚡ MentorAI • ${userData.serverCount} servers • ${userData.ping}ms`, 
+      iconURL: 'BOT_ICON_URL' 
     })
     .setTimestamp();
 
@@ -205,348 +89,568 @@ ${diff.emoji} **${data.difficulty.toUpperCase()}** ◈ 💎 **+${data.xp} XP** �
 
 ---
 
-## 🎨 BEST UNICODE CHARACTERS FOR DISCORD
-
-### Separators (All render well in Discord)
-```
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬  (Best!)
-━━━━━━━━━━━━━━━━━━━━
-═══════════════════
-───────────────────
-◆━━━━━━━━━━━━━━━━◆
-◈────────────────◈
-```
-
-### Progress Bars
-```
-█████████░░░░░░░░░░░  (Best!)
-▓▓▓▓▓▓▓▓▓░░░░░░░░░░░
-▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱
-◆◆◆◆◆◇◇◇◇◇◇◇◇◇◇◇◇◇◇
-■■■■■□□□□□□□□□□□□□□
-```
-
-### Answer Indicators
-```
-🔵 🟢 🟡 🟣  (Colored circles - BEST)
-🅰️ 🅱️ 🅲 🅳  (Letter squares - inconsistent)
-Ⓐ Ⓑ Ⓒ Ⓓ  (Circled letters)
-❶ ❷ ❸ ❹  (For numbered options)
-```
-
-### Decorative
-```
-◈ ◆ ◇ ║ │ ┃  (Dividers)
-╭ ╮ ╰ ╯       (Rounded corners)
-┌ ┐ └ ┘       (Square corners)
-「  」         (Brackets)
-『  』         (Double brackets)
-⟨ ⟩ ⟪ ⟫       (Angle brackets)
-```
-
----
-
-## 🔘 MAXIMUM BUTTON STYLING
+### DESIGN 2: Gaming/RPG Style (RECOMMENDED) 🔥
 
 ```javascript
-// Row 1: Answer buttons with emojis
-const row1 = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('a')
-      .setLabel('A')
-      .setEmoji('🔵')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('b')
-      .setLabel('B')
-      .setEmoji('🟢')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('c')
-      .setLabel('C')
-      .setEmoji('🟡')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('d')
-      .setLabel('D')
-      .setEmoji('🟣')
-      .setStyle(ButtonStyle.Secondary)
-  );
+function createGamingHelpEmbed(user, userData) {
+  const xpProgress = userData.xp % 1000;
+  const xpNeeded = 1000;
+  const progressBar = createProgressBar(xpProgress, xpNeeded, 15);
+  
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ 
+      name: '✦ MENTOR AI ✦ Command Center', 
+      iconURL: 'BOT_ICON' 
+    })
+    .setThumbnail(user.displayAvatarURL())
+    .setDescription(`
+\`\`\`ansi
+[2;36m╔══════════════════════════════════════╗[0m
+[2;36m║[0m     [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m       [2;36m║[0m
+[2;36m╚══════════════════════════════════════╝[0m
+\`\`\`
+### 👤 ${user.username}
 
-// Row 2: Utility buttons
-const row2 = new ActionRowBuilder()
-  .addComponents(
-    new ButtonBuilder()
-      .setCustomId('hint')
-      .setLabel('Hint')
-      .setEmoji('💡')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('5050')
-      .setLabel('50/50')
-      .setEmoji('✂️')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('skip')
-      .setLabel('Skip')
-      .setEmoji('⏭️')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
-      .setCustomId('quit')
-      .setLabel('Quit')
-      .setEmoji('🚪')
-      .setStyle(ButtonStyle.Danger)
-  );
-```
+╭───「 **PROFILE** 」───────────────────╮
 
----
+   🎖️ **Rank:** ${getRankDisplay(userData.rank)}
+   ⭐ **Level:** \`${userData.level}\`
+   ✨ **Total XP:** \`${userData.totalXP.toLocaleString()}\`
 
-## ✅ CORRECT ANSWER SCREEN
+   **Level Progress:**
+   ${progressBar} \`${xpProgress}/${xpNeeded}\`
 
-```javascript
-const correctEmbed = new EmbedBuilder()
-  .setColor(0x57F287) // Green
-  .setAuthor({ name: '✨ CORRECT! ✨', iconURL: 'ICON' })
-  .setDescription(`
-**You selected:** 🔵 **A**
+╰──────────────────────────────────────╯
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+╭───「 **STATS** 」────────────────────╮
 
-💎 **+35 XP** earned!
-🔥 Streak: **4**
+   🔥 \`${userData.streak}\` Day Streak
+   📚 \`${userData.lessons}\` Lessons
+   ✅ \`${userData.quizzes}\` Quizzes
+   ⚔️ \`${userData.battles}\` Battles Won
+   🏆 \`${userData.achievements}\` Badges
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+╰──────────────────────────────────────╯
 
-> 📖 **Explanation:**
-> DFS uses a stack (O(h) space) while BFS uses a queue (O(w) space). For shortest paths in unweighted graphs, BFS is optimal.
-  `)
-  .setFooter({ text: 'Next question in 3s...' });
-```
+╭───「 **FEATURES** 」─────────────────╮
 
----
+   📖 **/lesson** — Start AI lesson
+   🎯 **/quiz** — Take a quiz
+   ⚔️ **/battle** — Challenge friends
+   📊 **/profile** — View full stats
+   🏆 **/leaderboard** — Rankings
 
-## ❌ WRONG ANSWER SCREEN
+╰──────────────────────────────────────╯
 
-```javascript
-const wrongEmbed = new EmbedBuilder()
-  .setColor(0xED4245) // Red
-  .setAuthor({ name: '❌ INCORRECT', iconURL: 'ICON' })
-  .setDescription(`
-**You selected:** 🟣 **D**
-**Correct answer:** 🔵 **A**
+\`\`\`ansi
+[2;33m⚡ Select an option below to begin![0m
+\`\`\`
+    `)
+    .setFooter({ 
+      text: `MentorAI • ${userData.servers} servers • ${userData.ping}ms` 
+    })
+    .setTimestamp();
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+  return embed;
+}
 
-🔥 Streak reset to **0**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-> 📖 **Explanation:**
-> DFS uses O(h) memory (height of tree) while BFS uses O(w) memory (width). They're not equivalent!
-  `)
-  .setFooter({ text: 'Next question in 3s...' });
-```
-
----
-
-## 🏆 QUIZ COMPLETE SCREEN
-
-```javascript
-const completeEmbed = new EmbedBuilder()
-  .setColor(0x5865F2) // Blurple
-  .setAuthor({ name: '🏆 QUIZ COMPLETE! 🏆', iconURL: 'ICON' })
-  .setTitle('📚 ALGORITHMS')
-  .setDescription(`
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-**📊 YOUR RESULTS**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-✅ **Correct:** \`4/5\` (80%)
-💎 **XP Earned:** \`140 XP\`
-🔥 **Best Streak:** \`4\`
-⏱️ **Avg Time:** \`12.3s\`
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-\`████████████████░░░░\` **80%**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-🎖️ **RANK: A**
-
-> 🌟 *Great job! You're in the top 15% of players for this topic!*
-  `)
-  .setThumbnail('TROPHY_IMAGE_URL')
-  .setFooter({ text: 'Thanks for playing! • MentorAI' });
-```
-
----
-
-## 📋 COPY-PASTE READY CODE
-
-```javascript
-// Full implementation
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-
-class QuizUI {
-  static diffConfig = {
-    easy: { color: 0x57F287, emoji: '🟢', label: 'EASY' },
-    medium: { color: 0xFEE75C, emoji: '🟡', label: 'MEDIUM' },
-    hard: { color: 0xED4245, emoji: '🔴', label: 'HARD' }
+function getRankDisplay(rank) {
+  const ranks = {
+    bronze: '🥉 Bronze',
+    silver: '🥈 Silver',
+    gold: '🥇 Gold',
+    platinum: '💎 Platinum',
+    diamond: '💠 Diamond',
+    master: '👑 Master'
   };
+  return ranks[rank] || '🥉 Bronze';
+}
 
-  static progressBar(current, total, length = 20) {
-    const filled = Math.floor((current / total) * length);
-    return '█'.repeat(filled) + '░'.repeat(length - filled);
-  }
+function createProgressBar(current, max, length = 15) {
+  const percentage = current / max;
+  const filled = Math.round(percentage * length);
+  const empty = length - filled;
+  return `\`${'█'.repeat(filled)}${'░'.repeat(empty)}\``;
+}
+```
 
-  static createQuestion(data) {
-    const diff = this.diffConfig[data.difficulty];
+---
+
+### DESIGN 3: Clean Modern Style
+
+```javascript
+function createModernHelpEmbed(user, userData) {
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ 
+      name: 'MENTOR AI', 
+      iconURL: 'BOT_ICON' 
+    })
+    .setThumbnail('BOT_ICON')
+    .setTitle(`Welcome, ${user.username}! 👋`)
+    .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> 🎖️ **${userData.rank.toUpperCase()} LEARNER** • Level ${userData.level}
+> 
+> ████████████░░░░░░ \`${userData.xpPercent}%\` to Level ${userData.level + 1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 Your Journey**
+
+\`\`\`
+🔥 Streak      │  ${String(userData.streak).padStart(3)} days
+📚 Lessons     │  ${String(userData.lessons).padStart(3)} completed
+✅ Quizzes     │  ${String(userData.quizzes).padStart(3)} passed
+🏆 Achievements│  ${String(userData.achievements).padStart(3)} earned
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**⚡ What would you like to do?**
+
+Use the buttons below or type a command:
+• \`/quiz [topic]\` — Start a quiz
+• \`/lesson [topic]\` — Learn something new
+• \`/battle @user\` — Challenge a friend
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+    .setFooter({ 
+      text: `⚡ MentorAI • Empowering ${userData.servers}+ servers` 
+    })
+    .setTimestamp();
+
+  return embed;
+}
+```
+
+---
+
+### DESIGN 4: Compact Card Style
+
+```javascript
+function createCardHelpEmbed(user, userData) {
+  const progressBar = '▰'.repeat(Math.floor(userData.xpPercent / 10)) + 
+                      '▱'.repeat(10 - Math.floor(userData.xpPercent / 10));
+
+  const embed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL())
+    .addFields(
+      {
+        name: '👤 Profile',
+        value: `**${user.username}**\n🎖️ ${userData.rank} • Lv.**${userData.level}**\n${progressBar} \`${userData.xpPercent}%\``,
+        inline: true
+      },
+      {
+        name: '📊 Stats',
+        value: `🔥 **${userData.streak}** streak\n✅ **${userData.quizzes}** quizzes\n🏆 **${userData.achievements}** badges`,
+        inline: true
+      },
+      {
+        name: '\u200b', // Empty field for spacing
+        value: '\u200b',
+        inline: true
+      },
+      {
+        name: '⚡ Quick Actions',
+        value: '```\n📖 /lesson  │ 🎯 /quiz\n⚔️ /battle  │ 📊 /profile\n🏆 /rank    │ 🎁 /daily\n```',
+        inline: false
+      }
+    )
+    .setFooter({ text: `MentorAI • ${userData.servers} servers • ${userData.ping}ms` })
+    .setTimestamp();
+
+  return embed;
+}
+```
+
+---
+
+## 🔘 PREMIUM BUTTONS
+
+```javascript
+function createHelpButtons() {
+  // Row 1: Main actions (colorful)
+  const row1 = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('quick_quiz')
+        .setLabel('Quick Quiz')
+        .setEmoji('🎯')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('start_lesson')
+        .setLabel('Start Lesson')
+        .setEmoji('📖')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('daily_bonus')
+        .setLabel('Daily Bonus')
+        .setEmoji('🎁')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('my_profile')
+        .setLabel('My Profile')
+        .setEmoji('👤')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+  // Row 2: Secondary actions
+  const row2 = new ActionRowBuilder()
+    .addComponents(
+      new ButtonBuilder()
+        .setCustomId('rankings')
+        .setLabel('Rankings')
+        .setEmoji('🏆')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('achievements')
+        .setLabel('Badges')
+        .setEmoji('🎖️')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('streak')
+        .setLabel('Streak')
+        .setEmoji('🔥')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('topics')
+        .setLabel('Topics')
+        .setEmoji('📚')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+  return [row1, row2];
+}
+```
+
+---
+
+## 📋 PREMIUM SELECT MENU
+
+```javascript
+function createCategoryMenu() {
+  return new ActionRowBuilder()
+    .addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('help_category')
+        .setPlaceholder('📂 Explore command categories...')
+        .addOptions([
+          {
+            label: 'Learning',
+            description: 'Lessons, tutorials & guides',
+            value: 'learning',
+            emoji: '📖'
+          },
+          {
+            label: 'Quizzes',
+            description: 'Test your knowledge',
+            value: 'quizzes',
+            emoji: '🎯'
+          },
+          {
+            label: 'Battles',
+            description: 'Challenge friends & compete',
+            value: 'battles',
+            emoji: '⚔️'
+          },
+          {
+            label: 'Profile & Stats',
+            description: 'View your progress',
+            value: 'profile',
+            emoji: '📊'
+          },
+          {
+            label: 'Achievements',
+            description: 'Badges & rewards',
+            value: 'achievements',
+            emoji: '🏆'
+          },
+          {
+            label: 'Settings',
+            description: 'Customize your experience',
+            value: 'settings',
+            emoji: '⚙️'
+          }
+        ])
+    );
+}
+```
+
+---
+
+## 🎨 FULL IMPLEMENTATION
+
+```javascript
+const { 
+  EmbedBuilder, 
+  ActionRowBuilder, 
+  ButtonBuilder, 
+  ButtonStyle,
+  StringSelectMenuBuilder 
+} = require('discord.js');
+
+class HelpUI {
+  
+  static createMainEmbed(user, data) {
+    const xpPercent = Math.floor((data.xp % 1000) / 10);
+    const progressBar = '█'.repeat(Math.floor(xpPercent / 5)) + '░'.repeat(20 - Math.floor(xpPercent / 5));
+    
+    const rankIcons = {
+      bronze: '🥉', silver: '🥈', gold: '🥇',
+      platinum: '💎', diamond: '💠', master: '👑'
+    };
     
     return new EmbedBuilder()
-      .setColor(diff.color)
-      .setAuthor({ name: '⚡ MENTOR AI QUIZ ⚡', iconURL: data.botIcon })
+      .setColor(0x5865F2)
+      .setAuthor({ 
+        name: '✦ MENTOR AI ✦', 
+        iconURL: 'YOUR_BOT_ICON' 
+      })
+      .setThumbnail('YOUR_BOT_ICON')
       .setDescription(`
-**\` 📚 ${data.topic.toUpperCase()} \`**
+\`\`\`ansi
+[2;34m╔════════════════════════════════════════╗[0m
+[2;34m║[0m   [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m          [2;34m║[0m
+[2;34m╚════════════════════════════════════════╝[0m
+\`\`\`
+## 👋 Hey, ${user.username}!
 
-${diff.emoji} **${diff.label}** ◈ 💎 **+${data.xp} XP** ◈ ⏱️ **${data.time || 30}s**
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+╭───「 🎮 **YOUR PROFILE** 」──────────╮
+│
+│   ${rankIcons[data.rank] || '🥉'} **${(data.rank || 'bronze').toUpperCase()} LEARNER**
+│   ⭐ Level **${data.level}** 
+│
+│   \`${progressBar}\`
+│   ✨ \`${data.xp % 1000}\`/\`1000\` XP to next level
+│
+╰─────────────────────────────────────╯
 
-**❓ ${data.question}**
+╭───「 📊 **QUICK STATS** 」──────────╮
+│
+│   🔥 **${data.streak || 0}** day streak
+│   📚 **${data.lessons || 0}** lessons completed
+│   ✅ **${data.quizzes || 0}** quizzes passed
+│   🏆 **${data.achievements || 0}** achievements
+│
+╰─────────────────────────────────────╯
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+╭───「 ⚡ **FEATURES** 」─────────────╮
+│
+│   📖 **AI Lessons** — Learn any topic
+│   🎯 **Quizzes** — Test knowledge
+│   ⚔️ **Battles** — Challenge friends
+│   📈 **XP & Ranks** — Track progress
+│   🏆 **Achievements** — Collect badges
+│
+╰─────────────────────────────────────╯
 
-> 🔵 **A** ║ ${data.answers[0]}
-
-> 🟢 **B** ║ ${data.answers[1]}
-
-> 🟡 **C** ║ ${data.answers[2]}
-
-> 🟣 **D** ║ ${data.answers[3]}
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-\`${this.progressBar(data.current, data.total)}\` **${data.current}/${data.total}**
+\`\`\`ansi
+[2;33m🚀 Select an action below to start![0m
+\`\`\`
       `)
-      .setFooter({ text: '💡 Use buttons below to answer' })
+      .setFooter({ 
+        text: `⚡ MentorAI • ${data.servers || 1} servers • ${data.ping || 100}ms`,
+        iconURL: 'YOUR_BOT_ICON'
+      })
       .setTimestamp();
   }
 
   static createButtons() {
     const row1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('a').setLabel('A').setEmoji('🔵').setStyle(ButtonStyle.Primary),
-      new ButtonBuilder().setCustomId('b').setLabel('B').setEmoji('🟢').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId('c').setLabel('C').setEmoji('🟡').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('d').setLabel('D').setEmoji('🟣').setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder()
+        .setCustomId('quick_quiz')
+        .setLabel('Quick Quiz')
+        .setEmoji('🎯')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('start_lesson')
+        .setLabel('Start Lesson')
+        .setEmoji('📖')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('daily_bonus')
+        .setLabel('Daily Bonus')
+        .setEmoji('🎁')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('my_profile')
+        .setLabel('My Profile')
+        .setEmoji('👤')
+        .setStyle(ButtonStyle.Secondary)
     );
 
     const row2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId('hint').setLabel('Hint').setEmoji('💡').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('5050').setLabel('50/50').setEmoji('✂️').setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId('quit').setLabel('Quit').setEmoji('🚪').setStyle(ButtonStyle.Danger)
+      new ButtonBuilder()
+        .setCustomId('rankings')
+        .setLabel('Rankings')
+        .setEmoji('🏆')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('achievements')
+        .setLabel('Badges')
+        .setEmoji('🎖️')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('streak')
+        .setLabel('Streak')
+        .setEmoji('🔥')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('topics')
+        .setLabel('Topics')
+        .setEmoji('📚')
+        .setStyle(ButtonStyle.Secondary)
     );
 
     return [row1, row2];
   }
 
-  static createCorrect(data) {
-    return new EmbedBuilder()
-      .setColor(0x57F287)
-      .setAuthor({ name: '✨ CORRECT! ✨' })
-      .setDescription(`
-**You selected:** 🔵 **${data.selected}**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-💎 **+${data.xp} XP** earned!
-🔥 Streak: **${data.streak}**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-> 📖 ${data.explanation}
-      `);
+  static createSelectMenu() {
+    return new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('help_category')
+        .setPlaceholder('📂 Explore command categories...')
+        .addOptions([
+          { label: 'Learning', description: 'Lessons & tutorials', value: 'learning', emoji: '📖' },
+          { label: 'Quizzes', description: 'Test knowledge', value: 'quizzes', emoji: '🎯' },
+          { label: 'Battles', description: 'Challenge friends', value: 'battles', emoji: '⚔️' },
+          { label: 'Profile', description: 'Your stats', value: 'profile', emoji: '📊' },
+          { label: 'Achievements', description: 'Badges & rewards', value: 'achievements', emoji: '🏆' }
+        ])
+    );
   }
 
-  static createWrong(data) {
-    return new EmbedBuilder()
-      .setColor(0xED4245)
-      .setAuthor({ name: '❌ INCORRECT' })
-      .setDescription(`
-**You selected:** ${data.selectedEmoji} **${data.selected}**
-**Correct answer:** ${data.correctEmoji} **${data.correct}**
+  // Full help command response
+  static async sendHelp(interaction, userData) {
+    const embed = this.createMainEmbed(interaction.user, userData);
+    const buttons = this.createButtons();
+    const selectMenu = this.createSelectMenu();
 
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-🔥 Streak reset to **0**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-> 📖 ${data.explanation}
-      `);
-  }
-
-  static createComplete(data) {
-    const percentage = Math.round((data.correct / data.total) * 100);
-    const rank = percentage >= 90 ? 'S' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'D';
-    
-    return new EmbedBuilder()
-      .setColor(0x5865F2)
-      .setAuthor({ name: '🏆 QUIZ COMPLETE! 🏆' })
-      .setTitle(`📚 ${data.topic.toUpperCase()}`)
-      .setDescription(`
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-**📊 YOUR RESULTS**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-✅ **Correct:** \`${data.correct}/${data.total}\` (${percentage}%)
-💎 **XP Earned:** \`${data.xp} XP\`
-🔥 **Best Streak:** \`${data.streak}\`
-⏱️ **Avg Time:** \`${data.avgTime}s\`
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-\`${this.progressBar(percentage, 100)}\` **${percentage}%**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-🎖️ **RANK: ${rank}**
-      `)
-      .setFooter({ text: 'Thanks for playing! • MentorAI' });
+    await interaction.reply({
+      embeds: [embed],
+      components: [selectMenu, ...buttons]
+    });
   }
 }
 
-module.exports = QuizUI;
+module.exports = HelpUI;
 ```
 
 ---
 
-## 🚀 USAGE EXAMPLE
+## 📱 CATEGORY SUBPAGES
 
+When user selects a category from dropdown:
+
+### Learning Category
 ```javascript
-// In your quiz command
-const QuizUI = require('./QuizUI');
+static createLearningEmbed() {
+  return new EmbedBuilder()
+    .setColor(0x57F287)
+    .setAuthor({ name: '📖 LEARNING COMMANDS', iconURL: 'BOT_ICON' })
+    .setDescription(`
+\`\`\`ansi
+[2;32m╔════════════════════════════════════╗[0m
+[2;32m║[0m    [1;37m📖 AI-POWERED LEARNING[0m         [2;32m║[0m
+[2;32m╚════════════════════════════════════╝[0m
+\`\`\`
 
-// Send question
-await interaction.reply({
-  embeds: [QuizUI.createQuestion({
-    topic: 'algorithms',
-    difficulty: 'hard',
-    xp: 35,
-    question: 'Which describes DFS vs BFS most accurately?',
-    answers: [
-      'DFS uses less memory, slower for shortest paths',
-      'BFS uses less memory, slower for deep targets',
-      'Equal time complexity, BFS uses less memory',
-      'Equal space complexity, DFS always faster'
-    ],
-    current: 1,
-    total: 5,
-    botIcon: 'YOUR_ICON_URL'
-  })],
-  components: QuizUI.createButtons()
-});
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+### 📚 Commands
+
+> **/lesson [topic]**
+> Start an AI-powered lesson on any topic
+> Example: \`/lesson javascript basics\`
+
+> **/explain [concept]**
+> Get a detailed explanation
+> Example: \`/explain recursion\`
+
+> **/example [topic]**
+> See code examples
+> Example: \`/example async await\`
+
+> **/practice [topic]**
+> Get practice problems
+> Example: \`/practice arrays\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+💡 **Tip:** You can ask follow-up questions during lessons!
+    `);
+}
+```
+
+### Quiz Category  
+```javascript
+static createQuizEmbed() {
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '🎯 QUIZ COMMANDS', iconURL: 'BOT_ICON' })
+    .setDescription(`
+\`\`\`ansi
+[2;34m╔════════════════════════════════════╗[0m
+[2;34m║[0m      [1;37m🎯 TEST YOUR KNOWLEDGE[0m       [2;34m║[0m
+[2;34m╚════════════════════════════════════╝[0m
+\`\`\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+### 🎮 Commands
+
+> **/quiz [topic]**
+> Start a 5-question quiz
+> Example: \`/quiz react\`
+
+> **/quiz [topic] [difficulty]**
+> Choose difficulty: easy, medium, hard
+> Example: \`/quiz python hard\`
+
+> **/quickquiz**
+> Random topic, instant start!
+
+> **/marathon [topic]**
+> 20 questions, bonus XP!
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**🏆 XP Rewards:**
+\`\`\`
+Easy   │ +15 XP per correct
+Medium │ +25 XP per correct  
+Hard   │ +35 XP per correct
+\`\`\`
+    `);
+}
+```
+
+---
+
+## 🎨 UNICODE REFERENCE
+
+```
+╔ ╗ ╚ ╝ ║ ═   Double line (headers)
+╭ ╮ ╰ ╯ │ ─   Rounded corners (sections)
+┌ ┐ └ ┘ │ ─   Square corners
+「  」          Japanese brackets
+▬▬▬▬▬▬▬▬▬▬    Bold separator
+━━━━━━━━━━    Line separator
+═══════════   Double line separator
+
+Progress:
+█████░░░░░    Filled blocks
+▰▰▰▱▱▱▱▱    Parallelograms
+◆◆◆◇◇◇◇◇    Diamonds
+
+Decorative:
+✦ ✧ ★ ☆      Stars
+◈ ◆ ◇        Diamonds
+⚡ ✨ 💫      Sparkles
 ```

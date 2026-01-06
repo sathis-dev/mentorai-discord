@@ -28,14 +28,14 @@ export async function execute(interaction) {
         .setEmoji('🏆')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId('profile_history')
-        .setLabel('History')
-        .setEmoji('📜')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
         .setCustomId('execute_leaderboard')
         .setLabel('Leaderboard')
         .setEmoji('🏅')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 

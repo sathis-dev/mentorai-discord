@@ -100,6 +100,11 @@ async function startParty(interaction) {
       .setLabel('End Party')
       .setStyle(ButtonStyle.Danger)
       .setEmoji('🛑'),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🏠'),
   );
   
   await interaction.reply({ embeds: [embed], components: [row] });

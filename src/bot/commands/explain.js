@@ -93,9 +93,9 @@ export async function execute(interaction) {
         .setEmoji('📚')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('explain_deeper_' + encodeURIComponent(concept))
-        .setLabel('Go Deeper')
-        .setEmoji('🔬')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 

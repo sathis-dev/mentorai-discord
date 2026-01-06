@@ -123,19 +123,14 @@ export async function execute(interaction) {
         .setEmoji('🎲')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId('funfact_learn_' + encodeURIComponent(topic))
-        .setLabel('Learn More')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
         .setCustomId('funfact_quiz_' + encodeURIComponent(topic))
         .setLabel('Quiz Me')
         .setEmoji('🎯')
-        .setStyle(ButtonStyle.Secondary),
+        .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
-        .setCustomId('execute_share')
-        .setLabel('Share')
-        .setEmoji('📤')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -177,7 +172,12 @@ export async function execute(interaction) {
         .setCustomId('funfact_another')
         .setLabel('Another Fact')
         .setEmoji('🎲')
-        .setStyle(ButtonStyle.Primary)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Secondary)
     );
 
     await interaction.editReply({ embeds: [embed], components: [buttons] });

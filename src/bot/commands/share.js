@@ -87,10 +87,10 @@ export async function execute(interaction) {
       .setStyle(ButtonStyle.Success)
       .setEmoji('📚'),
     new ButtonBuilder()
-      .setCustomId('execute_daily')
-      .setLabel('Daily')
+      .setCustomId('help_main')
+      .setLabel('Menu')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🎁')
+      .setEmoji('🏠')
   );
 
   embed.setFooter({ 

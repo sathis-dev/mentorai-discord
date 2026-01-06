@@ -175,14 +175,14 @@ export async function performCodeReview(interaction, language, focus, code, cont
           .setEmoji('✨')
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
-          .setCustomId(`review_explain_${language}`)
-          .setLabel('Explain Issues')
-          .setEmoji('📖')
-          .setStyle(ButtonStyle.Secondary),
-        new ButtonBuilder()
           .setCustomId('review_new')
           .setLabel('New Review')
           .setEmoji('🔄')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('help_main')
+          .setLabel('Menu')
+          .setEmoji('🏠')
           .setStyle(ButtonStyle.Secondary)
       );
 

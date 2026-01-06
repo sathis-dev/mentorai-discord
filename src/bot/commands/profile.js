@@ -396,9 +396,9 @@ export async function execute(interaction) {
         .setEmoji('🎯')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId(`profile_share_${targetUser.id}`)
-        .setLabel('Share')
-        .setEmoji('📤')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -446,9 +446,9 @@ Begin your learning journey!
           .setEmoji('🎯')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
-          .setCustomId('exec_help')
-          .setLabel('Help')
-          .setEmoji('❓')
+          .setCustomId('help_main')
+          .setLabel('Menu')
+          .setEmoji('🏠')
           .setStyle(ButtonStyle.Secondary)
       );
 

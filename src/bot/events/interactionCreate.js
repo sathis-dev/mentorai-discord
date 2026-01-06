@@ -1134,7 +1134,12 @@ async function handleQuizButton(interaction, action, params) {
           .setCustomId('quiz_cancel')
           .setLabel('Quit')
           .setEmoji('🚪')
-          .setStyle(ButtonStyle.Danger)
+          .setStyle(ButtonStyle.Danger),
+        new ButtonBuilder()
+          .setCustomId('help_main')
+          .setLabel('Menu')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Secondary)
       );
 
       await interaction.update({ embeds: [feedbackEmbed], components: [continueRow] });
@@ -1457,6 +1462,11 @@ async function showLearningHistory(interaction, user) {
       .setCustomId('execute_achievements')
       .setLabel('Achievements')
       .setEmoji('🏆')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -1482,7 +1492,12 @@ async function showComparePrompt(interaction) {
       .setCustomId('execute_leaderboard')
       .setLabel('View Leaderboard')
       .setEmoji('🏆')
-      .setStyle(ButtonStyle.Primary)
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
   );
 
   await interaction.reply({ embeds: [embed], components: [buttons], ephemeral: true });

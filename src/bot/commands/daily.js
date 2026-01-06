@@ -156,14 +156,14 @@ export async function execute(interaction) {
         .setEmoji('🎯')
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
-        .setCustomId('lesson_suggest_general')
-        .setLabel('Start Learning')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
         .setCustomId('leaderboard_view')
         .setLabel('Leaderboard')
         .setEmoji('🏆')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 

@@ -75,7 +75,12 @@ export async function execute(interaction) {
       .setCustomId('challenge_decline_' + interaction.user.id + '_' + opponent.id)
       .setLabel('Decline')
       .setEmoji('🛡️')
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
   );
 
   await interaction.reply({ 

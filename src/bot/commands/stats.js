@@ -97,10 +97,10 @@ export async function execute(interaction) {
         .setEmoji('👤')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setLabel('Invite Bot')
-        .setEmoji('📨')
-        .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.com/oauth2/authorize?client_id=' + interaction.client.user.id + '&permissions=277025770560&scope=bot%20applications.commands')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Secondary)
     );
     
     await interaction.editReply({ embeds: [embed], components: [buttons] });

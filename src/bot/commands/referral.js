@@ -114,10 +114,10 @@ async function showReferralLink(interaction) {
       .setStyle(ButtonStyle.Primary)
       .setEmoji('📊'),
     new ButtonBuilder()
-      .setCustomId('referral_leaderboard')
-      .setLabel('Top Referrers')
+      .setCustomId('help_main')
+      .setLabel('Menu')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('🏆')
+      .setEmoji('🏠')
   );
 
   await interaction.editReply({ embeds: [embed], components: [buttons] });
@@ -213,9 +213,9 @@ async function showReferralStats(interaction) {
       .setEmoji('🔗')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId('referral_leaderboard')
-      .setLabel('Leaderboard')
-      .setEmoji('🏆')
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -318,9 +318,9 @@ async function showReferralLeaderboard(interaction) {
       .setEmoji('🔗')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId('referral_stats')
-      .setLabel('My Stats')
-      .setEmoji('📊')
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 

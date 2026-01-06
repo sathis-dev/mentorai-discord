@@ -151,7 +151,12 @@ async function startPath(interaction) {
       .setCustomId(`view_path_${subject}`)
       .setLabel('View Full Path')
       .setStyle(ButtonStyle.Primary)
-      .setEmoji('🗺️')
+      .setEmoji('🗺️'),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🏠')
   );
 
   await interaction.reply({ embeds: [embed], components: [row] });
@@ -223,7 +228,12 @@ async function continuePath(interaction) {
       .setCustomId(`start_lesson_${mostRecent.subject}_${nextLesson.id}`)
       .setLabel('Start Lesson')
       .setStyle(ButtonStyle.Success)
-      .setEmoji('🚀')
+      .setEmoji('🚀'),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji('🏠')
   );
 
   await interaction.reply({ embeds: [embed], components: [row] });

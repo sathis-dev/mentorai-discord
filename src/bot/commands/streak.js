@@ -212,9 +212,9 @@ export async function execute(interaction) {
         .setEmoji('👤')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('exec_leaderboard')
-        .setLabel('Leaderboard')
-        .setEmoji('🏅')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 

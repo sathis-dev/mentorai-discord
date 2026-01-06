@@ -192,9 +192,9 @@ export async function executeAndRespond(interaction, langConfig, code, stdin = '
         .setEmoji('📝')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('run_help')
-        .setLabel('Languages')
-        .setEmoji('📋')
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
         .setStyle(ButtonStyle.Secondary)
     );
 

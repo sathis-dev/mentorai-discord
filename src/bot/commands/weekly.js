@@ -125,14 +125,14 @@ async function showChallenge(interaction) {
       .setEmoji('🎯')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
-      .setCustomId('execute_learn')
-      .setLabel('Start Lesson')
-      .setEmoji('📚')
-      .setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder()
       .setCustomId('weekly_rewards')
       .setLabel('Rewards')
       .setEmoji('🎁')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -254,6 +254,11 @@ async function showLeaderboard(interaction) {
       .setCustomId('weekly_refresh')
       .setLabel('Refresh')
       .setEmoji('🔄')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 
@@ -298,7 +303,20 @@ async function showRewards(interaction) {
     .setFooter({ text: '🎓 MentorAI | New challenge every Monday!' })
     .setTimestamp();
 
-  await interaction.reply({ embeds: [embed] });
+  const buttons = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('weekly_challenge')
+      .setLabel('View Challenge')
+      .setEmoji('🎯')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.reply({ embeds: [embed], components: [buttons] });
 }
 
 function getWeekNumber() {

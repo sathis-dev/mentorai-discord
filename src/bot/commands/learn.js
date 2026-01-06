@@ -134,8 +134,8 @@ export async function execute(interaction) {
         .setLabel('📚 Next Lesson')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
-        .setCustomId('lesson_explain_' + safeTopic)
-        .setLabel('❓ Explain More')
+        .setCustomId('help_main')
+        .setLabel('🏠 Menu')
         .setStyle(ButtonStyle.Secondary)
     );
 

@@ -644,7 +644,12 @@ export function createQuizControlButtons() {
       .setCustomId('quiz_cancel')
       .setLabel('Quit')
       .setEmoji('🚪')
-      .setStyle(ButtonStyle.Danger)
+      .setStyle(ButtonStyle.Danger),
+    new ButtonBuilder()
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
   );
 }
 
@@ -683,9 +688,9 @@ export function createLessonButtons(topic) {
       .setEmoji('➡️')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId('lesson_explain_' + encodedTopic)
-      .setLabel('Explain More')
-      .setEmoji('❓')
+      .setCustomId('help_main')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 }
