@@ -1,10 +1,12 @@
-FROM node:18-bullseye-slim
+FROM node:20-bookworm-slim
 
 WORKDIR /app
 
-# Install build dependencies for canvas
+# Install build dependencies for canvas and other native modules
 RUN apt-get update && apt-get install -y \
     build-essential \
+    g++ \
+    make \
     libcairo2-dev \
     libpango1.0-dev \
     libjpeg-dev \
@@ -19,8 +21,8 @@ RUN apt-get update && apt-get install -y \
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# Install ALL dependencies (including dev for build), then prune
+RUN npm ci && npm cache clean --force
 
 # Copy source code
 COPY . .
