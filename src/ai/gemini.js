@@ -9,7 +9,7 @@
  */
 export async function generateWithGemini(prompt, options = {}) {
   const {
-    model = 'gemini-2.5-flash-preview-05-20', // Latest Gemini 2.5 Flash
+    model = 'gemini-2.0-flash', // Stable fast model
     maxTokens = 4000,
     temperature = 0.7
   } = options;
@@ -88,7 +88,7 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks, just J
 
   const startTime = Date.now();
   const response = await generateWithGemini(prompt, {
-    model: 'gemini-2.5-flash-preview-05-20',
+    model: 'gemini-2.0-flash',
     temperature: 0.8,
     maxTokens: 4000
   });
