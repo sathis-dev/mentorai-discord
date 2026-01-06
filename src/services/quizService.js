@@ -33,7 +33,10 @@ export async function createQuizSession(userId, topic, numQuestions = 5, difficu
     score: 0,
     answers: [],
     startedAt: Date.now(),
-    encouragement: quizData.encouragement || 'Great job completing the quiz!'
+    encouragement: quizData.encouragement || 'Great job completing the quiz!',
+    hintUsed: false,
+    fiftyUsed: false,
+    eliminatedOptions: [] // For 50/50
   };
 
   activeSessions.set(userId, session);
@@ -41,6 +44,76 @@ export async function createQuizSession(userId, topic, numQuestions = 5, difficu
   console.log('Quiz session created for user ' + userId + ' with ' + session.questions.length + ' questions');
   
   return session;
+}
+
+/**
+ * Use hint for current question
+ */
+export function useHint(userId) {
+  const session = activeSessions.get(userId);
+  if (!session) return null;
+  
+  if (session.hintUsed) {
+    return { alreadyUsed: true };
+  }
+  
+  session.hintUsed = true;
+  const currentQ = session.questions[session.currentQuestion];
+  
+  // Generate a hint based on the question
+  const hint = currentQ.explanation 
+    ? `💡 **Hint:** Think about ${currentQ.conceptTested || 'the core concept'}...`
+    : `💡 **Hint:** Consider what makes option ${['A', 'B', 'C', 'D'][currentQ.correctIndex]} unique.`;
+  
+  return { hint, conceptTested: currentQ.conceptTested };
+}
+
+/**
+ * Use 50/50 lifeline - eliminate 2 wrong answers
+ */
+export function useFiftyFifty(userId) {
+  const session = activeSessions.get(userId);
+  if (!session) return null;
+  
+  if (session.fiftyUsed) {
+    return { alreadyUsed: true };
+  }
+  
+  session.fiftyUsed = true;
+  const currentQ = session.questions[session.currentQuestion];
+  const correctIndex = currentQ.correctIndex;
+  
+  // Get wrong answer indices
+  const wrongIndices = [0, 1, 2, 3].filter(i => i !== correctIndex);
+  
+  // Randomly pick 2 wrong answers to eliminate
+  const shuffled = wrongIndices.sort(() => Math.random() - 0.5);
+  const eliminated = shuffled.slice(0, 2);
+  
+  session.eliminatedOptions = eliminated;
+  
+  return { 
+    eliminated, 
+    remaining: [0, 1, 2, 3].filter(i => !eliminated.includes(i))
+  };
+}
+
+/**
+ * Check if options are eliminated (for 50/50)
+ */
+export function getEliminatedOptions(userId) {
+  const session = activeSessions.get(userId);
+  return session?.eliminatedOptions || [];
+}
+
+/**
+ * Reset eliminated options for next question
+ */
+export function resetEliminatedOptions(userId) {
+  const session = activeSessions.get(userId);
+  if (session) {
+    session.eliminatedOptions = [];
+  }
 }
 
 /**

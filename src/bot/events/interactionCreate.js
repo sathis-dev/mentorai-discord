@@ -1,5 +1,5 @@
 import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { submitAnswer, getCurrentQuestion, cancelSession } from '../../services/quizService.js';
+import { submitAnswer, getCurrentQuestion, cancelSession, useHint, useFiftyFifty, resetEliminatedOptions } from '../../services/quizService.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { ServerSettings } from '../../database/models/ServerSettings.js';
 import { 
@@ -1092,6 +1092,7 @@ async function handleQuizButton(interaction, action, params) {
     }
   } else if (action === 'continue') {
     // User clicked continue - show next question
+    resetEliminatedOptions(userId); // Reset 50/50 for new question
     const questionData = getCurrentQuestion(userId);
     
     if (!questionData || !questionData.question) {
@@ -1134,6 +1135,80 @@ async function handleQuizButton(interaction, action, params) {
       })
       .setFooter({ text: '🎓 MentorAI' });
     await interaction.update({ embeds: [cancelEmbed], components: [] });
+  } else if (action === 'hint') {
+    // Handle hint button
+    const hintResult = useHint(userId);
+    
+    if (!hintResult) {
+      return interaction.reply({ content: '❌ No active quiz session!', ephemeral: true });
+    }
+    
+    if (hintResult.alreadyUsed) {
+      return interaction.reply({ content: '💡 You already used your hint for this quiz!', ephemeral: true });
+    }
+    
+    const hintEmbed = new EmbedBuilder()
+      .setTitle('💡 Hint')
+      .setColor(COLORS.WARNING)
+      .setDescription(hintResult.hint)
+      .setFooter({ text: 'Hint used - Choose your answer wisely!' });
+    
+    await interaction.reply({ embeds: [hintEmbed], ephemeral: true });
+    
+  } else if (action === 'fifty') {
+    // Handle 50/50 button
+    const fiftyResult = useFiftyFifty(userId);
+    
+    if (!fiftyResult) {
+      return interaction.reply({ content: '❌ No active quiz session!', ephemeral: true });
+    }
+    
+    if (fiftyResult.alreadyUsed) {
+      return interaction.reply({ content: '✂️ You already used 50/50 for this quiz!', ephemeral: true });
+    }
+    
+    // Update the buttons to show eliminated options
+    const questionData = getCurrentQuestion(userId);
+    if (!questionData || !questionData.question) {
+      return interaction.reply({ content: '❌ Could not get question data!', ephemeral: true });
+    }
+    
+    // Create updated answer buttons with eliminated options disabled
+    const updatedRow = new ActionRowBuilder();
+    const labels = ['A', 'B', 'C', 'D'];
+    const styles = [ButtonStyle.Primary, ButtonStyle.Success, ButtonStyle.Secondary, ButtonStyle.Secondary];
+    
+    for (let i = 0; i < 4; i++) {
+      const isEliminated = fiftyResult.eliminated.includes(i);
+      updatedRow.addComponents(
+        new ButtonBuilder()
+          .setCustomId('quiz_answer_' + i)
+          .setLabel(isEliminated ? '❌' : labels[i])
+          .setStyle(isEliminated ? ButtonStyle.Secondary : styles[i])
+          .setDisabled(isEliminated)
+      );
+    }
+    
+    // Create control buttons with 50/50 disabled
+    const controlRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('quiz_hint')
+        .setLabel('Hint')
+        .setEmoji('💡')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId('quiz_fifty')
+        .setLabel('50/50 ✓')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true),
+      new ButtonBuilder()
+        .setCustomId('quiz_cancel')
+        .setLabel('Cancel Quiz')
+        .setStyle(ButtonStyle.Danger)
+    );
+    
+    await interaction.update({ components: [updatedRow, controlRow] });
+    
   } else if (action === 'restart' || action === 'start') {
     const topic = decodeURIComponent(params.join('_') || 'JavaScript');
     
