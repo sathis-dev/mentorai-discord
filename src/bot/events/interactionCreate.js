@@ -326,11 +326,11 @@ async function handleSelectMenu(interaction) {
       // NEW V4: Handle help category menu from V4 design
       const helpModule = await import('../commands/help.js');
       await helpModule.handleCategorySelect(interaction, value);
-    } else if (customId === 'quiz_topic_select') {
-      // NEW: Start quiz with selected topic
+    } else if (customId === 'quiz_topic_select' || customId === 'quiz_topic_select_v4') {
+      // NEW: Start quiz with selected topic (both old and V4 versions)
       await startQuizFromHelpMenu(interaction, value);
-    } else if (customId === 'learn_topic_select') {
-      // NEW: Start lesson with selected topic
+    } else if (customId === 'learn_topic_select' || customId === 'learn_topic_select_v4') {
+      // NEW: Start lesson with selected topic (both old and V4 versions)
       await startLearnFromHelpMenu(interaction, value);
     }
   } catch (error) {
