@@ -221,6 +221,7 @@ async function showQuizPanel(interaction) {
       .setCustomId('quiz_topic_select_v4')
       .setPlaceholder('🎯 Choose a quiz topic...')
       .addOptions([
+        { label: 'Random Mix', description: 'Surprise me with random topics!', value: 'random', emoji: '🎲' },
         { label: 'JavaScript', description: 'Web development fundamentals', value: 'javascript', emoji: '🟨' },
         { label: 'Python', description: 'General programming & AI', value: 'python', emoji: '🐍' },
         { label: 'TypeScript', description: 'Typed JavaScript', value: 'typescript', emoji: '🔷' },
@@ -229,8 +230,7 @@ async function showQuizPanel(interaction) {
         { label: 'HTML & CSS', description: 'Web design basics', value: 'html-css', emoji: '🌐' },
         { label: 'SQL', description: 'Database queries', value: 'sql', emoji: '🗄️' },
         { label: 'Git', description: 'Version control', value: 'git', emoji: '📦' },
-        { label: 'Data Structures', description: 'Arrays, trees, graphs', value: 'data-structures', emoji: '🔢' },
-        { label: 'Random Mix', description: 'Surprise me!', value: 'random', emoji: '🎲' }
+        { label: 'Data Structures', description: 'Arrays, trees, graphs', value: 'data-structures', emoji: '🔢' }
       ])
   );
 
