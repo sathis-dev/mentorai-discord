@@ -48,6 +48,11 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
+// Health check endpoint (no auth required) - for Railway/Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Auth routes (no auth required)
 app.use('/api/auth', authRoutes);
 
