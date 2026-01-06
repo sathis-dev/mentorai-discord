@@ -183,10 +183,24 @@ Return ONLY valid JSON:
 }
 
 // ============================================================
-// QUIZ GENERATION - Enhanced with GPT-4
+// QUIZ GENERATION - Gemini Flash for Speed, OpenAI Fallback
 // ============================================================
 
+import { generateQuizWithGemini } from './gemini.js';
+
 export async function generateQuiz(topic, numQuestions = 5, difficulty = 'medium', userContext = {}) {
+  // Try Gemini Flash first (much faster)
+  if (process.env.GEMINI_API_KEY) {
+    console.log('⚡ Using Gemini Flash for quiz generation...');
+    const geminiQuiz = await generateQuizWithGemini(topic, numQuestions, difficulty);
+    if (geminiQuiz) {
+      console.log('✅ Gemini quiz generated successfully');
+      return geminiQuiz;
+    }
+    console.log('⚠️ Gemini failed, falling back to OpenAI...');
+  }
+
+  // Fallback to OpenAI
   const systemPrompt = `You are MentorAI Quiz Master - an expert educator creating ENGAGING, CHALLENGING, and EDUCATIONAL programming quizzes.
 
 🎯 YOUR MISSION:

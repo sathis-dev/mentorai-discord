@@ -153,57 +153,64 @@ export function createPremiumEmbed(options = {}) {
   return embed;
 }
 
-// Quiz Question Embed with Premium V4 UI
+// Quiz Question Embed with Clean Premium UI
 export function createQuizQuestionEmbed(question, questionNum, totalQuestions, topic, difficulty) {
   const difficultyColors = {
-    easy: 0x22C55E,
-    medium: 0xF59E0B,
-    hard: 0xEF4444
+    easy: 0x23A559,    // Green
+    medium: 0xF0B132,  // Yellow/Orange
+    hard: 0xF23F43     // Red
   };
   
   const difficultyInfo = {
-    easy: { emoji: '🟢', label: 'EASY', xp: '+20 XP' },
-    medium: { emoji: '🟡', label: 'MEDIUM', xp: '+25 XP' },
-    hard: { emoji: '🔴', label: 'HARD', xp: '+35 XP' }
+    easy: { dot: '🟢', label: 'EASY', xp: '+20 XP' },
+    medium: { dot: '🟡', label: 'MEDIUM', xp: '+25 XP' },
+    hard: { dot: '🔴', label: 'HARD', xp: '+35 XP' }
   };
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
-  const progressPercent = Math.round((questionNum / totalQuestions) * 100);
-  const progressBar = createProgressBar(questionNum, totalQuestions, 12, 'blocks');
+  
+  // Create progress bar (filled/empty)
+  const filled = Math.floor((questionNum / totalQuestions) * 10);
+  const empty = 10 - filled;
+  const progressBar = '▓'.repeat(filled) + '░'.repeat(empty);
   
   // Format question text
   let questionText = question.question || 'Loading question...';
   
-  // Create clean styled header using markdown
-  const header = `\`\`\`\n${diffData.emoji} ${diffData.label}  •  Question ${questionNum}/${totalQuestions}  •  ${diffData.xp}\n\`\`\``;
+  // Format answers with consistent colored dots
+  const answerColors = {
+    A: '🔵',  // Blue
+    B: '🟢',  // Green  
+    C: '🟡',  // Yellow
+    D: '🟣'   // Purple
+  };
+  
+  const options = question.options || ['N/A', 'N/A', 'N/A', 'N/A'];
+  const formattedAnswers = [
+    `${answerColors.A} **A** │ ${options[0]}`,
+    `${answerColors.B} **B** │ ${options[1]}`,
+    `${answerColors.C} **C** │ ${options[2]}`,
+    `${answerColors.D} **D** │ ${options[3]}`
+  ].join('\n');
+
+  // Build clean description
+  const description = `${diffData.dot} **${diffData.label}** • ${diffData.xp}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+**❓ ${questionText}**
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formattedAnswers}
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+${progressBar} ${questionNum}/${totalQuestions}`;
 
   const embed = new EmbedBuilder()
-    .setColor(difficultyColors[difficulty] || COLORS.QUIZ_PINK)
-    .setTitle(`📚 ${topic}`)
-    .setDescription(`${header}\n**❓ ${questionText}**\n\n${progressBar} \`${progressPercent}%\``)
-    .addFields(
-      {
-        name: '🅰️',
-        value: `\`${question.options?.[0] || 'N/A'}\``,
-        inline: true
-      },
-      {
-        name: '🅱️',
-        value: `\`${question.options?.[1] || 'N/A'}\``,
-        inline: true
-      },
-      { name: '\u200B', value: '\u200B', inline: false },
-      {
-        name: '🅲',
-        value: `\`${question.options?.[2] || 'N/A'}\``,
-        inline: true
-      },
-      {
-        name: '🅳',
-        value: `\`${question.options?.[3] || 'N/A'}\``,
-        inline: true
-      }
-    )
+    .setColor(difficultyColors[difficulty] || difficultyColors.medium)
+    .setTitle(`📚 ${topic.toUpperCase()}`)
+    .setDescription(description)
     .setFooter({ 
       text: '🎓 MentorAI • Select A, B, C, or D to answer',
     })
@@ -590,18 +597,30 @@ export function createHelpEmbed() {
 
 export function createQuizAnswerButtons(disabled = false) {
   const row = new ActionRowBuilder();
-  const labels = ['A', 'B', 'C', 'D'];
-  const styles = [ButtonStyle.Primary, ButtonStyle.Primary, ButtonStyle.Primary, ButtonStyle.Primary];
   
-  for (let i = 0; i < 4; i++) {
-    row.addComponents(
-      new ButtonBuilder()
-        .setCustomId('quiz_answer_' + i)
-        .setLabel(labels[i])
-        .setStyle(styles[i])
-        .setDisabled(disabled)
-    );
-  }
+  // A=Blue (Primary), B=Green (Success), C=Gray (Secondary), D=Gray (Secondary)
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId('quiz_answer_0')
+      .setLabel('A')
+      .setStyle(ButtonStyle.Primary)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setCustomId('quiz_answer_1')
+      .setLabel('B')
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setCustomId('quiz_answer_2')
+      .setLabel('C')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled),
+    new ButtonBuilder()
+      .setCustomId('quiz_answer_3')
+      .setLabel('D')
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(disabled)
+  );
   
   return row;
 }
@@ -612,18 +631,14 @@ export function createQuizControlButtons() {
       .setCustomId('quiz_hint')
       .setLabel('Hint')
       .setEmoji('💡')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('quiz_fifty')
       .setLabel('50/50')
-      .setEmoji('✂️')
-      .setStyle(ButtonStyle.Secondary)
-      .setDisabled(true),
+      .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('quiz_cancel')
       .setLabel('Cancel Quiz')
-      .setEmoji('🛑')
       .setStyle(ButtonStyle.Danger)
   );
 }
