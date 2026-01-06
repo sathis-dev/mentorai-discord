@@ -57,6 +57,85 @@ const userSchema = new mongoose.Schema({
   accessGrantedAt: { type: Date },
   accessExpiresAt: { type: Date },
   accessType: { type: String, default: 'none' }, // none, beta, premium, lifetime
+
+  // ============================================
+  // NEW ADVANCED FEATURES
+  // ============================================
+  
+  // Code Review & Debug Tracking
+  codeReviews: { type: Number, default: 0 },
+  debugSessions: { type: Number, default: 0 },
+  
+  // Topic Accuracy Tracking (for weak spots)
+  topicAccuracy: {
+    type: Map,
+    of: {
+      correct: { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+      lastAttempt: { type: Date }
+    },
+    default: new Map()
+  },
+  
+  // Skill Tree System
+  unlockedSkills: {
+    type: Map,
+    of: [String],
+    default: new Map()
+  },
+  
+  // Project System
+  completedProjects: [{
+    projectId: String,
+    completedAt: Date,
+    rating: String,
+    timeSpent: Number
+  }],
+  currentProject: {
+    projectId: String,
+    currentStep: { type: Number, default: 0 },
+    startedAt: Date
+  },
+  
+  // Arena/Multiplayer Stats
+  arenaStats: {
+    played: { type: Number, default: 0 },
+    wins: { type: Number, default: 0 },
+    podiums: { type: Number, default: 0 },
+    highestScore: { type: Number, default: 0 }
+  },
+  
+  // Speedrun Stats
+  speedrunStats: {
+    completed: { type: Number, default: 0 },
+    sRanks: { type: Number, default: 0 },
+    bestTime: { type: Number, default: 0 },
+    totalTime: { type: Number, default: 0 }
+  },
+  
+  // Certificates
+  certificates: [{
+    certificateId: String,
+    skill: String,
+    level: String,
+    issuedAt: Date
+  }],
+  
+  // Engagement Preferences
+  streakReminderSent: { type: Date },
+  lastWeeklySummary: { type: Date },
+  dmPreferences: {
+    streakReminders: { type: Boolean, default: true },
+    weeklySummary: { type: Boolean, default: true },
+    achievementAlerts: { type: Boolean, default: true }
+  },
+  
+  // Mentor Chat Sessions
+  mentorSessions: { type: Number, default: 0 },
+  mentorMinutes: { type: Number, default: 0 },
+  
+  // Longest streak ever (for achievements)
+  longestStreak: { type: Number, default: 0 }
 });
 
 // Calculate XP needed for next level

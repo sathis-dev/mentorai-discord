@@ -185,6 +185,30 @@ async function handleButton(interaction) {
       await handleShareButton(interaction, action, params);
     } else if (category === 'referral') {
       await handleReferralButton(interaction, action, params);
+    } else if (category === 'arena') {
+      // Handle arena multiplayer buttons
+      const { handleArenaButton } = await import('../commands/arena.js');
+      await handleArenaButton(interaction, action, params);
+    } else if (category === 'project') {
+      // Handle project-based learning buttons
+      const { handleProjectButton } = await import('../commands/project.js');
+      await handleProjectButton(interaction, action, params);
+    } else if (category === 'debug') {
+      // Handle debug command buttons
+      const { handleDebugButton } = await import('../commands/debug.js');
+      await handleDebugButton(interaction, action, params);
+    } else if (category === 'speedrun') {
+      // Handle speedrun challenge buttons
+      const { handleSpeedrunButton } = await import('../commands/speedrun.js');
+      await handleSpeedrunButton(interaction, action, params);
+    } else if (category === 'skilltree') {
+      // Handle skill tree buttons
+      const { handleSkillTreeButton } = await import('../commands/skilltree.js');
+      await handleSkillTreeButton(interaction, action, params);
+    } else if (category === 'insights') {
+      // Handle insights buttons
+      const { handleInsightsButton } = await import('../commands/insights.js');
+      await handleInsightsButton(interaction, action, params);
     }
   } catch (error) {
     logger.error('Button error:', error);
@@ -1716,6 +1740,27 @@ async function handleModal(interaction) {
     
     const { performCodeReview } = await import('../commands/review.js');
     await performCodeReview(interaction, language, focus, code, context);
+    return;
+  }
+  
+  // Handle debug code modal
+  if (interaction.customId === 'debug_code_modal') {
+    const { handleDebugSubmission } = await import('../commands/debug.js');
+    await handleDebugSubmission(interaction);
+    return;
+  }
+  
+  // Handle speedrun solution modal
+  if (interaction.customId === 'speedrun_solution_modal') {
+    const { handleSpeedrunSubmission } = await import('../commands/speedrun.js');
+    await handleSpeedrunSubmission(interaction);
+    return;
+  }
+  
+  // Handle project submission modal
+  if (interaction.customId.startsWith('project_submit_')) {
+    const { handleProjectSubmission } = await import('../commands/project.js');
+    await handleProjectSubmission(interaction);
     return;
   }
   
