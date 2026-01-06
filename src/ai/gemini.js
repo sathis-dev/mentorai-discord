@@ -9,7 +9,7 @@
  */
 export async function generateWithGemini(prompt, options = {}) {
   const {
-    model = 'gemini-2.0-flash', // Latest fast model
+    model = 'gemini-2.5-flash-preview-05-20', // Latest Gemini 2.5 Flash
     maxTokens = 4000,
     temperature = 0.7
   } = options;
@@ -21,7 +21,7 @@ export async function generateWithGemini(prompt, options = {}) {
     return null;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   try {
     const response = await fetch(url, {
@@ -88,7 +88,7 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks, just J
 
   const startTime = Date.now();
   const response = await generateWithGemini(prompt, {
-    model: 'gemini-2.0-flash',
+    model: 'gemini-2.5-flash-preview-05-20',
     temperature: 0.8,
     maxTokens: 4000
   });
