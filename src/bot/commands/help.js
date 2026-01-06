@@ -24,6 +24,8 @@ import { getOrCreateUser } from '../../services/gamificationService.js';
 
 // Helper to pad text to exact width (34 chars for inner box content)
 const pad = (text, width = 34) => (text + ' '.repeat(width)).slice(0, width);
+// Pad with emoji prefix (emoji takes 2 visual chars, so reduce width by 1)
+const padE = (emoji, text, width = 32) => emoji + ' ' + (text + ' '.repeat(width)).slice(0, width);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
@@ -69,43 +71,43 @@ export async function execute(interaction) {
       .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║     WELCOME TO MENTOR AI           ║
+║  ⚡ WELCOME TO MENTOR AI ⚡        ║
 ╚════════════════════════════════════╝
 \`\`\`
 ## 👋 Hey, ${interaction.user.username}!
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  YOUR PROFILE                      │
+│  🎮 YOUR PROFILE                   │
 ├────────────────────────────────────┤
-│  ${pad(tier.title.toUpperCase())}│
-│  ${pad('Level ' + (user.level || 1))}│
+│  ${padE('🏆', tier.title.toUpperCase())}│
+│  ${padE('⭐', 'Level ' + (user.level || 1))}│
 ├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  QUICK STATS                       │
+│  📊 QUICK STATS                    │
 ├────────────────────────────────────┤
-│  ${pad(streak + ' day streak')}│
-│  ${pad(lessonsCompleted + ' lessons completed')}│
-│  ${pad(quizzesTaken + ' quizzes passed')}│
-│  ${pad(achievements + ' achievements')}│
+│  ${padE('🔥', streak + ' day streak')}│
+│  ${padE('📚', lessonsCompleted + ' lessons completed')}│
+│  ${padE('✅', quizzesTaken + ' quizzes passed')}│
+│  ${padE('🏆', achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  FEATURES                          │
+│  ⚡ FEATURES                       │
 ├────────────────────────────────────┤
-│  AI Lessons   - Learn any topic    │
-│  Quizzes      - Test knowledge     │
-│  Battles      - Challenge friends  │
-│  XP & Ranks   - Track progress     │
-│  Achievements - Collect badges     │
+│  📖 AI Lessons  - Learn any topic  │
+│  🎯 Quizzes     - Test knowledge   │
+│  ⚔️ Battles     - Challenge friends│
+│  📈 XP & Ranks  - Track progress   │
+│  🏆 Achievements- Collect badges   │
 └────────────────────────────────────┘
 \`\`\`
 
@@ -470,7 +472,7 @@ async function showProfilePanel(interaction) {
     .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║  ${pad(tier.title.toUpperCase())}║
+║  ${padE('🏆', tier.title.toUpperCase())}║
 ╚════════════════════════════════════╝
 \`\`\`
 
@@ -478,21 +480,21 @@ async function showProfilePanel(interaction) {
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  PROGRESS TO NEXT LEVEL            │
+│  📈 PROGRESS TO NEXT LEVEL         │
 ├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP')}│
+│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP')}│
 └────────────────────────────────────┘
 \`\`\`
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  YOUR STATS                        │
+│  📊 YOUR STATS                     │
 ├────────────────────────────────────┤
-│  ${pad((user.streak || 0) + ' day streak')}│
-│  ${pad((user.quizzesTaken || 0) + ' quizzes taken')}│
-│  ${pad((user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
-│  ${pad((user.achievements?.length || 0) + ' achievements')}│
+│  ${padE('🔥', (user.streak || 0) + ' day streak')}│
+│  ${padE('📝', (user.quizzesTaken || 0) + ' quizzes taken')}│
+│  ${padE('🎯', (user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
+│  ${padE('🏆', (user.achievements?.length || 0) + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
     `)
@@ -782,43 +784,43 @@ async function showMainMenu(interaction) {
       .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║     WELCOME TO MENTOR AI           ║
+║  ⚡ WELCOME TO MENTOR AI ⚡        ║
 ╚════════════════════════════════════╝
 \`\`\`
 ## 👋 Hey, ${interaction.user.username}!
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  YOUR PROFILE                      │
+│  🎮 YOUR PROFILE                   │
 ├────────────────────────────────────┤
-│  ${pad(tier.title.toUpperCase())}│
-│  ${pad('Level ' + (user.level || 1))}│
+│  ${padE('🏆', tier.title.toUpperCase())}│
+│  ${padE('⭐', 'Level ' + (user.level || 1))}│
 ├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  QUICK STATS                       │
+│  📊 QUICK STATS                    │
 ├────────────────────────────────────┤
-│  ${pad(streak + ' day streak')}│
-│  ${pad(lessonsCompleted + ' lessons completed')}│
-│  ${pad(quizzesTaken + ' quizzes passed')}│
-│  ${pad(achievements + ' achievements')}│
+│  ${padE('🔥', streak + ' day streak')}│
+│  ${padE('📚', lessonsCompleted + ' lessons completed')}│
+│  ${padE('✅', quizzesTaken + ' quizzes passed')}│
+│  ${padE('🏆', achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
 \`\`\`
 ┌────────────────────────────────────┐
-│  FEATURES                          │
+│  ⚡ FEATURES                       │
 ├────────────────────────────────────┤
-│  AI Lessons   - Learn any topic    │
-│  Quizzes      - Test knowledge     │
-│  Battles      - Challenge friends  │
-│  XP & Ranks   - Track progress     │
-│  Achievements - Collect badges     │
+│  📖 AI Lessons  - Learn any topic  │
+│  🎯 Quizzes     - Test knowledge   │
+│  ⚔️ Battles     - Challenge friends│
+│  📈 XP & Ranks  - Track progress   │
+│  🏆 Achievements- Collect badges   │
 └────────────────────────────────────┘
 \`\`\`
 
