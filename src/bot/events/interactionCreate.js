@@ -862,11 +862,12 @@ async function handleExecButton(interaction, action, params) {
     'topics': 'topics',
     'help': 'help',
     'stats': 'stats',
-    'challenge': 'challenge',
     'weekly': 'weekly',
     'funfact': 'funfact',
     'path': 'path',
-    'share': 'share'
+    'share': 'share',
+    'quickquiz': 'quickquiz',
+    'explain': 'explain'
   };
   
   // Special commands that need topic selection
@@ -876,6 +877,14 @@ async function handleExecButton(interaction, action, params) {
     } else {
       return showLearnTopicSelector(interaction);
     }
+  }
+  
+  // Special handling for challenge command (needs a user mention)
+  if (action === 'challenge') {
+    return interaction.reply({
+      content: `⚔️ **Challenge a Friend!**\n\nUse \`/challenge @username\` to start a 1v1 quiz battle!\n\n> Example: \`/challenge @${interaction.user.username}\``,
+      ephemeral: true
+    });
   }
   
   // Special handling for weekly command (needs subcommand)
