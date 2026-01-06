@@ -1044,7 +1044,7 @@ async function handleQuizButton(interaction, action, params) {
       }
     } else {
       // Show answer result with CONTINUE button - Premium V4 Design
-      const answerEmojis = ['🅰️', '🅱️', 'Ⓒ', 'Ⓓ'];
+      const answerEmojis = ['🔵', '🟢', '🟡', '🟣'];
       const correctLetter = ['A', 'B', 'C', 'D'][result.correctAnswer] || '?';
       const selectedLetter = ['A', 'B', 'C', 'D'][answerIndex] || '?';
       const selectedEmoji = answerEmojis[answerIndex] || '⚪';
