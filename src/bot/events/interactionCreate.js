@@ -1043,48 +1043,52 @@ async function handleQuizButton(interaction, action, params) {
         await interaction.followUp({ embeds: [levelUpEmbed] });
       }
     } else {
-      // Show answer result with CONTINUE button - no auto-advance!
+      // Show answer result with CONTINUE button - Premium V4 Design
+      const answerEmojis = ['🔵', '🟢', '🟡', '🟣'];
       const correctLetter = ['A', 'B', 'C', 'D'][result.correctAnswer] || '?';
       const selectedLetter = ['A', 'B', 'C', 'D'][answerIndex] || '?';
+      const selectedEmoji = answerEmojis[answerIndex] || '⚪';
+      const correctEmoji = answerEmojis[result.correctAnswer] || '⚪';
       
-      // Create enhanced feedback embed
+      // Create premium feedback embed matching design system
       const feedbackEmbed = new EmbedBuilder()
-        .setColor(result.isCorrect ? 0x00D166 : 0xED4245)
-        .setTitle(result.isCorrect ? '✅ Correct! +25 XP' : '❌ Incorrect')
+        .setColor(result.isCorrect ? 0x57F287 : 0xED4245)
+        .setAuthor({ name: result.isCorrect ? '✨ CORRECT! ✨' : '❌ INCORRECT' })
         .setDescription(result.isCorrect 
-          ? `\`\`\`\n🎉 GREAT JOB! You nailed it!\n\`\`\``
-          : `\`\`\`\nYou selected: ${selectedLetter}\nCorrect answer: ${correctLetter}\n\`\`\``)
-        .addFields(
-          {
-            name: '📚 Explanation',
-            value: result.explanation || 'Keep learning!',
-            inline: false
-          },
-          {
-            name: '📊 Progress',
-            value: `Question **${result.currentQuestion}** of **${result.totalQuestions}** completed`,
-            inline: true
-          },
-          {
-            name: result.isCorrect ? '🔥 Streak' : '💪 Keep Going',
-            value: result.isCorrect ? 'You\'re doing great!' : 'Learn from mistakes!',
-            inline: true
-          }
-        )
-        .setFooter({ text: '🎓 MentorAI | Click Continue when ready for the next question' })
+          ? `**You selected:** ${selectedEmoji} **${selectedLetter}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+💎 **+25 XP** earned!
+🔥 Streak: **${result.streak || 1}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 ${result.explanation || 'Great job!'}`
+          : `**You selected:** ${selectedEmoji} **${selectedLetter}**
+**Correct answer:** ${correctEmoji} **${correctLetter}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🔥 Streak reset to **0**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 ${result.explanation || 'Keep learning!'}`)
+        .setFooter({ text: `Question ${result.currentQuestion}/${result.totalQuestions} • Click Continue` })
         .setTimestamp();
 
       // Create CONTINUE button
       const continueRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId('quiz_continue')
-          .setLabel('Continue →')
+          .setLabel('Continue')
           .setEmoji('▶️')
           .setStyle(ButtonStyle.Success),
         new ButtonBuilder()
           .setCustomId('quiz_cancel')
-          .setLabel('End Quiz')
-          .setEmoji('🛑')
+          .setLabel('Quit')
+          .setEmoji('🚪')
           .setStyle(ButtonStyle.Danger)
       );
 

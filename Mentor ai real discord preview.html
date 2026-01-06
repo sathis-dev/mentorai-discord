@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MentorAI - Real Discord UI Preview</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #313338;
+            font-family: 'Noto Sans', 'gg sans', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .discord-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 1.5rem;
+        }
+
+        .subtitle {
+            color: #949BA4;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        /* Discord Message */
+        .message {
+            display: flex;
+            padding: 4px 16px;
+            margin-bottom: 20px;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 16px;
+            background: linear-gradient(135deg, #5865F2, #EB459E);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .username {
+            color: #fff;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .bot-tag {
+            background: #5865F2;
+            color: #fff;
+            font-size: 10px;
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-weight: 500;
+        }
+
+        .timestamp {
+            color: #949BA4;
+            font-size: 12px;
+        }
+
+        /* Embed */
+        .embed {
+            max-width: 520px;
+            border-radius: 4px;
+            overflow: hidden;
+            display: flex;
+            margin-top: 4px;
+        }
+
+        .embed-pill {
+            width: 4px;
+            flex-shrink: 0;
+        }
+
+        .embed-pill.hard { background: #ED4245; }
+        .embed-pill.medium { background: #FEE75C; }
+        .embed-pill.easy { background: #57F287; }
+        .embed-pill.correct { background: #57F287; }
+        .embed-pill.wrong { background: #ED4245; }
+        .embed-pill.complete { background: #5865F2; }
+
+        .embed-content {
+            background: #2B2D31;
+            padding: 12px 16px;
+            flex: 1;
+        }
+
+        .embed-author {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .embed-author-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #5865F2;
+        }
+
+        .embed-author-name {
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .embed-title {
+            color: #00AFF4;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .embed-description {
+            color: #DBDEE1;
+            font-size: 14px;
+            line-height: 1.4;
+            white-space: pre-wrap;
+        }
+
+        .embed-description strong {
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .embed-description code {
+            background: #1E1F22;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        .code-block {
+            background: #1E1F22;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 8px 0;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            color: #B5BAC1;
+        }
+
+        .quote {
+            border-left: 4px solid #4E5058;
+            padding-left: 12px;
+            margin: 4px 0;
+        }
+
+        .separator {
+            color: #4E5058;
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .embed-footer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            color: #949BA4;
+            font-size: 12px;
+        }
+
+        /* Buttons */
+        .button-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 2px 16px;
+            border-radius: 3px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.15s;
+        }
+
+        .btn.primary { background: #5865F2; color: #fff; }
+        .btn.primary:hover { background: #4752C4; }
+        .btn.success { background: #248046; color: #fff; }
+        .btn.success:hover { background: #1A6334; }
+        .btn.secondary { background: #4E5058; color: #fff; }
+        .btn.secondary:hover { background: #6D6F78; }
+        .btn.danger { background: #DA373C; color: #fff; }
+        .btn.danger:hover { background: #A12D31; }
+
+        /* Color highlights */
+        .blue { color: #5865F2; }
+        .green { color: #57F287; }
+        .yellow { color: #FEE75C; }
+        .pink { color: #EB459E; }
+        .red { color: #ED4245; }
+        .cyan { color: #00D4AA; }
+
+        /* Labels */
+        .label {
+            color: #949BA4;
+            font-size: 12px;
+            margin-bottom: 8px;
+            margin-top: 24px;
+        }
+
+        .label:first-of-type {
+            margin-top: 0;
+        }
+
+        /* Progress */
+        .progress-text {
+            font-family: 'Consolas', monospace;
+            color: #B5BAC1;
+        }
+    </style>
+</head>
+<body>
+    <div class="discord-container">
+        <h1>⚡ MentorAI Discord UI</h1>
+        <p class="subtitle">Maximum visual impact within Discord's real limitations</p>
+
+        <!-- QUESTION EMBED -->
+        <p class="label">📝 QUESTION VIEW</p>
+        <div class="message">
+            <div class="avatar">⚡</div>
+            <div class="message-content">
+                <div class="header">
+                    <span class="username">MentorAI</span>
+                    <span class="bot-tag">APP</span>
+                    <span class="timestamp">Today at 06:26 PM</span>
+                </div>
+                
+                <div class="embed">
+                    <div class="embed-pill hard"></div>
+                    <div class="embed-content">
+                        <div class="embed-author">
+                            <div class="embed-author-icon"></div>
+                            <span class="embed-author-name">⚡ MENTOR AI QUIZ ⚡</span>
+                        </div>
+                        
+                        <div class="embed-description">
+<strong><code> 📚 ALGORITHMS </code></strong>
+
+🔴 <strong>HARD</strong> ◈ 💎 <strong class="cyan">+35 XP</strong> ◈ ⏱️ <strong>30s</strong>
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<strong>❓ Which of the following is the most accurate description of DFS vs BFS in graph traversal?</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<div class="quote">🔵 <strong>A</strong> ║ DFS uses less memory, slower for shortest paths</div>
+
+<div class="quote">🟢 <strong>B</strong> ║ BFS uses less memory, slower for deep targets</div>
+
+<div class="quote">🟡 <strong>C</strong> ║ Equal time complexity, BFS uses less memory</div>
+
+<div class="quote">🟣 <strong>D</strong> ║ Equal space complexity, DFS always faster</div>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+<code class="progress-text">████░░░░░░░░░░░░░░░░</code> <strong>1/5</strong>
+                        </div>
+                        
+                        <div class="embed-footer">
+                            💡 Use buttons below to answer
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="button-row">
+                    <button class="btn primary">🔵 A</button>
+                    <button class="btn success">🟢 B</button>
+                    <button class="btn secondary">🟡 C</button>
+                    <button class="btn secondary">🟣 D</button>
+                </div>
+                <div class="button-row">
+                    <button class="btn secondary">💡 Hint</button>
+                    <button class="btn secondary">✂️ 50/50</button>
+                    <button class="btn danger">🚪 Quit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CORRECT ANSWER -->
+        <p class="label">✅ CORRECT ANSWER VIEW</p>
+        <div class="message">
+            <div class="avatar">⚡</div>
+            <div class="message-content">
+                <div class="header">
+                    <span class="username">MentorAI</span>
+                    <span class="bot-tag">APP</span>
+                    <span class="timestamp">Today at 06:27 PM</span>
+                </div>
+                
+                <div class="embed">
+                    <div class="embed-pill correct"></div>
+                    <div class="embed-content">
+                        <div class="embed-author">
+                            <span class="embed-author-name">✨ CORRECT! ✨</span>
+                        </div>
+                        
+                        <div class="embed-description">
+<strong>You selected:</strong> 🔵 <strong>A</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+💎 <strong class="cyan">+35 XP</strong> earned!
+🔥 Streak: <strong>4</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<div class="quote">📖 DFS uses a stack (O(h) space) while BFS uses a queue (O(w) space). For shortest paths in unweighted graphs, BFS is optimal.</div>
+                        </div>
+                        
+                        <div class="embed-footer">
+                            Next question in 3s...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WRONG ANSWER -->
+        <p class="label">❌ WRONG ANSWER VIEW</p>
+        <div class="message">
+            <div class="avatar">⚡</div>
+            <div class="message-content">
+                <div class="header">
+                    <span class="username">MentorAI</span>
+                    <span class="bot-tag">APP</span>
+                    <span class="timestamp">Today at 06:28 PM</span>
+                </div>
+                
+                <div class="embed">
+                    <div class="embed-pill wrong"></div>
+                    <div class="embed-content">
+                        <div class="embed-author">
+                            <span class="embed-author-name">❌ INCORRECT</span>
+                        </div>
+                        
+                        <div class="embed-description">
+<strong>You selected:</strong> 🟣 <strong>D</strong>
+<strong>Correct answer:</strong> 🔵 <strong>A</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+🔥 Streak reset to <strong>0</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<div class="quote">📖 DFS uses O(h) memory (height of tree) while BFS uses O(w) memory (width). They're not equivalent!</div>
+                        </div>
+                        
+                        <div class="embed-footer">
+                            Next question in 3s...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QUIZ COMPLETE -->
+        <p class="label">🏆 QUIZ COMPLETE VIEW</p>
+        <div class="message">
+            <div class="avatar">⚡</div>
+            <div class="message-content">
+                <div class="header">
+                    <span class="username">MentorAI</span>
+                    <span class="bot-tag">APP</span>
+                    <span class="timestamp">Today at 06:30 PM</span>
+                </div>
+                
+                <div class="embed">
+                    <div class="embed-pill complete"></div>
+                    <div class="embed-content">
+                        <div class="embed-author">
+                            <span class="embed-author-name">🏆 QUIZ COMPLETE! 🏆</span>
+                        </div>
+                        
+                        <div class="embed-title">📚 ALGORITHMS</div>
+                        
+                        <div class="embed-description">
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<strong>📊 YOUR RESULTS</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+✅ <strong>Correct:</strong> <code>4/5</code> (80%)
+💎 <strong>XP Earned:</strong> <code class="cyan">140 XP</code>
+🔥 <strong>Best Streak:</strong> <code>4</code>
+⏱️ <strong>Avg Time:</strong> <code>12.3s</code>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+<code class="progress-text">████████████████░░░░</code> <strong>80%</strong>
+
+<span class="separator">▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬</span>
+
+🎖️ <strong>RANK: A</strong>
+
+<div class="quote">🌟 <em>Great job! You're in the top 15% of players for this topic!</em></div>
+                        </div>
+                        
+                        <div class="embed-footer">
+                            Thanks for playing! • MentorAI
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-row">
+                    <button class="btn primary">🔄 Play Again</button>
+                    <button class="btn secondary">📊 Leaderboard</button>
+                    <button class="btn secondary">🏠 Menu</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

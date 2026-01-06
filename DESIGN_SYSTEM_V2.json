@@ -1,169 +1,552 @@
-{
-  "designSystem": {
-    "name": "MentorAI Design System v2.0",
-    "version": "2.0.0",
-    "description": "Pixel-accurate design system extracted from live MentorAI Discord bot implementation",
-    "platform": "Discord Bot Embeds + Buttons",
-    "lastUpdated": "2024-12-19",
-    "sourceAnalysis": "Production implementation screenshots analyzed"
-  },
+🎯 MentorAI MAXIMUM Discord UI (Within Real Limits)
 
-  "colorSystem": {
-    "embedAccents": {
-      "quiz": {
-        "hex": "#F59E0B",
-        "rgb": "245, 158, 11",
-        "usage": "Quiz embed left border accent",
-        "icon": "🧠"
-      },
-      "lesson": {
-        "hex": "#8B5CF6",
-        "rgb": "139, 92, 246",
-        "usage": "Lesson/learning embed accent",
-        "icon": "📖"
-      },
-      "help": {
-        "hex": "#A855F7",
-        "rgb": "168, 85, 247",
-        "usage": "Help guide embed accent",
-        "icon": "🎓"
-      },
-      "progress": {
-        "hex": "#8B5CF6",
-        "rgb": "139, 92, 246",
-        "usage": "Progress/stats embed accent",
-        "icon": "📊"
-      },
-      "studyParty": {
-        "hex": "#EAB308",
-        "rgb": "234, 179, 8",
-        "usage": "Study party/social embed accent",
-        "icon": "🎉"
-      },
-      "error": {
-        "hex": "#EF4444",
-        "rgb": "239, 68, 68",
-        "usage": "Error/incorrect answer embed accent",
-        "icon": "❌"
-      },
-      "success": {
-        "hex": "#22C55E",
-        "rgb": "34, 197, 94",
-        "usage": "Success/correct answer accent",
-        "icon": "✅"
-      }
+## Discord Embed Limitations:
+- ❌ No custom CSS/fonts
+- ❌ No custom HTML
+- ✅ Unicode characters
+- ✅ Discord markdown (**bold**, *italic*, `code`, ```codeblock```)
+- ✅ Embed color (left border)
+- ✅ Author, Title, Description, Fields, Footer, Thumbnail, Image
+- ✅ Buttons (5 per row, max 5 rows)
+- ✅ Emojis
+
+---
+
+## 🔥 MAXIMUM IMPRESSIVE DESIGNS
+
+### DESIGN 1: Clean Premium
+```javascript
+const embed = new EmbedBuilder()
+  .setColor(0xED4245) // Red for HARD
+  .setAuthor({ 
+    name: '⚡ MENTOR AI QUIZ', 
+    iconURL: 'YOUR_ICON_URL' 
+  })
+  .setTitle('📚 ALGORITHMS')
+  .setDescription(`
+\`\`\`ansi
+[2;31m█ HARD [0m  [2;36m💎 +35 XP[0m  [2;33m⏱ 30s[0m
+\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**❓ Which of the following is the most accurate description of DFS vs BFS in graph traversal?**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+> 🔵 **A** ┃ DFS uses less memory, slower for shortest paths
+
+> 🟢 **B** ┃ BFS uses less memory, slower for deep targets
+
+> 🟡 **C** ┃ Equal time complexity, BFS uses less memory
+
+> 🟣 **D** ┃ Equal space complexity, DFS always faster
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+\`\`\`
+████████░░░░░░░░░░░░░░░░░░░░  1/5
+\`\`\`
+  `)
+  .setFooter({ text: '⚡ Select A, B, C, or D • MentorAI' })
+  .setTimestamp();
+```
+
+**Preview:**
+```
+┌─────────────────────────────────────────────┐
+│ ⚡ MENTOR AI QUIZ                            │
+├─────────────────────────────────────────────┤
+│ 📚 ALGORITHMS                               │
+│                                             │
+│ ┌─────────────────────────────────────────┐ │
+│ │ █ HARD   💎 +35 XP   ⏱ 30s             │ │
+│ └─────────────────────────────────────────┘ │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                             │
+│ ❓ Which of the following is the most       │
+│    accurate description of DFS vs BFS?      │
+│                                             │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│                                             │
+│ ▎🔵 A ┃ DFS uses less memory, slower...    │
+│                                             │
+│ ▎🟢 B ┃ BFS uses less memory, slower...    │
+│                                             │
+│ ▎🟡 C ┃ Equal time complexity, BFS...      │
+│                                             │
+│ ▎🟣 D ┃ Equal space complexity, DFS...     │
+│                                             │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━  │
+│ ████████░░░░░░░░░░░░░░░░░░░░  1/5          │
+│                                             │
+│ ⚡ Select A, B, C, or D • MentorAI          │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+### DESIGN 2: Using Fields for Structure
+```javascript
+const embed = new EmbedBuilder()
+  .setColor(0xED4245)
+  .setAuthor({ 
+    name: '🎮 MENTOR AI', 
+    iconURL: 'ICON_URL' 
+  })
+  .setTitle('`  📚 ALGORITHMS  `')
+  .addFields(
+    { 
+      name: '⠀', // invisible character for spacing
+      value: '```ansi\n[2;31m█ HARD[0m   💎 +35 XP   ⏱️ 30s   🔥 x3\n```',
+      inline: false 
     },
-
-    "buttons": {
-      "primary": {
-        "background": "#5865F2",
-        "backgroundHover": "#4752C4",
-        "text": "#FFFFFF",
-        "usage": "Main action buttons (Next, Start, Submit)"
-      },
-      "secondary": {
-        "background": "#4E5058",
-        "backgroundHover": "#6D6F78",
-        "text": "#FFFFFF",
-        "usage": "Navigation, quiz options A/B/C/D"
-      },
-      "success": {
-        "background": "#248046",
-        "backgroundHover": "#1A6334",
-        "text": "#FFFFFF",
-        "usage": "Positive actions (Join Party, Quiz Me, Confirm)"
-      },
-      "danger": {
-        "background": "#DA373C",
-        "backgroundHover": "#A12D31",
-        "text": "#FFFFFF",
-        "usage": "Destructive actions (Cancel, Leave, Delete)"
-      }
+    { 
+      name: '❓ Question', 
+      value: 'Which is the most accurate description of **DFS vs BFS** in graph traversal, considering space and time complexity?',
+      inline: false 
     },
-
-    "semantic": {
-      "xp": { "hex": "#FBBF24", "icon": "⭐" },
-      "level": { "hex": "#8B5CF6", "icon": "🏆" },
-      "streak": { "hex": "#F97316", "icon": "🔥" },
-      "accuracy": { "hex": "#22C55E", "icon": "🎯" }
+    { 
+      name: '⠀',
+      value: '>>> 🔵 **A** │ DFS uses less memory, slower for shortest paths\n\n🟢 **B** │ BFS uses less memory, slower for deep targets\n\n🟡 **C** │ Equal time, BFS uses less memory\n\n🟣 **D** │ Equal space, DFS always faster',
+      inline: false 
+    },
+    {
+      name: '📊 Progress',
+      value: '`▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱▱` **1/5**',
+      inline: false
     }
-  },
+  )
+  .setFooter({ text: 'Select A, B, C, or D to answer' })
+  .setTimestamp();
+```
 
-  "criticalRules": {
-    "doNot": [
-      "❌ DO NOT apply embed accent colors to button backgrounds",
-      "❌ DO NOT use gradients on embed backgrounds (always solid #2B2D31)",
-      "❌ DO NOT make quiz answer buttons match the orange theme (use Secondary)",
-      "❌ DO NOT add shadows to Discord embeds",
-      "❌ DO NOT round embed corners beyond 4px",
-      "❌ DO NOT use accent colors for body text (always #DBDEE1)"
-    ],
-    "mustDo": [
-      "✅ Quiz A/B/C/D buttons MUST use Secondary style (#4E5058)",
-      "✅ Left accent bar is the ONLY colored element on embeds",
-      "✅ Action buttons follow semantic meaning: green=positive, red=negative, blue=primary",
-      "✅ Embed backgrounds are ALWAYS #2B2D31"
-    ]
-  },
+---
 
-  "components": {
-    "discordEmbed": {
-      "container": {
-        "background": "#2B2D31",
-        "borderRadius": "4px",
-        "borderLeft": "4px solid var(--accent-color)",
-        "maxWidth": "520px",
-        "padding": "16px"
-      },
-      "title": {
-        "fontSize": "16px",
-        "fontWeight": "600",
-        "color": "#FFFFFF"
-      },
-      "description": {
-        "fontSize": "14px",
-        "fontWeight": "400",
-        "color": "#DBDEE1",
-        "lineHeight": "1.375"
-      },
-      "footer": {
-        "fontSize": "12px",
-        "color": "#949BA4"
-      }
-    },
-    "buttons": {
-      "base": {
-        "fontSize": "14px",
-        "fontWeight": "500",
-        "padding": "2px 16px",
-        "minHeight": "32px",
-        "borderRadius": "3px"
-      }
-    }
-  },
+### DESIGN 3: Compact Gaming Style
+```javascript
+const description = `
+**\`🎯 ALGORITHMS\`** ─ 🔴 HARD
+╭───────────────────────────╮
+│ 💎 \`+35 XP\`  ⏱️ \`30s\`  🔥 \`x3\`  │
+╰───────────────────────────╯
 
-  "upgradeTiers": {
-    "tier1_quickWins": [
-      "Animated XP gain feedback",
-      "Streak multipliers (up to 2x)",
-      "Daily challenges"
-    ],
-    "tier2_highImpact": [
-      "Visual skill trees",
-      "Spaced repetition system",
-      "Code playground with execution",
-      "AI personalization"
-    ],
-    "tier3_legendary": [
-      "Voice learning mode",
-      "Achievement badge generation",
-      "Learning analytics charts",
-      "Collaborative whiteboard"
-    ],
-    "tier4_ultimate": [
-      "AI tutor conversations",
-      "PDF certification system",
-      "Verified credentials"
-    ]
+> **❓ Which describes DFS vs BFS most accurately?**
+
+╭─ **ANSWERS** ─────────────────╮
+│                               │
+│ 🅰️ DFS less memory, slower    │
+│    for shortest paths         │
+│                               │
+│ 🅱️ BFS less memory, slower    │
+│    for deep targets           │
+│                               │
+│ 🅲 Equal time, BFS less mem   │
+│                               │
+│ 🅳 Equal space, DFS faster    │
+│                               │
+╰───────────────────────────────╯
+
+\`▓▓▓▓░░░░░░░░░░░░░░░░\` **1**/5
+`;
+```
+
+---
+
+### DESIGN 4: Ultra Clean (RECOMMENDED)
+```javascript
+function createQuizEmbed(data) {
+  const diffConfig = {
+    easy: { color: 0x57F287, emoji: '🟢', bar: '░' },
+    medium: { color: 0xFEE75C, emoji: '🟡', bar: '▒' },
+    hard: { color: 0xED4245, emoji: '🔴', bar: '▓' }
+  };
+  
+  const diff = diffConfig[data.difficulty];
+  
+  // Progress bar
+  const filled = Math.floor((data.current / data.total) * 20);
+  const progress = '█'.repeat(filled) + '░'.repeat(20 - filled);
+  
+  const embed = new EmbedBuilder()
+    .setColor(diff.color)
+    .setAuthor({ 
+      name: '⚡ MENTOR AI QUIZ ⚡', 
+      iconURL: 'YOUR_ICON' 
+    })
+    .setDescription(`
+**\` 📚 ${data.topic.toUpperCase()} \`**
+
+${diff.emoji} **${data.difficulty.toUpperCase()}** ◈ 💎 **+${data.xp} XP** ◈ ⏱️ **${data.time}s**
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**❓ ${data.question}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 🔵 **A** ║ ${data.answers[0]}
+
+> 🟢 **B** ║ ${data.answers[1]}
+
+> 🟡 **C** ║ ${data.answers[2]}
+
+> 🟣 **D** ║ ${data.answers[3]}
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+\`${progress}\` **${data.current}/${data.total}**
+    `)
+    .setFooter({ 
+      text: '💡 Use buttons below to answer', 
+      iconURL: 'YOUR_ICON' 
+    })
+    .setTimestamp();
+
+  return embed;
+}
+```
+
+---
+
+## 🎨 BEST UNICODE CHARACTERS FOR DISCORD
+
+### Separators (All render well in Discord)
+```
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬  (Best!)
+━━━━━━━━━━━━━━━━━━━━
+═══════════════════
+───────────────────
+◆━━━━━━━━━━━━━━━━◆
+◈────────────────◈
+```
+
+### Progress Bars
+```
+█████████░░░░░░░░░░░  (Best!)
+▓▓▓▓▓▓▓▓▓░░░░░░░░░░░
+▰▰▰▰▰▰▰▱▱▱▱▱▱▱▱▱▱▱▱
+◆◆◆◆◆◇◇◇◇◇◇◇◇◇◇◇◇◇◇
+■■■■■□□□□□□□□□□□□□□
+```
+
+### Answer Indicators
+```
+🔵 🟢 🟡 🟣  (Colored circles - BEST)
+🅰️ 🅱️ 🅲 🅳  (Letter squares - inconsistent)
+Ⓐ Ⓑ Ⓒ Ⓓ  (Circled letters)
+❶ ❷ ❸ ❹  (For numbered options)
+```
+
+### Decorative
+```
+◈ ◆ ◇ ║ │ ┃  (Dividers)
+╭ ╮ ╰ ╯       (Rounded corners)
+┌ ┐ └ ┘       (Square corners)
+「  」         (Brackets)
+『  』         (Double brackets)
+⟨ ⟩ ⟪ ⟫       (Angle brackets)
+```
+
+---
+
+## 🔘 MAXIMUM BUTTON STYLING
+
+```javascript
+// Row 1: Answer buttons with emojis
+const row1 = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('a')
+      .setLabel('A')
+      .setEmoji('🔵')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('b')
+      .setLabel('B')
+      .setEmoji('🟢')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('c')
+      .setLabel('C')
+      .setEmoji('🟡')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('d')
+      .setLabel('D')
+      .setEmoji('🟣')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+// Row 2: Utility buttons
+const row2 = new ActionRowBuilder()
+  .addComponents(
+    new ButtonBuilder()
+      .setCustomId('hint')
+      .setLabel('Hint')
+      .setEmoji('💡')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('5050')
+      .setLabel('50/50')
+      .setEmoji('✂️')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('skip')
+      .setLabel('Skip')
+      .setEmoji('⏭️')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('quit')
+      .setLabel('Quit')
+      .setEmoji('🚪')
+      .setStyle(ButtonStyle.Danger)
+  );
+```
+
+---
+
+## ✅ CORRECT ANSWER SCREEN
+
+```javascript
+const correctEmbed = new EmbedBuilder()
+  .setColor(0x57F287) // Green
+  .setAuthor({ name: '✨ CORRECT! ✨', iconURL: 'ICON' })
+  .setDescription(`
+**You selected:** 🔵 **A**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+💎 **+35 XP** earned!
+🔥 Streak: **4**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 **Explanation:**
+> DFS uses a stack (O(h) space) while BFS uses a queue (O(w) space). For shortest paths in unweighted graphs, BFS is optimal.
+  `)
+  .setFooter({ text: 'Next question in 3s...' });
+```
+
+---
+
+## ❌ WRONG ANSWER SCREEN
+
+```javascript
+const wrongEmbed = new EmbedBuilder()
+  .setColor(0xED4245) // Red
+  .setAuthor({ name: '❌ INCORRECT', iconURL: 'ICON' })
+  .setDescription(`
+**You selected:** 🟣 **D**
+**Correct answer:** 🔵 **A**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🔥 Streak reset to **0**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 **Explanation:**
+> DFS uses O(h) memory (height of tree) while BFS uses O(w) memory (width). They're not equivalent!
+  `)
+  .setFooter({ text: 'Next question in 3s...' });
+```
+
+---
+
+## 🏆 QUIZ COMPLETE SCREEN
+
+```javascript
+const completeEmbed = new EmbedBuilder()
+  .setColor(0x5865F2) // Blurple
+  .setAuthor({ name: '🏆 QUIZ COMPLETE! 🏆', iconURL: 'ICON' })
+  .setTitle('📚 ALGORITHMS')
+  .setDescription(`
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**📊 YOUR RESULTS**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+✅ **Correct:** \`4/5\` (80%)
+💎 **XP Earned:** \`140 XP\`
+🔥 **Best Streak:** \`4\`
+⏱️ **Avg Time:** \`12.3s\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+\`████████████████░░░░\` **80%**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🎖️ **RANK: A**
+
+> 🌟 *Great job! You're in the top 15% of players for this topic!*
+  `)
+  .setThumbnail('TROPHY_IMAGE_URL')
+  .setFooter({ text: 'Thanks for playing! • MentorAI' });
+```
+
+---
+
+## 📋 COPY-PASTE READY CODE
+
+```javascript
+// Full implementation
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+
+class QuizUI {
+  static diffConfig = {
+    easy: { color: 0x57F287, emoji: '🟢', label: 'EASY' },
+    medium: { color: 0xFEE75C, emoji: '🟡', label: 'MEDIUM' },
+    hard: { color: 0xED4245, emoji: '🔴', label: 'HARD' }
+  };
+
+  static progressBar(current, total, length = 20) {
+    const filled = Math.floor((current / total) * length);
+    return '█'.repeat(filled) + '░'.repeat(length - filled);
+  }
+
+  static createQuestion(data) {
+    const diff = this.diffConfig[data.difficulty];
+    
+    return new EmbedBuilder()
+      .setColor(diff.color)
+      .setAuthor({ name: '⚡ MENTOR AI QUIZ ⚡', iconURL: data.botIcon })
+      .setDescription(`
+**\` 📚 ${data.topic.toUpperCase()} \`**
+
+${diff.emoji} **${diff.label}** ◈ 💎 **+${data.xp} XP** ◈ ⏱️ **${data.time || 30}s**
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**❓ ${data.question}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 🔵 **A** ║ ${data.answers[0]}
+
+> 🟢 **B** ║ ${data.answers[1]}
+
+> 🟡 **C** ║ ${data.answers[2]}
+
+> 🟣 **D** ║ ${data.answers[3]}
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+\`${this.progressBar(data.current, data.total)}\` **${data.current}/${data.total}**
+      `)
+      .setFooter({ text: '💡 Use buttons below to answer' })
+      .setTimestamp();
+  }
+
+  static createButtons() {
+    const row1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('a').setLabel('A').setEmoji('🔵').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('b').setLabel('B').setEmoji('🟢').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('c').setLabel('C').setEmoji('🟡').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('d').setLabel('D').setEmoji('🟣').setStyle(ButtonStyle.Secondary)
+    );
+
+    const row2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('hint').setLabel('Hint').setEmoji('💡').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('5050').setLabel('50/50').setEmoji('✂️').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('quit').setLabel('Quit').setEmoji('🚪').setStyle(ButtonStyle.Danger)
+    );
+
+    return [row1, row2];
+  }
+
+  static createCorrect(data) {
+    return new EmbedBuilder()
+      .setColor(0x57F287)
+      .setAuthor({ name: '✨ CORRECT! ✨' })
+      .setDescription(`
+**You selected:** 🔵 **${data.selected}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+💎 **+${data.xp} XP** earned!
+🔥 Streak: **${data.streak}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 ${data.explanation}
+      `);
+  }
+
+  static createWrong(data) {
+    return new EmbedBuilder()
+      .setColor(0xED4245)
+      .setAuthor({ name: '❌ INCORRECT' })
+      .setDescription(`
+**You selected:** ${data.selectedEmoji} **${data.selected}**
+**Correct answer:** ${data.correctEmoji} **${data.correct}**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🔥 Streak reset to **0**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+> 📖 ${data.explanation}
+      `);
+  }
+
+  static createComplete(data) {
+    const percentage = Math.round((data.correct / data.total) * 100);
+    const rank = percentage >= 90 ? 'S' : percentage >= 80 ? 'A' : percentage >= 70 ? 'B' : percentage >= 60 ? 'C' : 'D';
+    
+    return new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setAuthor({ name: '🏆 QUIZ COMPLETE! 🏆' })
+      .setTitle(`📚 ${data.topic.toUpperCase()}`)
+      .setDescription(`
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**📊 YOUR RESULTS**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+✅ **Correct:** \`${data.correct}/${data.total}\` (${percentage}%)
+💎 **XP Earned:** \`${data.xp} XP\`
+🔥 **Best Streak:** \`${data.streak}\`
+⏱️ **Avg Time:** \`${data.avgTime}s\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+\`${this.progressBar(percentage, 100)}\` **${percentage}%**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🎖️ **RANK: ${rank}**
+      `)
+      .setFooter({ text: 'Thanks for playing! • MentorAI' });
   }
 }
+
+module.exports = QuizUI;
+```
+
+---
+
+## 🚀 USAGE EXAMPLE
+
+```javascript
+// In your quiz command
+const QuizUI = require('./QuizUI');
+
+// Send question
+await interaction.reply({
+  embeds: [QuizUI.createQuestion({
+    topic: 'algorithms',
+    difficulty: 'hard',
+    xp: 35,
+    question: 'Which describes DFS vs BFS most accurately?',
+    answers: [
+      'DFS uses less memory, slower for shortest paths',
+      'BFS uses less memory, slower for deep targets',
+      'Equal time complexity, BFS uses less memory',
+      'Equal space complexity, DFS always faster'
+    ],
+    current: 1,
+    total: 5,
+    botIcon: 'YOUR_ICON_URL'
+  })],
+  components: QuizUI.createButtons()
+});
+```

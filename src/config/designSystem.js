@@ -156,63 +156,57 @@ export function createPremiumEmbed(options = {}) {
 // Quiz Question Embed with Clean Premium UI
 export function createQuizQuestionEmbed(question, questionNum, totalQuestions, topic, difficulty) {
   const difficultyColors = {
-    easy: 0x23A559,    // Green
-    medium: 0xF0B132,  // Yellow/Orange
-    hard: 0xF23F43     // Red
+    easy: 0x57F287,    // Green
+    medium: 0xFEE75C,  // Yellow
+    hard: 0xED4245     // Red
   };
   
   const difficultyInfo = {
-    easy: { dot: '🟢', label: 'EASY', xp: '+20 XP' },
-    medium: { dot: '🟡', label: 'MEDIUM', xp: '+25 XP' },
-    hard: { dot: '🔴', label: 'HARD', xp: '+35 XP' }
+    easy: { dot: '🟢', label: 'EASY', xp: '+20 XP', time: '45s' },
+    medium: { dot: '🟡', label: 'MEDIUM', xp: '+25 XP', time: '30s' },
+    hard: { dot: '🔴', label: 'HARD', xp: '+35 XP', time: '20s' }
   };
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
   
-  // Create progress bar (filled/empty)
-  const filled = Math.floor((questionNum / totalQuestions) * 10);
-  const empty = 10 - filled;
-  const progressBar = '▓'.repeat(filled) + '░'.repeat(empty);
+  // Create progress bar (filled/empty) - 20 characters for better visuals
+  const filled = Math.floor((questionNum / totalQuestions) * 20);
+  const empty = 20 - filled;
+  const progressBar = '█'.repeat(filled) + '░'.repeat(empty);
   
   // Format question text
   let questionText = question.question || 'Loading question...';
   
-  // Format answers with consistent colored dots
-  const answerColors = {
-    A: '🔵',  // Blue
-    B: '🟢',  // Green  
-    C: '🟡',  // Yellow
-    D: '🟣'   // Purple
-  };
-  
+  // Format answers with quote blocks and consistent colored dots
   const options = question.options || ['N/A', 'N/A', 'N/A', 'N/A'];
   const formattedAnswers = [
-    `${answerColors.A} **A** │ ${options[0]}`,
-    `${answerColors.B} **B** │ ${options[1]}`,
-    `${answerColors.C} **C** │ ${options[2]}`,
-    `${answerColors.D} **D** │ ${options[3]}`
-  ].join('\n');
+    `> 🔵 **A** ║ ${options[0]}`,
+    `> 🟢 **B** ║ ${options[1]}`,
+    `> 🟡 **C** ║ ${options[2]}`,
+    `> 🟣 **D** ║ ${options[3]}`
+  ].join('\n\n');
 
-  // Build clean description
-  const description = `${diffData.dot} **${diffData.label}** • ${diffData.xp}
+  // Build premium description with diamond separators
+  const description = `**\` 📚 ${topic.toUpperCase()} \`**
 
-━━━━━━━━━━━━━━━━━━━━━━━━
+${diffData.dot} **${diffData.label}** ◈ 💎 **${diffData.xp}** ◈ ⏱️ **${diffData.time}**
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
 **❓ ${questionText}**
 
-━━━━━━━━━━━━━━━━━━━━━━━━
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
 
 ${formattedAnswers}
 
-━━━━━━━━━━━━━━━━━━━━━━━━
-${progressBar} ${questionNum}/${totalQuestions}`;
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+\`${progressBar}\` **${questionNum}/${totalQuestions}**`;
 
   const embed = new EmbedBuilder()
     .setColor(difficultyColors[difficulty] || difficultyColors.medium)
-    .setTitle(`📚 ${topic.toUpperCase()}`)
+    .setAuthor({ name: '⚡ MENTOR AI QUIZ ⚡' })
     .setDescription(description)
     .setFooter({ 
-      text: '🎓 MentorAI • Select A, B, C, or D to answer',
+      text: '💡 Use buttons below to answer',
     })
     .setTimestamp();
   
@@ -237,7 +231,7 @@ export function createAnswerResultEmbed(isCorrect, explanation, xpEarned = 0) {
   return embed;
 }
 
-// Quiz Results Embed with Rich Stats
+// Quiz Results Embed with Rich Stats - Premium V4 Design
 export function createQuizResultsEmbed(result) {
   const percentage = result.percentage || Math.round((result.score / result.totalQuestions) * 100);
   const gradeLabel = getGrade(percentage);
@@ -246,51 +240,55 @@ export function createQuizResultsEmbed(result) {
   // Premium grade styling - extract just the letter grade
   const gradeLetter = gradeLabel.split(' ').pop();
   const gradeInfo = {
-    'S+': { emoji: '👑', title: 'LEGENDARY' },
-    'A+': { emoji: '⭐', title: 'EXCELLENT' },
-    'A': { emoji: '✨', title: 'GREAT JOB' },
-    'B+': { emoji: '🌟', title: 'VERY GOOD' },
-    'B': { emoji: '💫', title: 'GOOD' },
-    'C+': { emoji: '📗', title: 'DECENT' },
-    'C': { emoji: '📚', title: 'KEEP LEARNING' },
-    'D': { emoji: '💪', title: 'PRACTICE MORE' },
-    'F': { emoji: '🔄', title: 'TRY AGAIN' }
+    'S+': { emoji: '👑', title: 'LEGENDARY', rank: 'S+' },
+    'A+': { emoji: '⭐', title: 'EXCELLENT', rank: 'A+' },
+    'A': { emoji: '✨', title: 'GREAT JOB', rank: 'A' },
+    'B+': { emoji: '🌟', title: 'VERY GOOD', rank: 'B+' },
+    'B': { emoji: '💫', title: 'GOOD', rank: 'B' },
+    'C+': { emoji: '📗', title: 'DECENT', rank: 'C+' },
+    'C': { emoji: '📚', title: 'KEEP LEARNING', rank: 'C' },
+    'D': { emoji: '💪', title: 'PRACTICE MORE', rank: 'D' },
+    'F': { emoji: '🔄', title: 'TRY AGAIN', rank: 'F' }
   };
   
   const gradeData = gradeInfo[gradeLetter] || gradeInfo['C'];
   
-  // Create visual score bar (filled/empty blocks)
-  const filledBlocks = Math.round((result.score / result.totalQuestions) * 10);
-  const emptyBlocks = 10 - filledBlocks;
-  const scoreBar = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
+  // Create visual progress bar (20 chars for consistency)
+  const filledBlocks = Math.round((percentage / 100) * 20);
+  const emptyBlocks = 20 - filledBlocks;
+  const progressBar = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
   
-  // Create clean header without ANSI boxes (using markdown formatting)
-  const header = `## ${gradeData.emoji} QUIZ COMPLETE! ${gradeData.emoji}\n### ${gradeData.title}`;
-  
-  // Clean score display using markdown code blocks and formatting
-  const scoreDisplay = `\`\`\`\n` +
-    `📊 SCORE: ${result.score}/${result.totalQuestions}\n` +
-    `   ${scoreBar} ${percentage}%\n\n` +
-    `🏆 GRADE:  ${gradeData.emoji} ${gradeLetter}\n` +
-    `✨ XP EARNED: +${result.xpEarned || 0} XP\n` +
-    `\`\`\``;
-  
-  // Create answer breakdown visualization
-  const answerBreakdown = result.answers 
-    ? result.answers.map((a, i) => (a.isCorrect ? '✅' : '❌')).join('')
-    : '📝 Answers recorded';
-  
+  // Premium description with separators and clean layout
+  const description = `▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+**📊 YOUR RESULTS**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+✅ **Correct:** \`${result.score}/${result.totalQuestions}\` (${percentage}%)
+💎 **XP Earned:** \`${result.xpEarned || 0} XP\`
+🔥 **Best Streak:** \`${result.bestStreak || result.score}\`
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+\`${progressBar}\` **${percentage}%**
+
+▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
+
+🎖️ **RANK: ${gradeData.rank}**
+
+> ${gradeData.emoji} *${gradeData.title}!*`;
+
   const embed = new EmbedBuilder()
+    .setAuthor({ name: '🏆 QUIZ COMPLETE! 🏆' })
+    .setTitle(`📚 ${(result.topic || 'Quiz').toUpperCase()}`)
     .setColor(gradeColor)
-    .setDescription(header + '\n' + scoreDisplay)
-    .addFields(
-      { name: '📝 Answer Breakdown', value: answerBreakdown, inline: false }
-    );
+    .setDescription(description);
   
   if (result.leveledUp) {
     embed.addFields({
       name: '🎊 LEVEL UP!',
-      value: `⭐ You reached **Level ${result.newLevel}**! Keep going!`,
+      value: `> ⭐ You reached **Level ${result.newLevel}**! Keep going!`,
       inline: false
     });
   }
@@ -599,25 +597,30 @@ export function createQuizAnswerButtons(disabled = false) {
   const row = new ActionRowBuilder();
   
   // A=Blue (Primary), B=Green (Success), C=Gray (Secondary), D=Gray (Secondary)
+  // With colored circle emojis to match the embed
   row.addComponents(
     new ButtonBuilder()
       .setCustomId('quiz_answer_0')
       .setLabel('A')
+      .setEmoji('🔵')
       .setStyle(ButtonStyle.Primary)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_1')
       .setLabel('B')
+      .setEmoji('🟢')
       .setStyle(ButtonStyle.Success)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_2')
       .setLabel('C')
+      .setEmoji('🟡')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled),
     new ButtonBuilder()
       .setCustomId('quiz_answer_3')
       .setLabel('D')
+      .setEmoji('🟣')
       .setStyle(ButtonStyle.Secondary)
       .setDisabled(disabled)
   );
@@ -635,10 +638,12 @@ export function createQuizControlButtons() {
     new ButtonBuilder()
       .setCustomId('quiz_fifty')
       .setLabel('50/50')
+      .setEmoji('✂️')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
       .setCustomId('quiz_cancel')
-      .setLabel('Cancel Quiz')
+      .setLabel('Quit')
+      .setEmoji('🚪')
       .setStyle(ButtonStyle.Danger)
   );
 }
@@ -648,18 +653,18 @@ export function createPostQuizButtons(topic) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('quiz_restart_' + encodedTopic)
-      .setLabel('Try Again')
+      .setLabel('Play Again')
       .setEmoji('🔄')
       .setStyle(ButtonStyle.Primary),
     new ButtonBuilder()
-      .setCustomId('lesson_suggest_' + encodedTopic)
-      .setLabel('Learn More')
-      .setEmoji('📚')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
       .setCustomId('leaderboard_view')
       .setLabel('Leaderboard')
-      .setEmoji('🏆')
+      .setEmoji('📊')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_menu')
+      .setLabel('Menu')
+      .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
   );
 }
