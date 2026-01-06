@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",
+    "@napi-rs/canvas": "^0.1.65",
     "bcryptjs": "^2.4.3",
-    "canvas": "^3.2.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "discord.js": "^14.18.0",

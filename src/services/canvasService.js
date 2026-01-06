@@ -3,7 +3,7 @@
 // Generate beautiful images: certificates, progress charts, skill trees
 // ============================================
 
-import { createCanvas, registerFont, loadImage } from 'canvas';
+import { createCanvas, GlobalFonts, loadImage } from '@napi-rs/canvas';
 import { AttachmentBuilder } from 'discord.js';
 import path from 'path';
 import { fileURLToPath } from 'url';

@@ -1,28 +1,17 @@
-FROM node:20-bookworm-slim
+FROM node:20-slim
 
 WORKDIR /app
 
-# Install build dependencies for canvas and other native modules
+# Install minimal dependencies (wget for health check)
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    g++ \
-    make \
-    libcairo2-dev \
-    libpango1.0-dev \
-    libjpeg-dev \
-    libgif-dev \
-    librsvg2-dev \
-    libpixman-1-dev \
-    pkg-config \
-    python3 \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev for build), then prune
-RUN npm ci && npm cache clean --force
+# Install dependencies
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy source code
 COPY . .
