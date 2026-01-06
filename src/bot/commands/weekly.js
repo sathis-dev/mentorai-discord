@@ -87,7 +87,7 @@ async function showChallenge(interaction) {
     .setThumbnail('https://i.imgur.com/AfFp7pu.png')
     .setDescription(
       '```\n' +
-      '🏆 THIS WEEK\\'S GLOBAL CHALLENGE 🏆\n' +
+      "🏆 THIS WEEK'S GLOBAL CHALLENGE 🏆\n" +
       challenge.icon + ' ' + challenge.name.toUpperCase() + ' ' + challenge.icon + '\n' +
       '```\n' +
       '### ' + challenge.emoji + ' ' + challenge.description
