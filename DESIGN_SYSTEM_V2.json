@@ -1,656 +1,533 @@
-# 🚀 MentorAI PREMIUM Help Command UI
+# 🎯 PERFECTLY ALIGNED Discord UI
 
-## Current Issues:
-```
-❌ Plain list of features (boring)
-❌ No visual hierarchy
-❌ No progress visualization
-❌ Feels like every other bot
-❌ No personality/brand feel
+## THE PROBLEM:
+- Unicode box characters (`╔ ╗ ╚ ╝ ║`) = inconsistent widths
+- Emojis inside code blocks = BREAKS alignment
+- Different Discord clients render differently
+
+## THE SOLUTION:
+1. **NO emojis inside code blocks** - put them outside
+2. **Use simple ASCII** - `+`, `-`, `|`, `=` always work
+3. **OR skip boxes entirely** - use clean separators
+
+---
+
+## ✅ DESIGN 1: PERFECT ASCII BOXES (Guaranteed to work!)
+
+```javascript
+function createPerfectHelp(user, data) {
+  const progressBar = '█'.repeat(Math.floor((data.xp % 1000) / 50)) + 
+                      '░'.repeat(20 - Math.floor((data.xp % 1000) / 50));
+  
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI ⚡', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+    .setDescription(`
+\`\`\`
++=============================================+
+|                                             |
+|          M E N T O R   A I                  |
+|       Next-Gen Learning Platform            |
+|                                             |
++=============================================+
+\`\`\`
+
+## 👋 Welcome, ${user.username}!
+
+\`\`\`
++---------------------------------------------+
+|  PLAYER PROFILE                             |
++---------------------------------------------+
+|                                             |
+|  RANK       :  BRONZE LEARNER               |
+|  LEVEL      :  ${String(data.level).padEnd(30)}|
+|  TOTAL XP   :  ${String(data.totalXP).toLocaleString().padEnd(30)}|
+|                                             |
+|  [${progressBar}]       |
+|  ${String(data.xp % 1000).padStart(3)}/1000 XP to next level                 |
+|                                             |
++---------------------------------------------+
+\`\`\`
+
+\`\`\`
++---------------------------------------------+
+|  STATISTICS                                 |
++---------------------------------------------+
+|                                             |
+|  STREAK     :  ${String(data.streak).padEnd(5)} days                    |
+|  LESSONS    :  ${String(data.lessons).padEnd(5)} completed              |
+|  QUIZZES    :  ${String(data.quizzes).padEnd(5)} passed                 |
+|  BADGES     :  ${String(data.achievements).padEnd(5)} earned                 |
+|  BATTLES    :  ${String(data.battles || 0).padEnd(5)} won                    |
+|                                             |
++---------------------------------------------+
+\`\`\`
+
+\`\`\`
++---------------------------------------------+
+|  GAME MODES                                 |
++---------------------------------------------+
+|                                             |
+|  > LESSONS   -  AI-powered learning         |
+|  > QUIZZES   -  Test your knowledge         |
+|  > BATTLES   -  1v1 quiz challenges         |
+|  > RANKINGS  -  Climb leaderboards          |
+|  > BADGES    -  Unlock achievements         |
+|                                             |
++---------------------------------------------+
+\`\`\`
+
+\`\`\`
++==============================================+
+|       SELECT AN ACTION BELOW TO START        |
++==============================================+
+\`\`\`
+    `)
+    .setFooter({ text: '⚡ MentorAI • Trusted by 1000+ servers' })
+    .setTimestamp();
+}
 ```
 
 ---
 
-## ✨ UPGRADED DESIGNS
+## ✅ DESIGN 2: CLEAN NO-BOX DESIGN (Cleanest!)
 
-### DESIGN 1: Premium Dashboard Style
+```javascript
+function createCleanHelp(user, data) {
+  const progressBar = '█'.repeat(Math.floor((data.xp % 1000) / 50)) + 
+                      '░'.repeat(20 - Math.floor((data.xp % 1000) / 50));
+  const percent = Math.floor((data.xp % 1000) / 10);
+
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+    .setDescription(`
+\`\`\`
+============================================
+        M E N T O R   A I
+     Next-Gen Learning Platform
+============================================
+\`\`\`
+
+# 👋 Welcome, ${user.username}!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🎮 PLAYER PROFILE
+
+> 🏆 **BRONZE LEARNER** • Level **${data.level}**
+> ✨ Total XP: **${data.totalXP.toLocaleString()}**
+
+\`${progressBar}\` **${percent}%**
+*${data.xp % 1000}/1000 XP to next level*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 STATISTICS
+
+> 🔥 **${data.streak}** day streak
+> 📚 **${data.lessons}** lessons completed
+> ✅ **${data.quizzes}** quizzes passed
+> 🏆 **${data.achievements}** badges earned
+> ⚔️ **${data.battles || 0}** battles won
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### ⚡ GAME MODES
+
+> 📖 **Lessons** — AI-powered learning
+> 🎯 **Quizzes** — Test your knowledge
+> ⚔️ **Battles** — 1v1 challenges
+> 🏆 **Rankings** — Climb leaderboards
+> 🎖️ **Badges** — Unlock achievements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`
+============================================
+      🚀 SELECT AN ACTION BELOW 🚀
+============================================
+\`\`\`
+    `)
+    .setFooter({ text: '⚡ MentorAI • Trusted by 1000+ servers' })
+    .setTimestamp();
+}
+```
+
+---
+
+## ✅ DESIGN 3: ANSI COLORS + PERFECT ASCII (Best of Both!)
+
+```javascript
+function createColoredPerfectHelp(user, data) {
+  const filled = Math.floor((data.xp % 1000) / 50);
+  const empty = 20 - filled;
+  
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+    .setDescription(`
+\`\`\`ansi
+[1;36m+=============================================+
+|                                             |
+|[0m [1;37m         M E N T O R   A I[0m                 [1;36m|
+|[0m [1;33m      Next-Gen Learning Platform[0m          [1;36m|
+|                                             |
++=============================================+[0m
+\`\`\`
+
+## 👋 Welcome, ${user.username}!
+
+\`\`\`ansi
+[1;33m+---------------------------------------------+
+|[0m [1;37m PLAYER PROFILE[0m                             [1;33m|
++---------------------------------------------+
+|[0m                                             [1;33m|
+|[0m  [1;36mRANK[0m       :  [1;33mBRONZE LEARNER[0m               [1;33m|
+|[0m  [1;36mLEVEL[0m      :  [1;37m${String(data.level).padEnd(30)}[0m[1;33m|
+|[0m  [1;36mTOTAL XP[0m   :  [1;32m${String(data.totalXP).padEnd(30)}[0m[1;33m|
+|[0m                                             [1;33m|
+|[0m  [1;32m${'#'.repeat(filled)}[0;30m${'-'.repeat(empty)}[0m         [1;33m|
+|[0m  [0;37m${String(data.xp % 1000).padStart(3)}/1000 XP to next level[0m                 [1;33m|
+|[0m                                             [1;33m|
++---------------------------------------------+[0m
+\`\`\`
+
+\`\`\`ansi
+[1;35m+---------------------------------------------+
+|[0m [1;37m STATISTICS[0m                                 [1;35m|
++---------------------------------------------+
+|[0m                                             [1;35m|
+|[0m  [1;31mSTREAK[0m     :  [1;37m${String(data.streak).padEnd(5)}[0m days                    [1;35m|
+|[0m  [1;32mLESSONS[0m    :  [1;37m${String(data.lessons).padEnd(5)}[0m completed              [1;35m|
+|[0m  [1;34mQUIZZES[0m    :  [1;37m${String(data.quizzes).padEnd(5)}[0m passed                 [1;35m|
+|[0m  [1;33mBADGES[0m     :  [1;37m${String(data.achievements).padEnd(5)}[0m earned                 [1;35m|
+|[0m  [1;36mBATTLES[0m    :  [1;37m${String(data.battles || 0).padEnd(5)}[0m won                    [1;35m|
+|[0m                                             [1;35m|
++---------------------------------------------+[0m
+\`\`\`
+
+\`\`\`ansi
+[1;32m+---------------------------------------------+
+|[0m [1;37m GAME MODES[0m                                 [1;32m|
++---------------------------------------------+
+|[0m                                             [1;32m|
+|[0m  [1;36m>[0m LESSONS   [0;37m-  AI-powered learning[0m         [1;32m|
+|[0m  [1;36m>[0m QUIZZES   [0;37m-  Test your knowledge[0m         [1;32m|
+|[0m  [1;36m>[0m BATTLES   [0;37m-  1v1 quiz challenges[0m         [1;32m|
+|[0m  [1;36m>[0m RANKINGS  [0;37m-  Climb leaderboards[0m          [1;32m|
+|[0m  [1;36m>[0m BADGES    [0;37m-  Unlock achievements[0m         [1;32m|
+|[0m                                             [1;32m|
++---------------------------------------------+[0m
+\`\`\`
+
+\`\`\`ansi
+[1;33m+==============================================+
+|[0m [1;37m      SELECT AN ACTION BELOW TO START[0m       [1;33m|
++==============================================+[0m
+\`\`\`
+    `)
+    .setFooter({ text: '⚡ MentorAI • Trusted by 1000+ servers' })
+    .setTimestamp();
+}
+```
+
+---
+
+## ✅ DESIGN 4: FIELDS-BASED LAYOUT (Most Reliable!)
+
+```javascript
+function createFieldsHelp(user, data) {
+  const progressBar = '█'.repeat(Math.floor((data.xp % 1000) / 50)) + 
+                      '░'.repeat(20 - Math.floor((data.xp % 1000) / 50));
+
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+    .setTitle(`👋 Welcome, ${user.username}!`)
+    .setDescription(`
+\`\`\`
+============================================
+          M E N T O R   A I
+       Next-Gen Learning Platform
+============================================
+\`\`\`
+    `)
+    .addFields(
+      {
+        name: '🎮 PLAYER PROFILE',
+        value: `>>> 🏆 **BRONZE LEARNER** • Level **${data.level}**\n✨ Total XP: **${data.totalXP.toLocaleString()}**\n\n\`${progressBar}\`\n*${data.xp % 1000}/1000 XP to next level*`,
+        inline: false
+      },
+      {
+        name: '📊 STATISTICS',
+        value: `>>> 🔥 **${data.streak}** day streak\n📚 **${data.lessons}** lessons\n✅ **${data.quizzes}** quizzes\n🏆 **${data.achievements}** badges`,
+        inline: true
+      },
+      {
+        name: '⚡ GAME MODES',
+        value: `>>> 📖 Lessons\n🎯 Quizzes\n⚔️ Battles\n🏆 Rankings\n🎖️ Badges`,
+        inline: true
+      },
+      {
+        name: '\u200b',
+        value: '```\n============================================\n      🚀 SELECT AN ACTION BELOW 🚀\n============================================\n```',
+        inline: false
+      }
+    )
+    .setFooter({ text: '⚡ MentorAI • Trusted by 1000+ servers' })
+    .setTimestamp();
+}
+```
+
+---
+
+## ✅ DESIGN 5: HYBRID PREMIUM (Recommended!) 🔥
+
+```javascript
+function createHybridHelp(user, data) {
+  const filled = Math.floor((data.xp % 1000) / 50);
+  const empty = 20 - filled;
+  const percent = Math.floor((data.xp % 1000) / 10);
+
+  return new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true }))
+    .setDescription(`
+\`\`\`ansi
+[1;35m=============================================[0m
+[1;37m           M E N T O R   A I[0m
+[1;33m        Next-Gen Learning Platform[0m
+[1;35m=============================================[0m
+\`\`\`
+
+# 👋 Hey, ${user.username}!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🎮 PLAYER PROFILE**
+
+\`\`\`ansi
+[1;33mRANK[0m       [1;37mBRONZE LEARNER[0m
+[1;33mLEVEL[0m      [1;37m${data.level}[0m
+[1;33mTOTAL XP[0m   [1;32m${data.totalXP.toLocaleString()}[0m
+
+[1;32m${'#'.repeat(filled)}[0;30m${'-'.repeat(empty)}[0m [1;37m${percent}%[0m
+[0;37m${data.xp % 1000}/1000 XP to next level[0m
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 STATISTICS**
+
+\`\`\`ansi
+[1;31mSTREAK[0m     [1;37m${String(data.streak).padEnd(5)}[0m days
+[1;32mLESSONS[0m    [1;37m${String(data.lessons).padEnd(5)}[0m completed
+[1;34mQUIZZES[0m    [1;37m${String(data.quizzes).padEnd(5)}[0m passed
+[1;33mBADGES[0m     [1;37m${String(data.achievements).padEnd(5)}[0m earned
+[1;36mBATTLES[0m    [1;37m${String(data.battles || 0).padEnd(5)}[0m won
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**⚡ GAME MODES**
+
+> 📖 **Lessons** — AI-powered learning
+> 🎯 **Quizzes** — Test your knowledge
+> ⚔️ **Battles** — 1v1 challenges
+> 🏆 **Rankings** — Climb leaderboards
+> 🎖️ **Badges** — Unlock achievements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`ansi
+[1;33m=============================================[0m
+[1;37m       🚀 SELECT AN ACTION BELOW 🚀[0m
+[1;33m=============================================[0m
+\`\`\`
+    `)
+    .setFooter({ text: '⚡ MentorAI • Trusted by 1000+ servers' })
+    .setTimestamp();
+}
+```
+
+---
+
+## 🔑 KEY RULES FOR PERFECT ALIGNMENT
+
+### ✅ WHAT WORKS:
+```
++ - | = # : > *     ← Basic ASCII (ALWAYS aligned)
+```
+
+### ❌ WHAT BREAKS:
+```
+╔ ╗ ╚ ╝ ║ ═ ╭ ╮     ← Unicode boxes (inconsistent)
+🔥 📚 ✅ 🏆           ← Emojis inside code blocks
+```
+
+### 📋 THE RULES:
+1. **NO emojis inside \`\`\` code blocks**
+2. **Use only**: `+`, `-`, `|`, `=`, `#`, `:`, `>`, `*`
+3. **Emojis go OUTSIDE** code blocks (in markdown)
+4. **Use `.padEnd()` and `.padStart()`** for spacing
+5. **OR skip boxes** - use separators `━━━━━━━`
+
+---
+
+## 📦 COMPONENTS (Buttons)
+
+```javascript
+function createComponents() {
+  const selectMenu = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('help_nav')
+      .setPlaceholder('🎮 Select a category...')
+      .addOptions([
+        { label: 'Learning', description: 'Lessons & tutorials', value: 'learning', emoji: '📖' },
+        { label: 'Quizzes', description: 'Test your skills', value: 'quizzes', emoji: '🎯' },
+        { label: 'Battles', description: 'PvP challenges', value: 'battles', emoji: '⚔️' },
+        { label: 'Profile', description: 'Your stats', value: 'profile', emoji: '📊' },
+        { label: 'Achievements', description: 'Badges & rewards', value: 'achievements', emoji: '🏆' }
+      ])
+  );
+
+  const row1 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('quiz').setLabel('QUICK QUIZ').setEmoji('🎯').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('lesson').setLabel('LESSON').setEmoji('📖').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('daily').setLabel('DAILY').setEmoji('🎁').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('profile').setLabel('PROFILE').setEmoji('👤').setStyle(ButtonStyle.Secondary)
+  );
+
+  const row2 = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('rank').setLabel('RANKINGS').setEmoji('🏆').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('battle').setLabel('BATTLE').setEmoji('⚔️').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('badges').setLabel('BADGES').setEmoji('🎖️').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('topics').setLabel('TOPICS').setEmoji('📚').setStyle(ButtonStyle.Secondary)
+  );
+
+  return [selectMenu, row1, row2];
+}
+```
+
+---
+
+## 🚀 FULL COPY-PASTE CODE
 
 ```javascript
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 
-function createHelpEmbed(user, userData) {
-  // Calculate level progress
-  const currentXP = userData.xp % 1000; // XP needed per level
-  const progressPercent = Math.floor((currentXP / 1000) * 100);
-  const progressBar = '█'.repeat(Math.floor(progressPercent / 5)) + '░'.repeat(20 - Math.floor(progressPercent / 5));
-  
-  // Rank badges
-  const rankBadges = {
-    bronze: '🥉',
-    silver: '🥈', 
-    gold: '🥇',
-    platinum: '💎',
-    diamond: '💠',
-    master: '👑'
-  };
-
-  const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setAuthor({ 
-      name: '⚡ MENTOR AI ⚡', 
-      iconURL: 'BOT_ICON_URL' 
-    })
-    .setThumbnail('BOT_ICON_URL')
-    .setDescription(`
-# Welcome back, ${user.username}! 👋
-
-╭─────────────────────────────────────╮
-│                                     │
-│  ${rankBadges[userData.rank]} **${userData.rank.toUpperCase()} LEARNER**  •  Level **${userData.level}**
-│                                     │
-│  \`${progressBar}\` **${progressPercent}%**
-│  ✨ ${currentXP}/${1000} XP to next level
-│                                     │
-╰─────────────────────────────────────╯
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-## 🎯 Quick Stats
-
-> 🔥 **${userData.streak}** day streak
-> 📚 **${userData.lessonsCompleted}** lessons completed  
-> ✅ **${userData.quizzesCompleted}** quizzes passed
-> 🏆 **${userData.achievements}** achievements
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-## ⚡ Features
-
-╭──────────────────────────────────────╮
-│ 📖 **Lessons** — AI-powered learning │
-│ 🎯 **Quizzes** — Test your knowledge │
-│ ⚔️ **Battles** — Challenge friends   │
-│ 🏆 **Ranks** — Climb leaderboards    │
-╰──────────────────────────────────────╯
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-🚀 **Select an action below to begin!**
-    `)
-    .setFooter({ 
-      text: `⚡ MentorAI • ${userData.serverCount} servers • ${userData.ping}ms`, 
-      iconURL: 'BOT_ICON_URL' 
-    })
-    .setTimestamp();
-
-  return embed;
-}
-```
-
----
-
-### DESIGN 2: Gaming/RPG Style (RECOMMENDED) 🔥
-
-```javascript
-function createGamingHelpEmbed(user, userData) {
-  const xpProgress = userData.xp % 1000;
-  const xpNeeded = 1000;
-  const progressBar = createProgressBar(xpProgress, xpNeeded, 15);
-  
-  const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setAuthor({ 
-      name: '✦ MENTOR AI ✦ Command Center', 
-      iconURL: 'BOT_ICON' 
-    })
-    .setThumbnail(user.displayAvatarURL())
-    .setDescription(`
-\`\`\`ansi
-[2;36m╔══════════════════════════════════════╗[0m
-[2;36m║[0m     [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m       [2;36m║[0m
-[2;36m╚══════════════════════════════════════╝[0m
-\`\`\`
-### 👤 ${user.username}
-
-╭───「 **PROFILE** 」───────────────────╮
-
-   🎖️ **Rank:** ${getRankDisplay(userData.rank)}
-   ⭐ **Level:** \`${userData.level}\`
-   ✨ **Total XP:** \`${userData.totalXP.toLocaleString()}\`
-
-   **Level Progress:**
-   ${progressBar} \`${xpProgress}/${xpNeeded}\`
-
-╰──────────────────────────────────────╯
-
-╭───「 **STATS** 」────────────────────╮
-
-   🔥 \`${userData.streak}\` Day Streak
-   📚 \`${userData.lessons}\` Lessons
-   ✅ \`${userData.quizzes}\` Quizzes
-   ⚔️ \`${userData.battles}\` Battles Won
-   🏆 \`${userData.achievements}\` Badges
-
-╰──────────────────────────────────────╯
-
-╭───「 **FEATURES** 」─────────────────╮
-
-   📖 **/lesson** — Start AI lesson
-   🎯 **/quiz** — Take a quiz
-   ⚔️ **/battle** — Challenge friends
-   📊 **/profile** — View full stats
-   🏆 **/leaderboard** — Rankings
-
-╰──────────────────────────────────────╯
-
-\`\`\`ansi
-[2;33m⚡ Select an option below to begin![0m
-\`\`\`
-    `)
-    .setFooter({ 
-      text: `MentorAI • ${userData.servers} servers • ${userData.ping}ms` 
-    })
-    .setTimestamp();
-
-  return embed;
-}
-
-function getRankDisplay(rank) {
-  const ranks = {
-    bronze: '🥉 Bronze',
-    silver: '🥈 Silver',
-    gold: '🥇 Gold',
-    platinum: '💎 Platinum',
-    diamond: '💠 Diamond',
-    master: '👑 Master'
-  };
-  return ranks[rank] || '🥉 Bronze';
-}
-
-function createProgressBar(current, max, length = 15) {
-  const percentage = current / max;
-  const filled = Math.round(percentage * length);
-  const empty = length - filled;
-  return `\`${'█'.repeat(filled)}${'░'.repeat(empty)}\``;
-}
-```
-
----
-
-### DESIGN 3: Clean Modern Style
-
-```javascript
-function createModernHelpEmbed(user, userData) {
-  const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setAuthor({ 
-      name: 'MENTOR AI', 
-      iconURL: 'BOT_ICON' 
-    })
-    .setThumbnail('BOT_ICON')
-    .setTitle(`Welcome, ${user.username}! 👋`)
-    .setDescription(`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-> 🎖️ **${userData.rank.toUpperCase()} LEARNER** • Level ${userData.level}
-> 
-> ████████████░░░░░░ \`${userData.xpPercent}%\` to Level ${userData.level + 1}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**📊 Your Journey**
-
-\`\`\`
-🔥 Streak      │  ${String(userData.streak).padStart(3)} days
-📚 Lessons     │  ${String(userData.lessons).padStart(3)} completed
-✅ Quizzes     │  ${String(userData.quizzes).padStart(3)} passed
-🏆 Achievements│  ${String(userData.achievements).padStart(3)} earned
-\`\`\`
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-**⚡ What would you like to do?**
-
-Use the buttons below or type a command:
-• \`/quiz [topic]\` — Start a quiz
-• \`/lesson [topic]\` — Learn something new
-• \`/battle @user\` — Challenge a friend
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    `)
-    .setFooter({ 
-      text: `⚡ MentorAI • Empowering ${userData.servers}+ servers` 
-    })
-    .setTimestamp();
-
-  return embed;
-}
-```
-
----
-
-### DESIGN 4: Compact Card Style
-
-```javascript
-function createCardHelpEmbed(user, userData) {
-  const progressBar = '▰'.repeat(Math.floor(userData.xpPercent / 10)) + 
-                      '▱'.repeat(10 - Math.floor(userData.xpPercent / 10));
-
-  const embed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'BOT_ICON' })
-    .setThumbnail(user.displayAvatarURL())
-    .addFields(
-      {
-        name: '👤 Profile',
-        value: `**${user.username}**\n🎖️ ${userData.rank} • Lv.**${userData.level}**\n${progressBar} \`${userData.xpPercent}%\``,
-        inline: true
-      },
-      {
-        name: '📊 Stats',
-        value: `🔥 **${userData.streak}** streak\n✅ **${userData.quizzes}** quizzes\n🏆 **${userData.achievements}** badges`,
-        inline: true
-      },
-      {
-        name: '\u200b', // Empty field for spacing
-        value: '\u200b',
-        inline: true
-      },
-      {
-        name: '⚡ Quick Actions',
-        value: '```\n📖 /lesson  │ 🎯 /quiz\n⚔️ /battle  │ 📊 /profile\n🏆 /rank    │ 🎁 /daily\n```',
-        inline: false
-      }
-    )
-    .setFooter({ text: `MentorAI • ${userData.servers} servers • ${userData.ping}ms` })
-    .setTimestamp();
-
-  return embed;
-}
-```
-
----
-
-## 🔘 PREMIUM BUTTONS
-
-```javascript
-function createHelpButtons() {
-  // Row 1: Main actions (colorful)
-  const row1 = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('quick_quiz')
-        .setLabel('Quick Quiz')
-        .setEmoji('🎯')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('start_lesson')
-        .setLabel('Start Lesson')
-        .setEmoji('📖')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('daily_bonus')
-        .setLabel('Daily Bonus')
-        .setEmoji('🎁')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId('my_profile')
-        .setLabel('My Profile')
-        .setEmoji('👤')
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-  // Row 2: Secondary actions
-  const row2 = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('rankings')
-        .setLabel('Rankings')
-        .setEmoji('🏆')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('achievements')
-        .setLabel('Badges')
-        .setEmoji('🎖️')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('streak')
-        .setLabel('Streak')
-        .setEmoji('🔥')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('topics')
-        .setLabel('Topics')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-  return [row1, row2];
-}
-```
-
----
-
-## 📋 PREMIUM SELECT MENU
-
-```javascript
-function createCategoryMenu() {
-  return new ActionRowBuilder()
-    .addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('help_category')
-        .setPlaceholder('📂 Explore command categories...')
-        .addOptions([
-          {
-            label: 'Learning',
-            description: 'Lessons, tutorials & guides',
-            value: 'learning',
-            emoji: '📖'
-          },
-          {
-            label: 'Quizzes',
-            description: 'Test your knowledge',
-            value: 'quizzes',
-            emoji: '🎯'
-          },
-          {
-            label: 'Battles',
-            description: 'Challenge friends & compete',
-            value: 'battles',
-            emoji: '⚔️'
-          },
-          {
-            label: 'Profile & Stats',
-            description: 'View your progress',
-            value: 'profile',
-            emoji: '📊'
-          },
-          {
-            label: 'Achievements',
-            description: 'Badges & rewards',
-            value: 'achievements',
-            emoji: '🏆'
-          },
-          {
-            label: 'Settings',
-            description: 'Customize your experience',
-            value: 'settings',
-            emoji: '⚙️'
-          }
-        ])
-    );
-}
-```
-
----
-
-## 🎨 FULL IMPLEMENTATION
-
-```javascript
-const { 
-  EmbedBuilder, 
-  ActionRowBuilder, 
-  ButtonBuilder, 
-  ButtonStyle,
-  StringSelectMenuBuilder 
-} = require('discord.js');
-
 class HelpUI {
-  
-  static createMainEmbed(user, data) {
-    const xpPercent = Math.floor((data.xp % 1000) / 10);
-    const progressBar = '█'.repeat(Math.floor(xpPercent / 5)) + '░'.repeat(20 - Math.floor(xpPercent / 5));
-    
-    const rankIcons = {
-      bronze: '🥉', silver: '🥈', gold: '🥇',
-      platinum: '💎', diamond: '💠', master: '👑'
-    };
-    
-    return new EmbedBuilder()
+  static create(user, data) {
+    const filled = Math.floor((data.xp % 1000) / 50);
+    const empty = 20 - filled;
+    const percent = Math.floor((data.xp % 1000) / 10);
+
+    const embed = new EmbedBuilder()
       .setColor(0x5865F2)
-      .setAuthor({ 
-        name: '✦ MENTOR AI ✦', 
-        iconURL: 'YOUR_BOT_ICON' 
-      })
-      .setThumbnail('YOUR_BOT_ICON')
+      .setAuthor({ name: '⚡ MENTOR AI', iconURL: 'YOUR_BOT_ICON' })
+      .setThumbnail(user.displayAvatarURL({ dynamic: true }))
       .setDescription(`
 \`\`\`ansi
-[2;34m╔════════════════════════════════════════╗[0m
-[2;34m║[0m   [1;37m⚡ WELCOME TO MENTOR AI ⚡[0m          [2;34m║[0m
-[2;34m╚════════════════════════════════════════╝[0m
+[1;35m=============================================[0m
+[1;37m           M E N T O R   A I[0m
+[1;33m        Next-Gen Learning Platform[0m
+[1;35m=============================================[0m
 \`\`\`
-## 👋 Hey, ${user.username}!
 
-╭───「 🎮 **YOUR PROFILE** 」──────────╮
-│
-│   ${rankIcons[data.rank] || '🥉'} **${(data.rank || 'bronze').toUpperCase()} LEARNER**
-│   ⭐ Level **${data.level}** 
-│
-│   \`${progressBar}\`
-│   ✨ \`${data.xp % 1000}\`/\`1000\` XP to next level
-│
-╰─────────────────────────────────────╯
+# 👋 Hey, ${user.username}!
 
-╭───「 📊 **QUICK STATS** 」──────────╮
-│
-│   🔥 **${data.streak || 0}** day streak
-│   📚 **${data.lessons || 0}** lessons completed
-│   ✅ **${data.quizzes || 0}** quizzes passed
-│   🏆 **${data.achievements || 0}** achievements
-│
-╰─────────────────────────────────────╯
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-╭───「 ⚡ **FEATURES** 」─────────────╮
-│
-│   📖 **AI Lessons** — Learn any topic
-│   🎯 **Quizzes** — Test knowledge
-│   ⚔️ **Battles** — Challenge friends
-│   📈 **XP & Ranks** — Track progress
-│   🏆 **Achievements** — Collect badges
-│
-╰─────────────────────────────────────╯
+**🎮 PLAYER PROFILE**
 
 \`\`\`ansi
-[2;33m🚀 Select an action below to start![0m
+[1;33mRANK[0m       [1;37m${(data.rank || 'BRONZE').toUpperCase()} LEARNER[0m
+[1;33mLEVEL[0m      [1;37m${data.level || 1}[0m
+[1;33mTOTAL XP[0m   [1;32m${(data.totalXP || 0).toLocaleString()}[0m
+
+[1;32m${'#'.repeat(filled)}[0;30m${'-'.repeat(empty)}[0m [1;37m${percent}%[0m
+[0;37m${data.xp % 1000}/1000 XP to next level[0m
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 STATISTICS**
+
+\`\`\`ansi
+[1;31mSTREAK[0m     [1;37m${String(data.streak || 0).padEnd(5)}[0m days
+[1;32mLESSONS[0m    [1;37m${String(data.lessons || 0).padEnd(5)}[0m completed
+[1;34mQUIZZES[0m    [1;37m${String(data.quizzes || 0).padEnd(5)}[0m passed
+[1;33mBADGES[0m     [1;37m${String(data.achievements || 0).padEnd(5)}[0m earned
+[1;36mBATTLES[0m    [1;37m${String(data.battles || 0).padEnd(5)}[0m won
+\`\`\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**⚡ GAME MODES**
+
+> 📖 **Lessons** — AI-powered learning
+> 🎯 **Quizzes** — Test your knowledge
+> ⚔️ **Battles** — 1v1 challenges
+> 🏆 **Rankings** — Climb leaderboards
+> 🎖️ **Badges** — Unlock achievements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`ansi
+[1;33m=============================================[0m
+[1;37m       🚀 SELECT AN ACTION BELOW 🚀[0m
+[1;33m=============================================[0m
 \`\`\`
       `)
-      .setFooter({ 
-        text: `⚡ MentorAI • ${data.servers || 1} servers • ${data.ping || 100}ms`,
-        iconURL: 'YOUR_BOT_ICON'
-      })
+      .setFooter({ text: `⚡ MentorAI • ${data.servers || 1} servers • ${data.ping || 1}ms` })
       .setTimestamp();
+
+    return embed;
   }
 
-  static createButtons() {
+  static createComponents() {
+    const select = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('help_nav')
+        .setPlaceholder('🎮 Select a category...')
+        .addOptions([
+          { label: 'Learning', value: 'learning', emoji: '📖' },
+          { label: 'Quizzes', value: 'quizzes', emoji: '🎯' },
+          { label: 'Battles', value: 'battles', emoji: '⚔️' },
+          { label: 'Profile', value: 'profile', emoji: '📊' }
+        ])
+    );
+
     const row1 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('quick_quiz')
-        .setLabel('Quick Quiz')
-        .setEmoji('🎯')
-        .setStyle(ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId('start_lesson')
-        .setLabel('Start Lesson')
-        .setEmoji('📖')
-        .setStyle(ButtonStyle.Success),
-      new ButtonBuilder()
-        .setCustomId('daily_bonus')
-        .setLabel('Daily Bonus')
-        .setEmoji('🎁')
-        .setStyle(ButtonStyle.Danger),
-      new ButtonBuilder()
-        .setCustomId('my_profile')
-        .setLabel('My Profile')
-        .setEmoji('👤')
-        .setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId('quiz').setLabel('QUICK QUIZ').setEmoji('🎯').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('lesson').setLabel('LESSON').setEmoji('📖').setStyle(ButtonStyle.Success),
+      new ButtonBuilder().setCustomId('daily').setLabel('DAILY').setEmoji('🎁').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId('profile').setLabel('PROFILE').setEmoji('👤').setStyle(ButtonStyle.Secondary)
     );
 
     const row2 = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId('rankings')
-        .setLabel('Rankings')
-        .setEmoji('🏆')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('achievements')
-        .setLabel('Badges')
-        .setEmoji('🎖️')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('streak')
-        .setLabel('Streak')
-        .setEmoji('🔥')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('topics')
-        .setLabel('Topics')
-        .setEmoji('📚')
-        .setStyle(ButtonStyle.Secondary)
+      new ButtonBuilder().setCustomId('rank').setLabel('RANKINGS').setEmoji('🏆').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('battle').setLabel('BATTLE').setEmoji('⚔️').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('badges').setLabel('BADGES').setEmoji('🎖️').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('topics').setLabel('TOPICS').setEmoji('📚').setStyle(ButtonStyle.Secondary)
     );
 
-    return [row1, row2];
+    return [select, row1, row2];
   }
 
-  static createSelectMenu() {
-    return new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('help_category')
-        .setPlaceholder('📂 Explore command categories...')
-        .addOptions([
-          { label: 'Learning', description: 'Lessons & tutorials', value: 'learning', emoji: '📖' },
-          { label: 'Quizzes', description: 'Test knowledge', value: 'quizzes', emoji: '🎯' },
-          { label: 'Battles', description: 'Challenge friends', value: 'battles', emoji: '⚔️' },
-          { label: 'Profile', description: 'Your stats', value: 'profile', emoji: '📊' },
-          { label: 'Achievements', description: 'Badges & rewards', value: 'achievements', emoji: '🏆' }
-        ])
-    );
-  }
-
-  // Full help command response
-  static async sendHelp(interaction, userData) {
-    const embed = this.createMainEmbed(interaction.user, userData);
-    const buttons = this.createButtons();
-    const selectMenu = this.createSelectMenu();
-
+  static async send(interaction, userData) {
     await interaction.reply({
-      embeds: [embed],
-      components: [selectMenu, ...buttons]
+      embeds: [this.create(interaction.user, userData)],
+      components: this.createComponents()
     });
   }
 }
 
 module.exports = HelpUI;
-```
-
----
-
-## 📱 CATEGORY SUBPAGES
-
-When user selects a category from dropdown:
-
-### Learning Category
-```javascript
-static createLearningEmbed() {
-  return new EmbedBuilder()
-    .setColor(0x57F287)
-    .setAuthor({ name: '📖 LEARNING COMMANDS', iconURL: 'BOT_ICON' })
-    .setDescription(`
-\`\`\`ansi
-[2;32m╔════════════════════════════════════╗[0m
-[2;32m║[0m    [1;37m📖 AI-POWERED LEARNING[0m         [2;32m║[0m
-[2;32m╚════════════════════════════════════╝[0m
-\`\`\`
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-### 📚 Commands
-
-> **/lesson [topic]**
-> Start an AI-powered lesson on any topic
-> Example: \`/lesson javascript basics\`
-
-> **/explain [concept]**
-> Get a detailed explanation
-> Example: \`/explain recursion\`
-
-> **/example [topic]**
-> See code examples
-> Example: \`/example async await\`
-
-> **/practice [topic]**
-> Get practice problems
-> Example: \`/practice arrays\`
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-💡 **Tip:** You can ask follow-up questions during lessons!
-    `);
-}
-```
-
-### Quiz Category  
-```javascript
-static createQuizEmbed() {
-  return new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setAuthor({ name: '🎯 QUIZ COMMANDS', iconURL: 'BOT_ICON' })
-    .setDescription(`
-\`\`\`ansi
-[2;34m╔════════════════════════════════════╗[0m
-[2;34m║[0m      [1;37m🎯 TEST YOUR KNOWLEDGE[0m       [2;34m║[0m
-[2;34m╚════════════════════════════════════╝[0m
-\`\`\`
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-### 🎮 Commands
-
-> **/quiz [topic]**
-> Start a 5-question quiz
-> Example: \`/quiz react\`
-
-> **/quiz [topic] [difficulty]**
-> Choose difficulty: easy, medium, hard
-> Example: \`/quiz python hard\`
-
-> **/quickquiz**
-> Random topic, instant start!
-
-> **/marathon [topic]**
-> 20 questions, bonus XP!
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-**🏆 XP Rewards:**
-\`\`\`
-Easy   │ +15 XP per correct
-Medium │ +25 XP per correct  
-Hard   │ +35 XP per correct
-\`\`\`
-    `);
-}
-```
-
----
-
-## 🎨 UNICODE REFERENCE
-
-```
-╔ ╗ ╚ ╝ ║ ═   Double line (headers)
-╭ ╮ ╰ ╯ │ ─   Rounded corners (sections)
-┌ ┐ └ ┘ │ ─   Square corners
-「  」          Japanese brackets
-▬▬▬▬▬▬▬▬▬▬    Bold separator
-━━━━━━━━━━    Line separator
-═══════════   Double line separator
-
-Progress:
-█████░░░░░    Filled blocks
-▰▰▰▱▱▱▱▱    Parallelograms
-◆◆◆◇◇◇◇◇    Diamonds
-
-Decorative:
-✦ ✧ ★ ☆      Stars
-◈ ◆ ◇        Diamonds
-⚡ ✨ 💫      Sparkles
 ```

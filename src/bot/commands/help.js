@@ -71,35 +71,51 @@ export async function execute(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`## ⚡ WELCOME TO MENTOR AI ⚡
-
-👋 **Hey, ${interaction.user.username}!**
-
-🎮 **YOUR PROFILE**
-\`\`\`
-┌──────────────────────────────────┐
-│ ${pad(tier.title.toUpperCase(), 32)} │
-│ Level ${String(user.level || 1).padEnd(26)}│
-│ ${pad(progressBar, 32)} │
-│ ${String(currentXP).padStart(4)}/${xpNeeded} XP to next level       │
-└──────────────────────────────────┘
+`\`\`\`
+============================================
+          M E N T O R   A I
+       Next-Gen Learning Platform
+============================================
 \`\`\`
 
-📊 **QUICK STATS**
-\`\`\`
-┌──────────────────────────────────┐
-│ 🔥 ${String(streak).padEnd(4)} day streak             │
-│ 📚 ${String(lessonsCompleted).padEnd(4)} lessons completed       │
-│ ✅ ${String(quizzesTaken).padEnd(4)} quizzes passed           │
-│ 🏆 ${String(achievements).padEnd(4)} achievements             │
-└──────────────────────────────────┘
-\`\`\`
+# 👋 Welcome, ${interaction.user.username}!
 
-⚡ **FEATURES**
-> 📖 AI Lessons • 🎯 Quizzes • ⚔️ Battles
-> 📈 XP & Ranks • 🏆 Achievements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🚀 **Select an action below to start!**`
+### 🎮 PLAYER PROFILE
+
+> 🏆 **${tier.title.toUpperCase()}** • Level **${user.level || 1}**
+> ✨ Total XP: **${(user.xp || 0).toLocaleString()}**
+
+\`${progressBar}\` **${xpPercent}%**
+*${currentXP}/1000 XP to next level*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 STATISTICS
+
+> 🔥 **${streak}** day streak
+> 📚 **${lessonsCompleted}** lessons completed
+> ✅ **${quizzesTaken}** quizzes passed
+> 🏆 **${achievements}** badges earned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### ⚡ GAME MODES
+
+> 📖 **Lessons** — AI-powered learning
+> 🎯 **Quizzes** — Test your knowledge
+> ⚔️ **Battles** — 1v1 challenges
+> 🏆 **Rankings** — Climb leaderboards
+> 🎖️ **Badges** — Unlock achievements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`
+============================================
+      🚀 SELECT AN ACTION BELOW 🚀
+============================================
+\`\`\``
       )
       .setFooter({ 
         text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
@@ -246,28 +262,24 @@ async function showQuizPanel(interaction) {
     .setColor(COLORS.QUIZ)
     .setAuthor({ name: '🎯 QUIZ COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║     TEST YOUR KNOWLEDGE           ║
-╚════════════════════════════════════╝
-\`\`\`
+`### 🎮 TEST YOUR KNOWLEDGE
 
-### 🎮 Commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📋 COMMANDS**
 
 > **/quiz [topic]** — Start a 5-question quiz
 > **/quiz [topic] [difficulty]** — Choose: easy, medium, hard
 > **/quickquiz** — Random topic, instant start!
 > **/challenge @user** — Battle a friend!
 
-\`\`\`
-┌────────────────────────────────────┐
-│  XP REWARDS                        │
-├────────────────────────────────────┤
-│  Easy   = +20 XP per correct       │
-│  Medium = +30 XP per correct       │
-│  Hard   = +45 XP per correct       │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**💎 XP REWARDS**
+
+> 🟢 Easy = **+20 XP** per correct
+> 🟡 Medium = **+30 XP** per correct
+> 🔴 Hard = **+45 XP** per correct
     `)
     .setFooter({ text: '⚡ MentorAI • Select a topic below' });
 
@@ -317,29 +329,25 @@ async function showLearnPanel(interaction) {
     .setColor(COLORS.LESSON)
     .setAuthor({ name: '📖 LEARNING COMMANDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║     AI-POWERED LEARNING            ║
-╚════════════════════════════════════╝
-\`\`\`
+`### 📚 AI-POWERED LEARNING
 
-### 📚 Commands
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📋 COMMANDS**
 
 > **/learn [topic]** — Start an AI lesson
 > **/explain [concept]** — Get explanations
 > **/path browse** — Learning paths
 > **/topics** — See all topics
 
-\`\`\`
-┌────────────────────────────────────┐
-│  WHAT YOU GET                      │
-├────────────────────────────────────┤
-│  + Clear explanations              │
-│  + Code examples                   │
-│  + Key concepts                    │
-│  + Practice challenges             │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**✨ WHAT YOU GET**
+
+> ✅ Clear explanations
+> ✅ Code examples
+> ✅ Key concepts
+> ✅ Practice challenges
     `)
     .setFooter({ text: '⚡ MentorAI • Select a topic to begin' });
 
@@ -388,27 +396,21 @@ async function showDailyPanel(interaction) {
     .setColor(COLORS.XP_GOLD)
     .setAuthor({ name: '🎁 DAILY REWARDS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║       DAILY BONUS CENTER           ║
-╚════════════════════════════════════╝
-\`\`\`
-
-### ✨ Claim Your Daily Rewards!
+`### ✨ DAILY BONUS CENTER
 
 Come back every day to earn bonus XP!
 
-\`\`\`
-┌────────────────────────────────────┐
-│  STREAK REWARDS                    │
-├────────────────────────────────────┤
-│  Base Reward: +75 XP               │
-│  3+ days  = 1.25x XP               │
-│  7+ days  = 1.5x XP                │
-│  14+ days = 1.75x XP               │
-│  30+ days = 2x XP                  │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🎁 STREAK REWARDS**
+
+> 💫 Base Reward: **+75 XP**
+> 🔥 3+ days = **1.25x** XP
+> 🔥 7+ days = **1.5x** XP
+> 🔥 14+ days = **1.75x** XP
+> 🔥 30+ days = **2x** XP
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 > ✨ *Plus: AI-powered daily tips & fun facts!*
     `)
@@ -453,31 +455,31 @@ async function showProfilePanel(interaction) {
   const emptyBars = progressLength - filledBars;
   const progressBar = '█'.repeat(filledBars) + '░'.repeat(emptyBars);
   
+  const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
+  
   const embed = new EmbedBuilder()
     .setColor(tier.color)
     .setAuthor({ name: '👤 YOUR PROFILE', iconURL: interaction.client.user.displayAvatarURL() })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
     .setDescription(
-`## 🏆 ${tier.title.toUpperCase()}
+`### 🏆 ${tier.title.toUpperCase()}
 ### ⭐ Level ${user.level || 1} • ${(user.xp || 0).toLocaleString()} Total XP
 
-📈 **PROGRESS**
-\`\`\`
-┌──────────────────────────────────┐
-│ ${pad(progressBar, 32)} │
-│ ${String(currentXP).padStart(4)}/${xpNeeded} XP to next level       │
-└──────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 **YOUR STATS**
-\`\`\`
-┌──────────────────────────────────┐
-│ 🔥 ${String(user.streak || 0).padEnd(4)} day streak             │
-│ 📝 ${String(user.quizzesTaken || 0).padEnd(4)} quizzes taken           │
-│ 🎯 ${String(user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0).padEnd(3)}% accuracy              │
-│ 🏆 ${String(user.achievements?.length || 0).padEnd(4)} achievements             │
-└──────────────────────────────────┘
-\`\`\`
+**📈 PROGRESS TO NEXT LEVEL**
+
+\`${progressBar}\` **${xpPercent}%**
+*${currentXP}/1000 XP to next level*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 YOUR STATS**
+
+> 🔥 **${user.streak || 0}** day streak
+> 📝 **${user.quizzesTaken || 0}** quizzes taken
+> 🎯 **${user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0}%** accuracy
+> 🏆 **${user.achievements?.length || 0}** achievements
     `)
     .setFooter({ text: `⚡ MentorAI • ${tier.badge || tier.title}` });
 
@@ -513,24 +515,20 @@ async function showLeaderboardPanel(interaction) {
     .setColor(COLORS.LEADERBOARD)
     .setAuthor({ name: '🏆 LEADERBOARD', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║       COMPETE & CLIMB RANKS       ║
-╚════════════════════════════════════╝
-\`\`\`
+`### 🏅 COMPETE & CLIMB RANKS
 
-### 🏅 Compete with learners worldwide!
+Compete with learners worldwide!
 
-\`\`\`
-┌────────────────────────────────────┐
-│  RANKING CRITERIA                 │
-├────────────────────────────────────┤
-│  Total XP earned                   │
-│  Level progression                 │
-│  Learning streak                   │
-│  Quiz accuracy                     │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📊 RANKING CRITERIA**
+
+> 🏆 Total XP earned
+> ⬆️ Level progression
+> 🔥 Learning streak
+> 🎯 Quiz accuracy
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 > 🚀 *Complete quizzes & lessons to rise up!*
     `)
@@ -564,26 +562,22 @@ async function showAchievementsPanel(interaction) {
     .setColor(COLORS.ACHIEVEMENT)
     .setAuthor({ name: '🏅 ACHIEVEMENTS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║        UNLOCK ACHIEVEMENTS        ║
-╚════════════════════════════════════╝
-\`\`\`
+`### 🏆 UNLOCK ACHIEVEMENTS
 
-### 🏆 Collect badges and earn bonus XP!
+Collect badges and earn bonus XP!
 
-\`\`\`
-┌────────────────────────────────────┐
-│  AVAILABLE BADGES                  │
-├────────────────────────────────────┤
-│  First Steps    - First quiz       │
-│  On Fire        - 7-day streak     │
-│  Sharpshooter   - 100% quiz        │
-│  Bookworm       - 10 lessons       │
-│  Champion       - Level 10         │
-│  Diamond Mind   - Level 30         │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🏅 AVAILABLE BADGES**
+
+> 🎯 **First Steps** — First quiz
+> 🔥 **On Fire** — 7-day streak
+> 🎯 **Sharpshooter** — 100% quiz
+> 📖 **Bookworm** — 10 lessons
+> 🏆 **Champion** — Level 10
+> 💎 **Diamond Mind** — Level 30
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 > ✨ *Each achievement grants bonus XP!*
     `)
@@ -621,24 +615,20 @@ async function showStreakPanel(interaction) {
     .setColor(COLORS.STREAK_FIRE)
     .setAuthor({ name: '🔥 STREAK STATUS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║       KEEP THE FIRE BURNING       ║
-╚════════════════════════════════════╝
-\`\`\`
+`### ${fires} KEEP THE FIRE BURNING
 
-### ${fires} Current Streak: **${streak}** day${streak !== 1 ? 's' : ''}
+**Current Streak: ${streak} day${streak !== 1 ? 's' : ''}**
 
-\`\`\`
-┌────────────────────────────────────┐
-│  STREAK BONUSES                    │
-├────────────────────────────────────┤
-│  3 days   = +25% XP                │
-│  7 days   = +50% XP                │
-│  14 days  = +75% XP                │
-│  30 days  = +100% XP               │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**💎 STREAK BONUSES**
+
+> 🔥 3 days = **+25%** XP
+> 🔥 7 days = **+50%** XP
+> 🔥 14 days = **+75%** XP
+> 🔥 30 days = **+100%** XP
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 > 🎯 *Complete any activity daily to maintain!*
     `)
@@ -672,38 +662,30 @@ async function showTopicsPanel(interaction) {
     .setColor(COLORS.LESSON)
     .setAuthor({ name: '📖 AVAILABLE TOPICS', iconURL: interaction.client.user.displayAvatarURL() })
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║        MASTER THESE TOPICS        ║
-╚════════════════════════════════════╝
-\`\`\`
+`### 📚 MASTER THESE TOPICS
 
-\`\`\`
-┌────────────────────────────────────┐
-│  PROGRAMMING LANGUAGES             │
-├────────────────────────────────────┤
-│  JavaScript - Python - TypeScript  │
-│  Java - C++ - Rust - Go            │
-└────────────────────────────────────┘
-\`\`\`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-\`\`\`
-┌────────────────────────────────────┐
-│  WEB DEVELOPMENT                   │
-├────────────────────────────────────┤
-│  React - Vue.js - Angular          │
-│  Node.js - CSS - Tailwind          │
-└────────────────────────────────────┘
-\`\`\`
+**💻 PROGRAMMING LANGUAGES**
 
-\`\`\`
-┌────────────────────────────────────┐
-│  BACKEND & DATA                    │
-├────────────────────────────────────┤
-│  SQL - MongoDB - Firebase          │
-│  REST APIs - Authentication        │
-└────────────────────────────────────┘
-\`\`\`
+> 🟨 JavaScript • 🐍 Python • 🔷 TypeScript
+> ☕ Java • ⚙️ C++ • 🦀 Rust • 🔵 Go
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🌐 WEB DEVELOPMENT**
+
+> ⚛️ React • 💚 Vue.js • 🅰️ Angular
+> 🟢 Node.js • 🎨 CSS • 💨 Tailwind
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**🗄️ BACKEND & DATA**
+
+> 📊 SQL • 🍃 MongoDB • 🔥 Firebase
+> 🔗 REST APIs • 🔐 Authentication
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 > 🤖 *Or ask about any topic — AI can teach it!*
     `)
@@ -755,6 +737,8 @@ async function showMainMenu(interaction) {
     const quizzesTaken = user.quizzesTaken || 0;
     const achievements = user.achievements?.length || 0;
     
+    const xpPercent = Math.floor((currentXP / xpNeeded) * 100);
+    
     const mainEmbed = new EmbedBuilder()
       .setColor(COLORS.BRAND_PRIMARY)
       .setAuthor({ 
@@ -763,35 +747,51 @@ async function showMainMenu(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`## ⚡ WELCOME TO MENTOR AI ⚡
-
-👋 **Hey, ${interaction.user.username}!**
-
-🎮 **YOUR PROFILE**
-\`\`\`
-┌──────────────────────────────────┐
-│ ${pad(tier.title.toUpperCase(), 32)} │
-│ Level ${String(user.level || 1).padEnd(26)}│
-│ ${pad(progressBar, 32)} │
-│ ${String(currentXP).padStart(4)}/${xpNeeded} XP to next level       │
-└──────────────────────────────────┘
+`\`\`\`
+============================================
+          M E N T O R   A I
+       Next-Gen Learning Platform
+============================================
 \`\`\`
 
-📊 **QUICK STATS**
-\`\`\`
-┌──────────────────────────────────┐
-│ 🔥 ${String(streak).padEnd(4)} day streak             │
-│ 📚 ${String(lessonsCompleted).padEnd(4)} lessons completed       │
-│ ✅ ${String(quizzesTaken).padEnd(4)} quizzes passed           │
-│ 🏆 ${String(achievements).padEnd(4)} achievements             │
-└──────────────────────────────────┘
-\`\`\`
+# 👋 Welcome, ${interaction.user.username}!
 
-⚡ **FEATURES**
-> 📖 AI Lessons • 🎯 Quizzes • ⚔️ Battles
-> 📈 XP & Ranks • 🏆 Achievements
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🚀 *Select an action below to start!*`
+### 🎮 PLAYER PROFILE
+
+> 🏆 **${tier.title.toUpperCase()}** • Level **${user.level || 1}**
+> ✨ Total XP: **${(user.xp || 0).toLocaleString()}**
+
+\`${progressBar}\` **${xpPercent}%**
+*${currentXP}/1000 XP to next level*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 STATISTICS
+
+> 🔥 **${streak}** day streak
+> 📚 **${lessonsCompleted}** lessons completed
+> ✅ **${quizzesTaken}** quizzes passed
+> 🏆 **${achievements}** badges earned
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### ⚡ GAME MODES
+
+> 📖 **Lessons** — AI-powered learning
+> 🎯 **Quizzes** — Test your knowledge
+> ⚔️ **Battles** — 1v1 challenges
+> 🏆 **Rankings** — Climb leaderboards
+> 🎖️ **Badges** — Unlock achievements
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`\`\`
+============================================
+      🚀 SELECT AN ACTION BELOW 🚀
+============================================
+\`\`\``
       )
       .setFooter({ 
         text: `⚡ MentorAI • ${interaction.client.guilds.cache.size} servers • ${interaction.client.ws.ping}ms`,
