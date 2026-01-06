@@ -69,45 +69,38 @@ export async function execute(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║  ⚡ WELCOME TO MENTOR AI ⚡        ║
-╚════════════════════════════════════╝
-\`\`\`
-## 👋 Hey, ${interaction.user.username}!
+`## ⚡ WELCOME TO MENTOR AI ⚡
 
+### 👋 Hey, ${interaction.user.username}!
+
+**🎮 YOUR PROFILE**
 \`\`\`
 ┌────────────────────────────────────┐
-│  🎮 YOUR PROFILE                   │
-├────────────────────────────────────┤
-│  ${padE('🏆', tier.title.toUpperCase())}│
-│  ${padE('⭐', 'Level ' + (user.level || 1))}│
-├────────────────────────────────────┤
+│  ${pad(tier.title.toUpperCase())}│
+│  ${pad('Level ' + (user.level || 1))}│
 │  ${pad(progressBar)}│
-│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
+**📊 QUICK STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  📊 QUICK STATS                    │
-├────────────────────────────────────┤
-│  ${padE('🔥', streak + ' day streak')}│
-│  ${padE('📚', lessonsCompleted + ' lessons completed')}│
-│  ${padE('✅', quizzesTaken + ' quizzes passed')}│
-│  ${padE('🏆', achievements + ' achievements')}│
+│  ${pad(streak + ' day streak')}│
+│  ${pad(lessonsCompleted + ' lessons completed')}│
+│  ${pad(quizzesTaken + ' quizzes passed')}│
+│  ${pad(achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
+**⚡ FEATURES**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ⚡ FEATURES                       │
-├────────────────────────────────────┤
-│  📖 AI Lessons  - Learn any topic  │
-│  🎯 Quizzes     - Test knowledge   │
-│  ⚔️ Battles     - Challenge friends│
-│  📈 XP & Ranks  - Track progress   │
-│  🏆 Achievements- Collect badges   │
+│  AI Lessons   - Learn any topic    │
+│  Quizzes      - Test knowledge     │
+│  Battles      - Challenge friends  │
+│  XP & Ranks   - Track progress     │
+│  Achievements - Collect badges     │
 └────────────────────────────────────┘
 \`\`\`
 
@@ -470,31 +463,25 @@ async function showProfilePanel(interaction) {
     .setAuthor({ name: '👤 YOUR PROFILE', iconURL: interaction.client.user.displayAvatarURL() })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
     .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║  ${padE('🏆', tier.title.toUpperCase())}║
-╚════════════════════════════════════╝
-\`\`\`
+`### 🏆 ${tier.title.toUpperCase()}
 
 ### ⭐ Level ${user.level || 1} • ${(user.xp || 0).toLocaleString()} Total XP
 
+**📈 PROGRESS TO NEXT LEVEL**
 \`\`\`
 ┌────────────────────────────────────┐
-│  📈 PROGRESS TO NEXT LEVEL         │
-├────────────────────────────────────┤
 │  ${pad(progressBar)}│
-│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP')}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP')}│
 └────────────────────────────────────┘
 \`\`\`
 
+**📊 YOUR STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  📊 YOUR STATS                     │
-├────────────────────────────────────┤
-│  ${padE('🔥', (user.streak || 0) + ' day streak')}│
-│  ${padE('📝', (user.quizzesTaken || 0) + ' quizzes taken')}│
-│  ${padE('🎯', (user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
-│  ${padE('🏆', (user.achievements?.length || 0) + ' achievements')}│
+│  ${pad((user.streak || 0) + ' day streak')}│
+│  ${pad((user.quizzesTaken || 0) + ' quizzes taken')}│
+│  ${pad((user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
+│  ${pad((user.achievements?.length || 0) + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
     `)
@@ -782,45 +769,38 @@ async function showMainMenu(interaction) {
       })
       .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true, size: 256 }))
       .setDescription(
-`\`\`\`
-╔════════════════════════════════════╗
-║  ⚡ WELCOME TO MENTOR AI ⚡        ║
-╚════════════════════════════════════╝
-\`\`\`
-## 👋 Hey, ${interaction.user.username}!
+`## ⚡ WELCOME TO MENTOR AI ⚡
 
+### 👋 Hey, ${interaction.user.username}!
+
+**🎮 YOUR PROFILE**
 \`\`\`
 ┌────────────────────────────────────┐
-│  🎮 YOUR PROFILE                   │
-├────────────────────────────────────┤
-│  ${padE('🏆', tier.title.toUpperCase())}│
-│  ${padE('⭐', 'Level ' + (user.level || 1))}│
-├────────────────────────────────────┤
+│  ${pad(tier.title.toUpperCase())}│
+│  ${pad('Level ' + (user.level || 1))}│
 │  ${pad(progressBar)}│
-│  ${padE('✨', currentXP + '/' + xpNeeded + ' XP to next level')}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
+**📊 QUICK STATS**
 \`\`\`
 ┌────────────────────────────────────┐
-│  📊 QUICK STATS                    │
-├────────────────────────────────────┤
-│  ${padE('🔥', streak + ' day streak')}│
-│  ${padE('📚', lessonsCompleted + ' lessons completed')}│
-│  ${padE('✅', quizzesTaken + ' quizzes passed')}│
-│  ${padE('🏆', achievements + ' achievements')}│
+│  ${pad(streak + ' day streak')}│
+│  ${pad(lessonsCompleted + ' lessons completed')}│
+│  ${pad(quizzesTaken + ' quizzes passed')}│
+│  ${pad(achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
+**⚡ FEATURES**
 \`\`\`
 ┌────────────────────────────────────┐
-│  ⚡ FEATURES                       │
-├────────────────────────────────────┤
-│  📖 AI Lessons  - Learn any topic  │
-│  🎯 Quizzes     - Test knowledge   │
-│  ⚔️ Battles     - Challenge friends│
-│  📈 XP & Ranks  - Track progress   │
-│  🏆 Achievements- Collect badges   │
+│  AI Lessons   - Learn any topic    │
+│  Quizzes      - Test knowledge     │
+│  Battles      - Challenge friends  │
+│  XP & Ranks   - Track progress     │
+│  Achievements - Collect badges     │
 └────────────────────────────────────┘
 \`\`\`
 
