@@ -9,7 +9,7 @@
  */
 export async function generateWithGemini(prompt, options = {}) {
   const {
-    model = 'gemini-1.5-flash', // Fastest model
+    model = 'gemini-2.0-flash', // Latest fast model
     maxTokens = 4000,
     temperature = 0.7
   } = options;
@@ -21,7 +21,7 @@ export async function generateWithGemini(prompt, options = {}) {
     return null;
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
 
   try {
     const response = await fetch(url, {
