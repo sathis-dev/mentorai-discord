@@ -489,12 +489,21 @@ async function handleHelpCategorySelect(interaction, category) {
 }
 
 async function handleHelpButton(interaction, action, params) {
-  if (action === 'main') {
+  if (action === 'main' || action === 'menu') {
     // Show main help menu
-    const welcomeEmbed = createWelcomeEmbed(interaction);
-    const statsEmbed = createStatsEmbed(interaction);
-    const components = createHelpComponents();
-    await interaction.update({ embeds: [welcomeEmbed, statsEmbed], components });
+    const helpModule = await import('../commands/help.js');
+    await helpModule.execute({
+      ...interaction,
+      isChatInputCommand: () => true,
+      replied: false,
+      deferred: false,
+      reply: async (opts) => interaction.update(opts),
+      deferReply: async () => {},
+      editReply: async (opts) => interaction.editReply(opts),
+      followUp: async (opts) => interaction.followUp(opts),
+      user: interaction.user,
+      client: interaction.client
+    });
   } else if (action === 'quickstart') {
     const embed = createQuickStartEmbed();
     await interaction.update({ embeds: [embed], components: [createHelpBackButton()] });

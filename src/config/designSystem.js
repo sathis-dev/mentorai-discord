@@ -662,7 +662,7 @@ export function createPostQuizButtons(topic) {
       .setEmoji('📊')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId('help_menu')
+      .setCustomId('help_main')
       .setLabel('Menu')
       .setEmoji('🏠')
       .setStyle(ButtonStyle.Secondary)
