@@ -878,6 +878,42 @@ async function handleExecButton(interaction, action, params) {
     }
   }
   
+  // Special handling for weekly command (needs subcommand)
+  if (action === 'weekly') {
+    const command = interaction.client.commands.get('weekly');
+    if (!command) {
+      return interaction.reply({ content: '❌ Weekly command not found', ephemeral: true });
+    }
+    
+    try {
+      await interaction.deferReply();
+      const fakeInteraction = {
+        ...interaction,
+        isChatInputCommand: () => true,
+        isButton: () => false,
+        commandName: 'weekly',
+        options: {
+          getSubcommand: () => 'challenge',
+          getString: () => null,
+          getInteger: () => null,
+          getUser: () => null,
+          get: () => null
+        },
+        replied: true,
+        deferred: true,
+        reply: async (opts) => interaction.editReply(opts),
+        deferReply: async () => {},
+        editReply: async (opts) => interaction.editReply(opts),
+        followUp: async (opts) => interaction.followUp(opts)
+      };
+      await command.execute(fakeInteraction);
+      return;
+    } catch (error) {
+      logger.error('Weekly exec error:', error);
+      return interaction.editReply({ content: '❌ Failed to load weekly challenge' });
+    }
+  }
+  
   const commandName = commandMap[action];
   if (!commandName) {
     return interaction.reply({ 
