@@ -147,7 +147,7 @@ export async function execute(interaction) {
     if (!user.completedLessons) user.completedLessons = [];
     user.completedLessons.push(`${topic}:${difficulty}:${Date.now()}`);
     
-    const levelResult = await user.addXp(result.xpEarned);
+    const levelResult = user.addXp(result.xpEarned); // Sync now
     await user.save();
 
     await interaction.editReply({ 

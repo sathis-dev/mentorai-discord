@@ -248,8 +248,8 @@ async function claimRewards(interaction) {
     return interaction.editReply({ embeds: [noRewardsEmbed] });
   }
 
-  // Claim rewards
-  await user.addXp(pendingRewards);
+  // Claim rewards (sync now)
+  user.addXp(pendingRewards);
   user.pendingReferralRewards = 0;
   user.referralXpEarned = (user.referralXpEarned || 0) + pendingRewards;
   await user.save();

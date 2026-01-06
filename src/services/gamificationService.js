@@ -136,7 +136,9 @@ export async function addXpToUser(discordId, amount, reason = 'Unknown') {
     const user = await User.findOne({ discordId });
     if (!user) return null;
 
-    const result = await user.addXp(amount);
+    const result = user.addXp(amount); // No longer async
+    await user.save(); // Explicit save
+    
     console.log(`💫 ${user.username} earned ${amount} XP (${reason}) - Now Level ${user.level} with ${user.xp} XP`);
     
     // Broadcast update to admin panel
@@ -313,13 +315,13 @@ export async function claimDailyBonus(user) {
   // Also update the general streak for compatibility
   user.streak = newStreak;
 
-  // Add XP
-  const levelResult = await user.addXp(totalXp);
+  // Add XP (synchronous now)
+  const levelResult = user.addXp(totalXp);
 
   // Check achievements
   const achievements = await checkAchievements(user);
 
-  await user.save();
+  await user.save(); // Single save at the end
   broadcastUserUpdate(user.toObject(), 'daily_bonus');
 
   return {
@@ -393,10 +395,10 @@ export async function recordQuizCompletion(user, correct, total, topic) {
     }
   }
 
-  const levelResult = await user.addXp(xpEarned);
+  const levelResult = user.addXp(xpEarned); // Sync now
   const achievements = await checkAchievements(user);
   
-  await user.save();
+  await user.save(); // Single save
   broadcastUserUpdate(user.toObject(), 'quiz_complete');
 
   return {
@@ -440,10 +442,10 @@ export async function recordLessonCompletion(user, lessonId, topic) {
     }
   }
 
-  const levelResult = await user.addXp(xpEarned);
+  const levelResult = user.addXp(xpEarned); // Sync now
   const achievements = await checkAchievements(user);
   
-  await user.save();
+  await user.save(); // Single save
   broadcastUserUpdate(user.toObject(), 'lesson_complete');
 
   return {

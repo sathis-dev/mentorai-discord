@@ -1099,10 +1099,10 @@ async function handleQuizButton(interaction, action, params) {
       user.correctAnswers = (user.correctAnswers || 0) + result.score;
       user.totalQuestions = (user.totalQuestions || 0) + result.totalQuestions;
 
-      const levelResult = await user.addXp(result.xpEarned);
+      const levelResult = user.addXp(result.xpEarned); // Sync now
       result.leveledUp = levelResult.leveledUp;
       result.newLevel = levelResult.newLevel;
-      await user.save();
+      await user.save(); // Explicit save
 
       await sleep(1500);
       const resultsEmbed = createQuizResultsEmbed(result);
@@ -1179,8 +1179,8 @@ async function handleQuizButton(interaction, action, params) {
     }
   } else if (action === 'continue') {
     // User clicked continue - show next question
-    resetEliminatedOptions(userId); // Reset 50/50 for new question
-    const questionData = getCurrentQuestion(userId);
+    await resetEliminatedOptions(userId); // Reset 50/50 for new question (now async)
+    const questionData = await getCurrentQuestion(userId);
     
     if (!questionData || !questionData.question) {
       await interaction.reply({ content: '❌ Quiz session expired. Start a new one with `/quiz`', ephemeral: true });
@@ -1204,13 +1204,17 @@ async function handleQuizButton(interaction, action, params) {
       questionData.difficulty || 'medium'
     );
     
+    // Check if 50/50 was already used (new feature)
+    const answerButtons = createQuizAnswerButtons(questionData.eliminatedOptions);
+    const controlButtons = createQuizControlButtons(questionData.hintUsed, questionData.fiftyUsed);
+    
     await interaction.editReply({ 
       embeds: [questionEmbed], 
-      components: [createQuizAnswerButtons(), createQuizControlButtons()] 
+      components: [answerButtons, controlButtons] 
     });
     
   } else if (action === 'cancel') {
-    cancelSession(userId);
+    await cancelSession(userId);
     const cancelEmbed = new EmbedBuilder()
       .setTitle('🛑 Quiz Ended')
       .setColor(COLORS.WARNING)
@@ -1223,8 +1227,8 @@ async function handleQuizButton(interaction, action, params) {
       .setFooter({ text: '🎓 MentorAI' });
     await interaction.update({ embeds: [cancelEmbed], components: [] });
   } else if (action === 'hint') {
-    // Handle hint button
-    const hintResult = useHint(userId);
+    // Handle hint button (now async)
+    const hintResult = await useHint(userId);
     
     if (!hintResult) {
       return interaction.reply({ content: '❌ No active quiz session!', ephemeral: true });
@@ -1243,8 +1247,8 @@ async function handleQuizButton(interaction, action, params) {
     await interaction.reply({ embeds: [hintEmbed], ephemeral: true });
     
   } else if (action === 'fifty') {
-    // Handle 50/50 button
-    const fiftyResult = useFiftyFifty(userId);
+    // Handle 50/50 button (now async)
+    const fiftyResult = await useFiftyFifty(userId);
     
     if (!fiftyResult) {
       return interaction.reply({ content: '❌ No active quiz session!', ephemeral: true });
@@ -1255,7 +1259,7 @@ async function handleQuizButton(interaction, action, params) {
     }
     
     // Update the buttons to show eliminated options
-    const questionData = getCurrentQuestion(userId);
+    const questionData = await getCurrentQuestion(userId);
     if (!questionData || !questionData.question) {
       return interaction.reply({ content: '❌ Could not get question data!', ephemeral: true });
     }
@@ -1947,7 +1951,7 @@ async function handleQuickQuizAnswer(interaction, quizId, params) {
     if (user.quickQuizCurrentStreak > (user.quickQuizBestStreak || 0)) {
       user.quickQuizBestStreak = user.quickQuizCurrentStreak;
     }
-    await user.addXp(25);
+    user.addXp(25); // Sync now
   } else {
     // Reset current streak on wrong answer
     user.quickQuizCurrentStreak = 0;

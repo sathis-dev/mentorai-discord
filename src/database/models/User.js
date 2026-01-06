@@ -144,30 +144,62 @@ userSchema.methods.xpForNextLevel = function() {
 };
 
 // Add XP and handle level ups
-userSchema.methods.addXp = async function(amount) {
+// Note: Does NOT auto-save - caller must save to avoid double-saves
+userSchema.methods.addXp = function(amount) {
   this.xp += amount;
   
   let leveledUp = false;
+  let levelsGained = 0;
   while (this.xp >= this.xpForNextLevel()) {
     this.xp -= this.xpForNextLevel();
     this.level += 1;
     leveledUp = true;
+    levelsGained++;
   }
   
-  await this.save();
-  return { leveledUp, newLevel: this.level };
+  // Don't save here - let caller batch saves
+  return { leveledUp, newLevel: this.level, levelsGained };
 };
 
-// Update streak
+// Update streak - Fixed logic for first-time users and edge cases
 userSchema.methods.updateStreak = async function() {
   const now = new Date();
-  const lastActive = new Date(this.lastActive);
+  const lastActive = this.lastActive ? new Date(this.lastActive) : null;
+  
+  // First time user or never had activity
+  if (!lastActive || this.streak === 0) {
+    this.streak = 1;
+    this.lastActive = now;
+    // Track longest streak
+    if (this.streak > (this.longestStreak || 0)) {
+      this.longestStreak = this.streak;
+    }
+    await this.save();
+    return this.streak;
+  }
+  
   const diffHours = (now - lastActive) / (1000 * 60 * 60);
   
+  // Already active today (less than 24h) - no change needed
+  if (diffHours < 24) {
+    // Just update lastActive, don't increment streak
+    this.lastActive = now;
+    await this.save();
+    return this.streak;
+  }
+  
+  // Active within 24-48 hours - increment streak!
   if (diffHours >= 24 && diffHours < 48) {
     this.streak += 1;
-  } else if (diffHours >= 48) {
+  } 
+  // More than 48 hours - streak broken, reset to 1
+  else if (diffHours >= 48) {
     this.streak = 1;
+  }
+  
+  // Track longest streak achievement
+  if (this.streak > (this.longestStreak || 0)) {
+    this.longestStreak = this.streak;
   }
   
   this.lastActive = now;

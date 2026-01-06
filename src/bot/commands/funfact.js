@@ -91,8 +91,8 @@ export async function execute(interaction) {
       };
     }
 
-    // Award small XP for curiosity
-    await user.addXp(5);
+    // Award small XP for curiosity (sync now)
+    user.addXp(5);
     
     // Track fun facts viewed
     user.funFactsViewed = (user.funFactsViewed || 0) + 1;

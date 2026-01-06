@@ -63,6 +63,21 @@ export async function execute(interaction) {
     // Generate quiz
     const session = await createQuizSession(interaction.user.id, topic, numQuestions, difficulty);
 
+    // Check for rate limiting
+    if (session?.error === 'rate_limited') {
+      const rateLimitEmbed = new EmbedBuilder()
+        .setTitle('⏳ Slow Down!')
+        .setColor(COLORS.WARNING)
+        .setDescription(`You're generating quizzes too quickly!\n\nPlease wait **${session.waitTime} seconds** before creating another quiz.`)
+        .addFields(
+          { name: '💡 Tip', value: 'Take your time with each quiz to learn better!', inline: false }
+        )
+        .setFooter({ text: '🎓 MentorAI - Rate limit helps ensure fair usage' });
+
+      await interaction.editReply({ embeds: [rateLimitEmbed] });
+      return;
+    }
+
     if (!session || !session.questions || session.questions.length === 0) {
       const errorEmbed = new EmbedBuilder()
         .setTitle('❌ Quiz Generation Failed')
@@ -93,8 +108,8 @@ export async function execute(interaction) {
     await interaction.editReply({ embeds: [readyEmbed] });
     await new Promise(r => setTimeout(r, 2000));
 
-    // Get first question
-    const questionData = getCurrentQuestion(interaction.user.id);
+    // Get first question (now async)
+    const questionData = await getCurrentQuestion(interaction.user.id);
     if (!questionData || !questionData.question) throw new Error('Failed to get question');
 
     const questionEmbed = createQuizQuestionEmbed(

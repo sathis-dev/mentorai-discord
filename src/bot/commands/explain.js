@@ -99,8 +99,8 @@ export async function execute(interaction) {
         .setStyle(ButtonStyle.Secondary)
     );
 
-    // Award XP for learning
-    await user.addXp(15);
+    // Award XP for learning (sync now)
+    user.addXp(15);
     await user.save();
 
     await interaction.editReply({ 

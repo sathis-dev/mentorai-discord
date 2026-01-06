@@ -96,7 +96,10 @@ export const EMOJIS = {
 
 // Progress Bar Styles
 export function createProgressBar(current, max, length = 10, style = 'default') {
-  const percentage = Math.min(Math.max(current / max, 0), 1);
+  // Guard against division by zero
+  const safeMax = max || 1;
+  const safeCurrent = Math.max(0, current || 0);
+  const percentage = Math.min(Math.max(safeCurrent / safeMax, 0), 1);
   const filled = Math.round(percentage * length);
   const empty = length - filled;
   
