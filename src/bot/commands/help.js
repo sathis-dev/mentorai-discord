@@ -22,6 +22,9 @@ import {
 } from '../../config/designSystemV4.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 
+// Helper to pad text to exact width (34 chars for inner box content)
+const pad = (text, width = 34) => (text + ' '.repeat(width)).slice(0, width);
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -66,7 +69,7 @@ export async function execute(interaction) {
       .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║   ⚡ WELCOME TO MENTOR AI ⚡       ║
+║     WELCOME TO MENTOR AI           ║
 ╚════════════════════════════════════╝
 \`\`\`
 ## 👋 Hey, ${interaction.user.username}!
@@ -75,11 +78,11 @@ export async function execute(interaction) {
 ┌────────────────────────────────────┐
 │  YOUR PROFILE                      │
 ├────────────────────────────────────┤
-│  ${tier.title.toUpperCase().padEnd(20)}             │
-│  Level ${String(user.level || 1).padEnd(4)}                        │
+│  ${pad(tier.title.toUpperCase())}│
+│  ${pad('Level ' + (user.level || 1))}│
 ├────────────────────────────────────┤
-│  ${progressBar}            │
-│  ${String(currentXP).padStart(4)}/${xpNeeded} XP to next level      │
+│  ${pad(progressBar)}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
@@ -87,10 +90,10 @@ export async function execute(interaction) {
 ┌────────────────────────────────────┐
 │  QUICK STATS                       │
 ├────────────────────────────────────┤
-│  ${String(streak).padEnd(4)} day streak                 │
-│  ${String(lessonsCompleted).padEnd(4)} lessons completed           │
-│  ${String(quizzesTaken).padEnd(4)} quizzes passed               │
-│  ${String(achievements).padEnd(4)} achievements                 │
+│  ${pad(streak + ' day streak')}│
+│  ${pad(lessonsCompleted + ' lessons completed')}│
+│  ${pad(quizzesTaken + ' quizzes passed')}│
+│  ${pad(achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
@@ -467,7 +470,7 @@ async function showProfilePanel(interaction) {
     .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║  ${tier.title.toUpperCase().padEnd(20)}             ║
+║  ${pad(tier.title.toUpperCase())}║
 ╚════════════════════════════════════╝
 \`\`\`
 
@@ -477,8 +480,8 @@ async function showProfilePanel(interaction) {
 ┌────────────────────────────────────┐
 │  PROGRESS TO NEXT LEVEL            │
 ├────────────────────────────────────┤
-│  ${progressBar}            │
-│  ${currentXP.toString().padStart(4)}/${xpNeeded} XP                     │
+│  ${pad(progressBar)}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP')}│
 └────────────────────────────────────┘
 \`\`\`
 
@@ -486,10 +489,10 @@ async function showProfilePanel(interaction) {
 ┌────────────────────────────────────┐
 │  YOUR STATS                        │
 ├────────────────────────────────────┤
-│  ${(user.streak || 0).toString().padEnd(4)} day streak                 │
-│  ${(user.quizzesTaken || 0).toString().padEnd(4)} quizzes taken              │
-│  ${(user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0).toString().padEnd(3)}% accuracy                  │
-│  ${(user.achievements?.length || 0).toString().padEnd(4)} achievements                │
+│  ${pad((user.streak || 0) + ' day streak')}│
+│  ${pad((user.quizzesTaken || 0) + ' quizzes taken')}│
+│  ${pad((user.totalQuestions > 0 ? Math.round((user.correctAnswers / user.totalQuestions) * 100) : 0) + '% accuracy')}│
+│  ${pad((user.achievements?.length || 0) + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
     `)
@@ -779,7 +782,7 @@ async function showMainMenu(interaction) {
       .setDescription(
 `\`\`\`
 ╔════════════════════════════════════╗
-║   ⚡ WELCOME TO MENTOR AI ⚡       ║
+║     WELCOME TO MENTOR AI           ║
 ╚════════════════════════════════════╝
 \`\`\`
 ## 👋 Hey, ${interaction.user.username}!
@@ -788,11 +791,11 @@ async function showMainMenu(interaction) {
 ┌────────────────────────────────────┐
 │  YOUR PROFILE                      │
 ├────────────────────────────────────┤
-│  ${tier.title.toUpperCase().padEnd(20)}             │
-│  Level ${(user.level || 1).toString().padEnd(4)}                        │
+│  ${pad(tier.title.toUpperCase())}│
+│  ${pad('Level ' + (user.level || 1))}│
 ├────────────────────────────────────┤
-│  ${progressBar}            │
-│  ${currentXP.toString().padStart(4)}/${xpNeeded} XP to next level      │
+│  ${pad(progressBar)}│
+│  ${pad(currentXP + '/' + xpNeeded + ' XP to next level')}│
 └────────────────────────────────────┘
 \`\`\`
 
@@ -800,10 +803,10 @@ async function showMainMenu(interaction) {
 ┌────────────────────────────────────┐
 │  QUICK STATS                       │
 ├────────────────────────────────────┤
-│  ${streak.toString().padEnd(4)} day streak                 │
-│  ${lessonsCompleted.toString().padEnd(4)} lessons completed           │
-│  ${quizzesTaken.toString().padEnd(4)} quizzes passed               │
-│  ${achievements.toString().padEnd(4)} achievements                 │
+│  ${pad(streak + ' day streak')}│
+│  ${pad(lessonsCompleted + ' lessons completed')}│
+│  ${pad(quizzesTaken + ' quizzes passed')}│
+│  ${pad(achievements + ' achievements')}│
 └────────────────────────────────────┘
 \`\`\`
 
