@@ -88,7 +88,7 @@ Return ONLY valid JSON in this exact format (no markdown, no code blocks, just J
 
   const startTime = Date.now();
   const response = await generateWithGemini(prompt, {
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     temperature: 0.8,
     maxTokens: 4000
   });
