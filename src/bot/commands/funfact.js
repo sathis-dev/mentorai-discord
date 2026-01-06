@@ -103,10 +103,8 @@ export async function execute(interaction) {
       .setTitle(factData.emoji + ' Fun Fact')
       .setColor(embedColor)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;36m╔═══════════════════════════════════╗\u001b[0m\n' +
-        '\u001b[1;36m║\u001b[0m   🎲 DID YOU KNOW?   \u001b[1;36m║\u001b[0m\n' +
-        '\u001b[1;36m╚═══════════════════════════════════╝\u001b[0m\n' +
+        '```\n' +
+        '🎲 DID YOU KNOW?\n' +
         '```\n\n' +
         '> 💡 **' + factData.fact + '**'
       )
@@ -163,10 +161,8 @@ export async function execute(interaction) {
       .setTitle(randomFact.emoji + ' Fun Fact')
       .setColor(COLORS.LESSON_BLUE)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;36m╔═══════════════════════════════════╗\u001b[0m\n' +
-        '\u001b[1;36m║\u001b[0m   🎲 DID YOU KNOW?   \u001b[1;36m║\u001b[0m\n' +
-        '\u001b[1;36m╚═══════════════════════════════════╝\u001b[0m\n' +
+        '```\n' +
+        '🎲 DID YOU KNOW?\n' +
         '```\n\n' +
         '> 💡 **' + randomFact.fact + '**'
       )

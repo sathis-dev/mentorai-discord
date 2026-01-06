@@ -64,10 +64,8 @@ async function showReferralLink(interaction) {
     .setColor(rank.color)
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true, size: 512 }))
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m╔═══════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m   🎁 INVITE & EARN REWARDS 🎁  \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m╚═══════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🎁 INVITE & EARN REWARDS 🎁\n' +
       '```\n\n' +
       '### 🎫 Your Referral Code\n' +
       '```fix\n' + referralCode + '\n```'
@@ -173,16 +171,12 @@ async function showReferralStats(interaction) {
 
   // Build premium stats display
   let statsDisplay = 
-    '```ansi\n' +
-    '\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m   📊 YOUR REFERRAL DASHBOARD 📊    \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m╠══════════════════════════════════════╣\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m                                      \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m  👥 REFERRALS: \u001b[1;33m' + String(referrals).padEnd(18) + '\u001b[0m \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m  ✨ XP EARNED:  \u001b[1;32m+' + referralXpEarned.toLocaleString().padEnd(17) + '\u001b[0m \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m  🏅 RANK:       \u001b[1;35m' + rank.name.padEnd(18) + '\u001b[0m \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m                                      \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m\n' +
+    '```\n' +
+    '📊 YOUR REFERRAL DASHBOARD 📊\n' +
+    '──────────────────────────\n' +
+    '👥 REFERRALS: ' + referrals + '\n' +
+    '✨ XP EARNED:  +' + referralXpEarned.toLocaleString() + '\n' +
+    '🏅 RANK:       ' + rank.name + '\n' +
     '```';
 
   let progressSection = '';
@@ -193,8 +187,8 @@ async function showReferralStats(interaction) {
       `_${nextMilestone - referrals} more invite${nextMilestone - referrals !== 1 ? 's' : ''} to go!_`;
   } else {
     progressSection = 
-      '\n```ansi\n' +
-      '\u001b[1;33m★★★ INFLUENCER STATUS ACHIEVED ★★★\u001b[0m\n' +
+      '\n```\n' +
+      '★★★ INFLUENCER STATUS ACHIEVED ★★★\n' +
       '```\n' +
       '_You\'ve reached the highest referral rank! 🎉_';
   }
@@ -245,10 +239,8 @@ async function claimRewards(interaction) {
     const noRewardsEmbed = new EmbedBuilder()
       .setColor(COLORS.ERROR_RED)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;31m╔════════════════════════════════╗\u001b[0m\n' +
-        '\u001b[1;31m║\u001b[0m  ❌ NO PENDING REWARDS        \u001b[1;31m║\u001b[0m\n' +
-        '\u001b[1;31m╚════════════════════════════════╝\u001b[0m\n' +
+        '```\n' +
+        '❌ NO PENDING REWARDS\n' +
         '```\n' +
         '_Invite more friends to earn XP!_\n\n' +
         '💡 Use `/referral link` to get your invite link'
@@ -266,14 +258,10 @@ async function claimRewards(interaction) {
     .setTitle('🎁 Rewards Claimed!')
     .setColor(COLORS.SUCCESS_GREEN)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m╔════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m  🎉 CONGRATULATIONS! 🎉          \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m╠════════════════════════════════════╣\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m                                    \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m      ✨  \u001b[1;33m+' + String(pendingRewards).padEnd(6) + ' XP\u001b[0m  ✨       \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m                                    \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m╚════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🎉 CONGRATULATIONS! 🎉\n' +
+      '────────────────────\n' +
+      '✨  +' + pendingRewards + ' XP  ✨\n' +
       '```\n' +
       '🚀 Thanks for spreading the word about MentorAI!\n' +
       '_Keep inviting for more rewards!_'
@@ -310,10 +298,8 @@ async function showReferralLeaderboard(interaction) {
     .setTitle('🏆 Top Referrers')
     .setColor(COLORS.XP_GOLD)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m╔═══════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m   🏆 REFERRAL HALL OF FAME 🏆   \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m╚═══════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🏆 REFERRAL HALL OF FAME 🏆\n' +
       '```\n\n' +
       leaderboardText
     )

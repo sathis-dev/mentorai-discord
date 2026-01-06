@@ -134,15 +134,13 @@ function createLevelCard(level, xp, xpNeeded, tier) {
   const nextTier = getNextTier(level);
   const levelsToNext = nextTier.minLevel - level;
   
-  return `\`\`\`ansi
-\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m  ${tier.glow} \u001b[1;33mLEVEL ${String(level).padStart(2, '0')}\u001b[0m ${tier.badge} ${tier.glow}  \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;32m${bar}\u001b[0m  \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;37m${xp.toLocaleString().padStart(7)}\u001b[0m / \u001b[1;33m${xpNeeded.toLocaleString().padEnd(7)}\u001b[0m XP \u001b[1;35m${String(percentage).padStart(3)}%\u001b[0m  \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  ${nextTier.emoji} Next: \u001b[1;36m${nextTier.name}\u001b[0m in \u001b[1;33m${levelsToNext}\u001b[0m levels       \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m
+  return `\`\`\`
+${tier.glow} LEVEL ${String(level).padStart(2, '0')} ${tier.badge} ${tier.glow}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${bar}
+${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP  (${percentage}%)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${nextTier.emoji} Next: ${nextTier.name} in ${levelsToNext} levels
 \`\`\``;
 }
 
@@ -150,25 +148,23 @@ function createStatsPanel(stats) {
   const { quizzes, accuracy, lessons, topics, streak, achievements } = stats;
   
   // Accuracy grade
-  let grade, gradeColor;
-  if (accuracy >= 95) { grade = 'S+'; gradeColor = '\u001b[1;33m'; }
-  else if (accuracy >= 90) { grade = 'S'; gradeColor = '\u001b[1;33m'; }
-  else if (accuracy >= 85) { grade = 'A+'; gradeColor = '\u001b[1;32m'; }
-  else if (accuracy >= 80) { grade = 'A'; gradeColor = '\u001b[1;32m'; }
-  else if (accuracy >= 70) { grade = 'B'; gradeColor = '\u001b[1;36m'; }
-  else if (accuracy >= 60) { grade = 'C'; gradeColor = '\u001b[1;37m'; }
-  else { grade = 'D'; gradeColor = '\u001b[0;37m'; }
+  let grade;
+  if (accuracy >= 95) { grade = 'S+'; }
+  else if (accuracy >= 90) { grade = 'S'; }
+  else if (accuracy >= 85) { grade = 'A+'; }
+  else if (accuracy >= 80) { grade = 'A'; }
+  else if (accuracy >= 70) { grade = 'B'; }
+  else if (accuracy >= 60) { grade = 'C'; }
+  else { grade = 'D'; }
 
-  return `\`\`\`ansi
-\u001b[1;35m┌─────────────────────────────────────┐\u001b[0m
-\u001b[1;35m│\u001b[0m      \u001b[1;37m📊 PERFORMANCE STATS\u001b[0m            \u001b[1;35m│\u001b[0m
-\u001b[1;35m├─────────────────────────────────────┤\u001b[0m
-\u001b[1;35m│\u001b[0m  🎯 Quizzes   \u001b[1;33m${String(quizzes).padStart(5)}\u001b[0m    📚 Lessons \u001b[1;32m${String(lessons).padStart(4)}\u001b[0m \u001b[1;35m│\u001b[0m
-\u001b[1;35m│\u001b[0m  📂 Topics    \u001b[1;36m${String(topics).padStart(5)}\u001b[0m    🔥 Streak  \u001b[1;31m${String(streak).padStart(4)}\u001b[0m \u001b[1;35m│\u001b[0m
-\u001b[1;35m├─────────────────────────────────────┤\u001b[0m
-\u001b[1;35m│\u001b[0m  📈 Accuracy  ${gradeColor}${String(accuracy).padStart(3)}%\u001b[0m   Grade: ${gradeColor}[ ${grade.padEnd(2)} ]\u001b[0m   \u001b[1;35m│\u001b[0m
-\u001b[1;35m│\u001b[0m  🏆 Achievements Unlocked    \u001b[1;33m${String(achievements).padStart(4)}\u001b[0m   \u001b[1;35m│\u001b[0m
-\u001b[1;35m└─────────────────────────────────────┘\u001b[0m
+  return `\`\`\`
+📊 PERFORMANCE STATS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Quizzes: ${quizzes}    📚 Lessons: ${lessons}
+📂 Topics: ${topics}      🔥 Streak: ${streak}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 Accuracy: ${accuracy}%   Grade: [ ${grade} ]
+🏆 Achievements Unlocked: ${achievements}
 \`\`\``;
 }
 
@@ -420,10 +416,10 @@ export async function execute(interaction) {
         .setTitle(`👤 ${targetUser?.username || 'User'}'s Profile`)
         .setColor(0x22C55E)
         .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
-        .setDescription(`\`\`\`ansi
-\u001b[1;36m╔══════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m    \u001b[1;32m🌱 NEW EXPLORER 🌱\u001b[0m       \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚══════════════════════════════╝\u001b[0m
+        .setDescription(`\`\`\`
+🌱 NEW EXPLORER 🌱
+━━━━━━━━━━━━━━━━━━━━
+Begin your learning journey!
 \`\`\``)
         .addFields(
           { name: '⭐ Level', value: '`1`', inline: true },
@@ -526,23 +522,21 @@ async function showStatsPanel(interaction, userId) {
     const embed = new EmbedBuilder()
       .setColor(0x3B82F6)
       .setTitle('📊 Detailed Statistics')
-      .setDescription(`\`\`\`ansi
-\u001b[1;36m╔═══════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m         \u001b[1;37mCOMPLETE STATS BREAKDOWN\u001b[0m       \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  ⭐ Level:        \u001b[1;33m${String(stats.level).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ✨ Total XP:     \u001b[1;32m${String(stats.xp).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  🔥 Best Streak:  \u001b[1;31m${String(stats.streak).padStart(6)}\u001b[0m days         \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  🎯 Quizzes:      \u001b[1;35m${String(stats.quizzes).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  📝 Questions:    \u001b[1;36m${String(stats.totalQ).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ✅ Correct:      \u001b[1;32m${String(stats.correct).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  📈 Accuracy:     \u001b[1;33m${String(accuracy).padStart(5)}%\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  📚 Lessons:      \u001b[1;34m${String(stats.lessons).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  📂 Topics:       \u001b[1;35m${String(stats.topics).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  🏆 Achievements: \u001b[1;33m${String(stats.achievements).padStart(6)}\u001b[0m              \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚═══════════════════════════════════════╝\u001b[0m
+      .setDescription(`\`\`\`
+COMPLETE STATS BREAKDOWN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⭐ Level:        ${stats.level}
+✨ Total XP:     ${stats.xp}
+🔥 Best Streak:  ${stats.streak} days
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎯 Quizzes:      ${stats.quizzes}
+📝 Questions:    ${stats.totalQ}
+✅ Correct:      ${stats.correct}
+📈 Accuracy:     ${accuracy}%
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 Lessons:      ${stats.lessons}
+📂 Topics:       ${stats.topics}
+🏆 Achievements: ${stats.achievements}
 \`\`\``)
       .setFooter({ text: '🎓 MentorAI Statistics' })
       .setTimestamp();

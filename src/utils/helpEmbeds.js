@@ -16,8 +16,8 @@ export function createLearningHelpEmbed() {
     .setTitle('📚 Learning Commands')
     .setColor(COLORS.LEARNING)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;36m🎓 Master any topic with AI-powered learning!\u001b[0m\n' +
+      '```\n' +
+      '🎓 Master any topic with AI-powered learning!\n' +
       '```'
     )
     .addFields(
@@ -58,8 +58,8 @@ export function createGamificationHelpEmbed() {
     .setTitle('🎮 Gamification Commands')
     .setColor(COLORS.GAMIFICATION)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m🏆 Level up, earn XP, and unlock achievements!\u001b[0m\n' +
+      '```\n' +
+      '🏆 Level up, earn XP, and unlock achievements!\n' +
       '```'
     )
     .addFields(
@@ -106,8 +106,8 @@ export function createProgressHelpEmbed() {
     .setTitle('📊 Progress & Stats Commands')
     .setColor(COLORS.PROGRESS)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;34m📈 Track your learning journey!\u001b[0m\n' +
+      '```\n' +
+      '📈 Track your learning journey!\n' +
       '```'
     )
     .addFields(
@@ -158,8 +158,8 @@ export function createSocialHelpEmbed() {
     .setTitle('👥 Social Features')
     .setColor(COLORS.SOCIAL)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m🤝 Learn together, compete, and have fun!\u001b[0m\n' +
+      '```\n' +
+      '🤝 Learn together, compete, and have fun!\n' +
       '```'
     )
     .addFields(
@@ -206,8 +206,8 @@ export function createUtilityHelpEmbed() {
     .setTitle('⚙️ Utility Commands')
     .setColor(COLORS.UTILITY)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;37m🔧 Helpful tools and settings\u001b[0m\n' +
+      '```\n' +
+      '🔧 Helpful tools and settings\n' +
       '```'
     )
     .addFields(
@@ -257,8 +257,8 @@ export function createAllCommandsEmbed() {
     .setTitle('📋 All Commands')
     .setColor(COLORS.PRIMARY)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m📜 Complete command reference\u001b[0m\n' +
+      '```\n' +
+      '📜 Complete command reference\n' +
       '```'
     )
     .addFields(
@@ -307,8 +307,8 @@ export function createQuickStartEmbed() {
     .setTitle('🚀 Quick Start Guide')
     .setColor(COLORS.SUCCESS)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m🎯 Get started in 60 seconds!\u001b[0m\n' +
+      '```\n' +
+      '🎯 Get started in 60 seconds!\n' +
       '```'
     )
     .addFields(
@@ -362,8 +362,8 @@ export function createPopularCommandsEmbed() {
     .setTitle('⭐ Most Popular Commands')
     .setColor(COLORS.GOLD)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m🔥 What everyone is using!\u001b[0m\n' +
+      '```\n' +
+      '🔥 What everyone is using!\n' +
       '```'
     )
     .addFields(
@@ -412,8 +412,8 @@ export function createProTipsEmbed() {
     .setTitle('💡 Pro Tips & Secrets')
     .setColor(0x9B59B6)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m🧙 Master MentorAI like a pro!\u001b[0m\n' +
+      '```\n' +
+      '🧙 Master MentorAI like a pro!\n' +
       '```'
     )
     .addFields(

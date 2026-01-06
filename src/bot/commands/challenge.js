@@ -46,8 +46,8 @@ export async function execute(interaction) {
     .setTitle('⚔️ QUIZ BATTLE CHALLENGE!')
     .setColor(COLORS.CHALLENGE_RED)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;31m⚔️ ' + interaction.user.username + ' VS ' + opponent.username + ' ⚔️\u001b[0m\n' +
+      '```\n' +
+      '⚔️ ' + interaction.user.username + ' VS ' + opponent.username + ' ⚔️\n' +
       '```'
     )
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))

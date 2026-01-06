@@ -43,14 +43,10 @@ function createFlameVisualization(streak) {
   const tier = getStreakTier(streak);
   
   if (streak === 0) {
-    return `\`\`\`ansi
-\u001b[1;36m╔═══════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m                                       \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m      \u001b[1;34m❄️  NO ACTIVE STREAK  ❄️\u001b[0m        \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m                                       \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m    \u001b[0;37mUse /daily to ignite your flame!\u001b[0m   \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m                                       \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚═══════════════════════════════════════╝\u001b[0m
+    return `\`\`\`
+❄️  NO ACTIVE STREAK  ❄️
+
+Use /daily to ignite your flame!
 \`\`\``;
   }
   
@@ -58,34 +54,28 @@ function createFlameVisualization(streak) {
   const flameCount = Math.min(streak, 7);
   const flames = '🔥'.repeat(flameCount);
   
-  let flameArt;
+  let tierName;
+  let flameDisplay;
   if (streak >= 100) {
-    flameArt = `
-\u001b[1;33m      👑 LEGENDARY 👑\u001b[0m
-\u001b[1;31m      🔥🔥🔥🔥🔥🔥🔥\u001b[0m
-\u001b[1;33m        ⭐⭐⭐⭐⭐\u001b[0m`;
+    tierName = '👑 LEGENDARY 👑';
+    flameDisplay = '🔥🔥🔥🔥🔥🔥🔥';
   } else if (streak >= 30) {
-    flameArt = `
-\u001b[1;33m       🔥 BLAZING 🔥\u001b[0m
-\u001b[1;31m       ${flames}\u001b[0m
-\u001b[1;33m         ⭐⭐⭐\u001b[0m`;
+    tierName = '🔥 BLAZING 🔥';
+    flameDisplay = flames;
   } else if (streak >= 7) {
-    flameArt = `
-\u001b[1;33m        🔥 HOT 🔥\u001b[0m
-\u001b[1;31m       ${flames}\u001b[0m
-\u001b[1;33m          ⭐\u001b[0m`;
+    tierName = '🔥 HOT 🔥';
+    flameDisplay = flames;
   } else {
-    flameArt = `
-\u001b[1;33m       ✨ SPARK ✨\u001b[0m
-\u001b[1;31m       ${flames || '💫'}\u001b[0m`;
+    tierName = '✨ SPARK ✨';
+    flameDisplay = flames || '💫';
   }
 
-  return `\`\`\`ansi
-\u001b[1;36m╔═══════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m${flameArt}                    \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;37mStreak:\u001b[0m \u001b[1;33m${String(streak).padStart(3)}\u001b[0m days   \u001b[1;37mBonus:\u001b[0m \u001b[1;32m${tier.multiplier} XP\u001b[0m   \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚═══════════════════════════════════════╝\u001b[0m
+  return `\`\`\`
+${tierName}
+${flameDisplay}
+──────────────────────────
+Streak: ${streak} days
+Bonus: ${tier.multiplier} XP
 \`\`\``;
 }
 

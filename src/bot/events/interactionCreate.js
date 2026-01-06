@@ -639,10 +639,8 @@ function createWelcomeEmbed(interaction) {
     .setTitle('✨ Welcome to MentorAI ✨')
     .setColor(0x5865F2)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m╔══════════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;35m║\u001b[0m  \u001b[1;36m🎓 Your AI-Powered Learning Companion\u001b[0m  \u001b[1;35m║\u001b[0m\n' +
-      '\u001b[1;35m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🎓 Your AI-Powered Learning Companion\n' +
       '```\n' +
       '> *Learn any programming topic with AI-generated lessons,*\n' +
       '> *test your knowledge with smart quizzes, and level up!*'
@@ -1013,10 +1011,8 @@ async function handleQuizButton(interaction, action, params) {
       const calculatingEmbed = new EmbedBuilder()
         .setTitle('🎯 Calculating Your Results...')
         .setColor(COLORS.PRIMARY)
-        .setDescription(`\`\`\`ansi
-\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m      \u001b[1;33m⏳ Analyzing Performance...\u001b[0m       \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m
+        .setDescription(`\`\`\`
+⏳ Analyzing Performance...
 \`\`\``);
 
       await interaction.update({ embeds: [calculatingEmbed], components: [] });
@@ -1040,10 +1036,8 @@ async function handleQuizButton(interaction, action, params) {
         const levelUpEmbed = new EmbedBuilder()
           .setTitle('🎉 LEVEL UP!')
           .setColor(COLORS.XP_GOLD)
-          .setDescription(`\`\`\`ansi
-\u001b[1;33m╔═══════════════════════════╗\u001b[0m
-\u001b[1;33m║\u001b[0m   \u001b[1;32m⭐ LEVEL ${result.newLevel} REACHED! ⭐\u001b[0m   \u001b[1;33m║\u001b[0m
-\u001b[1;33m╚═══════════════════════════╝\u001b[0m
+          .setDescription(`\`\`\`
+⭐ LEVEL ${result.newLevel} REACHED! ⭐
 \`\`\``)
           .setFooter({ text: '🎓 MentorAI | Keep learning!' });
         await interaction.followUp({ embeds: [levelUpEmbed] });
@@ -1058,17 +1052,8 @@ async function handleQuizButton(interaction, action, params) {
         .setColor(result.isCorrect ? 0x00D166 : 0xED4245)
         .setTitle(result.isCorrect ? '✅ Correct! +25 XP' : '❌ Incorrect')
         .setDescription(result.isCorrect 
-          ? `\`\`\`ansi
-\u001b[1;32m╔════════════════════════════════════════╗\u001b[0m
-\u001b[1;32m║\u001b[0m    \u001b[1;33m🎉 GREAT JOB! You nailed it!\u001b[0m       \u001b[1;32m║\u001b[0m
-\u001b[1;32m╚════════════════════════════════════════╝\u001b[0m
-\`\`\``
-          : `\`\`\`ansi
-\u001b[1;31m╔════════════════════════════════════════╗\u001b[0m
-\u001b[1;31m║\u001b[0m  \u001b[1;37mYou selected: ${selectedLetter}\u001b[0m                       \u001b[1;31m║\u001b[0m
-\u001b[1;31m║\u001b[0m  \u001b[1;32mCorrect answer: ${correctLetter}\u001b[0m                    \u001b[1;31m║\u001b[0m
-\u001b[1;31m╚════════════════════════════════════════╝\u001b[0m
-\`\`\``)
+          ? `\`\`\`\n🎉 GREAT JOB! You nailed it!\n\`\`\``
+          : `\`\`\`\nYou selected: ${selectedLetter}\nCorrect answer: ${correctLetter}\n\`\`\``)
         .addFields(
           {
             name: '📚 Explanation',
@@ -1118,9 +1103,7 @@ async function handleQuizButton(interaction, action, params) {
     const transitionEmbed = new EmbedBuilder()
       .setTitle('⏳ Loading Next Question...')
       .setColor(COLORS.PRIMARY)
-      .setDescription(`\`\`\`ansi
-\u001b[1;36m▓▓▓▓▓▓▓▓▓▓ Question ${questionData.questionNum}/${questionData.totalQuestions}\u001b[0m
-\`\`\``);
+      .setDescription(`\`\`\`\n▓▓▓▓▓▓▓▓▓▓ Question ${questionData.questionNum}/${questionData.totalQuestions}\n\`\`\``);
 
     await interaction.update({ embeds: [transitionEmbed], components: [] });
     await sleep(800);
@@ -1143,11 +1126,7 @@ async function handleQuizButton(interaction, action, params) {
     const cancelEmbed = new EmbedBuilder()
       .setTitle('🛑 Quiz Ended')
       .setColor(COLORS.WARNING)
-      .setDescription(`\`\`\`ansi
-\u001b[1;33m╔══════════════════════════════════════╗\u001b[0m
-\u001b[1;33m║\u001b[0m    \u001b[1;37mQuiz cancelled - No XP earned\u001b[0m     \u001b[1;33m║\u001b[0m
-\u001b[1;33m╚══════════════════════════════════════╝\u001b[0m
-\`\`\``)
+      .setDescription(`\`\`\`\nQuiz cancelled - No XP earned\n\`\`\``)
       .addFields({
         name: '🎯 Ready for another challenge?',
         value: 'Use `/quiz` to start a new quiz!',
@@ -1919,10 +1898,8 @@ async function showAccessKeyPrompt(interaction, reason) {
     .setTitle('🔐 MentorAI Beta Access Required')
     .setColor(0x5865F2)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;36m╔══════════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;36m║\u001b[0m    \u001b[1;33m⚡ EXCLUSIVE BETA ACCESS ⚡\u001b[0m           \u001b[1;36m║\u001b[0m\n' +
-      '\u001b[1;36m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '⚡ EXCLUSIVE BETA ACCESS ⚡\n' +
       '```\n\n' +
       (reasonMessages[reason] || reasonMessages['no_key']) +
       '\n\n' +
@@ -1987,8 +1964,8 @@ async function handleAccessButton(interaction, action) {
       .setTitle('ℹ️ How to Get an Access Key')
       .setColor(0x5865F2)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;32m📋 GETTING YOUR ACCESS KEY\u001b[0m\n' +
+        '```\n' +
+        '📋 GETTING YOUR ACCESS KEY\n' +
         '```\n\n' +
         '**MentorAI is currently in private beta.**\n\n' +
         '**To get an access key:**\n\n' +
@@ -2034,7 +2011,7 @@ async function handleAccessKeySubmit(interaction) {
       .setTitle(`${err.emoji} ${err.title}`)
       .setColor(0xED4245)
       .setDescription(
-        '```ansi\n\u001b[1;31m' + err.desc + '\u001b[0m\n```\n\n' +
+        '```\n' + err.desc + '\n```\n\n' +
         '**What to do:**\n' +
         '• Double-check your key for typos\n' +
         '• Request a new key from the bot owner\n' +
@@ -2052,10 +2029,8 @@ async function handleAccessKeySubmit(interaction) {
     .setTitle('🎉 Welcome to MentorAI Beta!')
     .setColor(0x57F287)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m╔══════════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m      \u001b[1;33m✨ ACCESS GRANTED ✨\u001b[0m                \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m╚══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '✨ ACCESS GRANTED ✨\n' +
       '```\n\n' +
       `Welcome, **${interaction.user.username}**! 🎊\n\n` +
       'Your access key has been activated. You now have **full access** to all MentorAI features!'

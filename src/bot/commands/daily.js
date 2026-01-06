@@ -27,7 +27,7 @@ export async function execute(interaction) {
         .setTitle('⏰ Already Claimed Today!')
         .setColor(COLORS.WARNING)
         .setDescription(
-          '```ansi\n\u001b[1;33m✓ You\'ve already claimed today\'s bonus!\u001b[0m\n```\n' +
+          '```\n✓ You\'ve already claimed today\'s bonus!\n```\n' +
           `⏳ **Next bonus available in:** ${timeString.trim()}\n\n` +
           `🕐 **Resets at:** <t:${Math.floor(result.nextClaimTime.getTime() / 1000)}:t> (<t:${Math.floor(result.nextClaimTime.getTime() / 1000)}:R>)`
         )
@@ -64,8 +64,8 @@ export async function execute(interaction) {
       .setTitle('🎁 Daily Bonus Claimed!')
       .setColor(COLORS.XP_GOLD)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;33m✨ Welcome back, ' + interaction.user.username + '! ✨\u001b[0m\n' +
+        '```\n' +
+        '✨ Welcome back, ' + interaction.user.username + '! ✨\n' +
         '```'
       );
     
@@ -95,7 +95,7 @@ export async function execute(interaction) {
     if (result.milestoneMessage) {
       bonusEmbed.addFields({
         name: '🎊 MILESTONE REACHED!',
-        value: '```ansi\n\u001b[1;35m' + result.milestoneMessage + '\u001b[0m\n```',
+        value: '```\n🎉 ' + result.milestoneMessage + '\n```',
         inline: false
       });
     }
@@ -113,7 +113,7 @@ export async function execute(interaction) {
     if (result.leveledUp) {
       bonusEmbed.addFields({
         name: '🆙 LEVEL UP!',
-        value: '```ansi\n\u001b[1;32m🎉 You reached Level ' + result.newLevel + '! 🎉\u001b[0m\n```',
+        value: '```\n🎉 You reached Level ' + result.newLevel + '! 🎉\n```',
         inline: false
       });
     }

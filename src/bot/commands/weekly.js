@@ -86,19 +86,17 @@ async function showChallenge(interaction) {
     .setColor(challenge.color || COLORS.XP_GOLD)
     .setThumbnail('https://i.imgur.com/AfFp7pu.png')
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m╔════════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m   🏆 THIS WEEK\'S GLOBAL CHALLENGE 🏆  \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m        ' + challenge.icon + ' ' + challenge.name.toUpperCase() + ' ' + challenge.icon + '        \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m╚════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🏆 THIS WEEK\\'S GLOBAL CHALLENGE 🏆\n' +
+      challenge.icon + ' ' + challenge.name.toUpperCase() + ' ' + challenge.icon + '\n' +
       '```\n' +
       '### ' + challenge.emoji + ' ' + challenge.description
     )
     .addFields(
       { name: '━━━━━ CHALLENGE INFO ━━━━━', value: '\u200b', inline: false },
       { name: '🎯 Objective', value: '```\n' + challenge.description + '\n```', inline: true },
-      { name: '⏰ Time Left', value: '```ansi\n\u001b[1;31m' + daysLeft + 'd ' + hoursLeft + 'h\u001b[0m\n```', inline: true },
-      { name: '🏅 Current Leader', value: leader ? '```\n👑 ' + leader.username + '\n```' : '```\nNo one yet!\n```', inline: true },
+      { name: '⏰ Time Left', value: '`' + daysLeft + 'd ' + hoursLeft + 'h`', inline: true },
+      { name: '🏅 Current Leader', value: leader ? '`👑 ' + leader.username + '`' : '`No one yet!`', inline: true },
       { 
         name: '━━━━━━ REWARDS ━━━━━━', 
         value: '🥇 **1st Place:** +500 XP + "🏆 Weekly Champion" badge\n' +
@@ -210,11 +208,9 @@ async function showLeaderboard(interaction) {
     .setTitle('🏆 Weekly Leaderboard')
     .setColor(challenge.color || COLORS.XP_GOLD)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m╔═══════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m  ' + challenge.emoji + ' ' + challenge.name.toUpperCase() + '  \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m         Week #' + weekNumber + ' Rankings        \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m╚═══════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      challenge.emoji + ' ' + challenge.name.toUpperCase() + '\n' +
+      'Week #' + weekNumber + ' Rankings\n' +
       '```\n\n' +
       leaderboardText
     )
@@ -224,7 +220,7 @@ async function showLeaderboard(interaction) {
   if (userData && userRank > 10) {
     embed.addFields({
       name: '📍 Your Position',
-      value: '```ansi\n\u001b[1;36m#' + userRank + '\u001b[0m - ' + getMetricValue(userData, challenge.metric) + '\n```',
+      value: '`#' + userRank + '` - ' + getMetricValue(userData, challenge.metric),
       inline: false
     });
   }

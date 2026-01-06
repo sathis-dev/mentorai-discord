@@ -82,7 +82,7 @@ export async function execute(interaction) {
     const readyEmbed = new EmbedBuilder()
       .setTitle('✅ Quiz Ready!')
       .setColor(COLORS.SUCCESS)
-      .setDescription('```ansi\n\u001b[1;32m🎮 Get ready to test your knowledge!\u001b[0m\n```')
+      .setDescription('```\n🎮 Get ready to test your knowledge!\n```')
       .addFields(
         { name: '📚 Topic', value: topic, inline: true },
         { name: '❓ Questions', value: String(numQuestions), inline: true },

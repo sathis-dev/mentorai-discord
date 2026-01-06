@@ -99,7 +99,7 @@ export async function animateCountdown(interaction, seconds, onComplete) {
     const embed = new EmbedBuilder()
       .setTitle(emoji + ' Time Remaining')
       .setColor(colors[colorIndex])
-      .setDescription('```ansi\n\u001b[1;' + (i <= 3 ? '31' : '32') + 'm' + 
+      .setDescription('```\n' + 
         '⏱️ ' + formatTime(i) + '\n```')
       .setFooter({ text: '🎓 MentorAI' });
 
@@ -145,7 +145,7 @@ export async function animateScoreReveal(interaction, score, total, xpEarned) {
     const embed = new EmbedBuilder()
       .setTitle('📈 Your Score')
       .setColor(color)
-      .setDescription('```ansi\n\u001b[1;33m' + p + '%\u001b[0m\n```')
+      .setDescription('```\n' + p + '%\n```')
       .setFooter({ text: '🎓 MentorAI' });
 
     await interaction.editReply({ embeds: [embed] });
@@ -187,7 +187,7 @@ export async function animateLevelUp(interaction, newLevel) {
     const embed = new EmbedBuilder()
       .setTitle(frame + ' LEVEL UP! ' + frame)
       .setColor(0xFFD700)
-      .setDescription('```ansi\n\u001b[1;33m⬆️ You reached Level ' + newLevel + '! ⬆️\u001b[0m\n```')
+      .setDescription('```\n⬆️ You reached Level ' + newLevel + '! ⬆️\n```')
       .setFooter({ text: '🎓 MentorAI' });
 
     await interaction.editReply({ embeds: [embed] });

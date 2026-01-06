@@ -162,9 +162,9 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   };
   
   const difficultyInfo = {
-    easy: { emoji: '🟢', label: 'EASY', xp: '+20 XP', ansi: '\u001b[1;32m' },
-    medium: { emoji: '🟡', label: 'MEDIUM', xp: '+25 XP', ansi: '\u001b[1;33m' },
-    hard: { emoji: '🔴', label: 'HARD', xp: '+35 XP', ansi: '\u001b[1;31m' }
+    easy: { emoji: '🟢', label: 'EASY', xp: '+20 XP' },
+    medium: { emoji: '🟡', label: 'MEDIUM', xp: '+25 XP' },
+    hard: { emoji: '🔴', label: 'HARD', xp: '+35 XP' }
   };
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
@@ -174,12 +174,8 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   // Format question text
   let questionText = question.question || 'Loading question...';
   
-  // Create styled header
-  const header = `\`\`\`ansi
-\u001b[1;35m╔══════════════════════════════════════════════════╗\u001b[0m
-\u001b[1;35m║\u001b[0m  ${diffData.ansi}${diffData.emoji} ${diffData.label}\u001b[0m • Question \u001b[1;37m${questionNum}/${totalQuestions}\u001b[0m • ${diffData.ansi}${diffData.xp}\u001b[0m    \u001b[1;35m║\u001b[0m
-\u001b[1;35m╚══════════════════════════════════════════════════╝\u001b[0m
-\`\`\``;
+  // Create clean styled header using markdown
+  const header = `\`\`\`\n${diffData.emoji} ${diffData.label}  •  Question ${questionNum}/${totalQuestions}  •  ${diffData.xp}\n\`\`\``;
 
   const embed = new EmbedBuilder()
     .setColor(difficultyColors[difficulty] || COLORS.QUIZ_PINK)
@@ -237,70 +233,57 @@ export function createAnswerResultEmbed(isCorrect, explanation, xpEarned = 0) {
 // Quiz Results Embed with Rich Stats
 export function createQuizResultsEmbed(result) {
   const percentage = result.percentage || Math.round((result.score / result.totalQuestions) * 100);
-  const grade = getGrade(percentage);
+  const gradeLabel = getGrade(percentage);
   const gradeColor = getGradeColor(percentage);
   
-  // Premium grade styling
+  // Premium grade styling - extract just the letter grade
+  const gradeLetter = gradeLabel.split(' ').pop();
   const gradeInfo = {
-    'S+': { emoji: '👑', title: 'LEGENDARY', color: '[1;33m' },
-    'S': { emoji: '🏆', title: 'OUTSTANDING', color: '[1;33m' },
-    'A+': { emoji: '⭐', title: 'EXCELLENT', color: '[1;32m' },
-    'A': { emoji: '✨', title: 'GREAT JOB', color: '[1;32m' },
-    'B+': { emoji: '🌟', title: 'VERY GOOD', color: '[1;36m' },
-    'B': { emoji: '💫', title: 'GOOD', color: '[1;36m' },
-    'C': { emoji: '📚', title: 'KEEP LEARNING', color: '[1;34m' },
-    'D': { emoji: '💪', title: 'PRACTICE MORE', color: '[0;33m' },
-    'F': { emoji: '🔄', title: 'TRY AGAIN', color: '[0;31m' }
+    'S+': { emoji: '👑', title: 'LEGENDARY' },
+    'A+': { emoji: '⭐', title: 'EXCELLENT' },
+    'A': { emoji: '✨', title: 'GREAT JOB' },
+    'B+': { emoji: '🌟', title: 'VERY GOOD' },
+    'B': { emoji: '💫', title: 'GOOD' },
+    'C+': { emoji: '📗', title: 'DECENT' },
+    'C': { emoji: '📚', title: 'KEEP LEARNING' },
+    'D': { emoji: '💪', title: 'PRACTICE MORE' },
+    'F': { emoji: '🔄', title: 'TRY AGAIN' }
   };
   
-  const gradeData = gradeInfo[grade] || gradeInfo['C'];
+  const gradeData = gradeInfo[gradeLetter] || gradeInfo['C'];
   
   // Create visual score bar (filled/empty blocks)
   const filledBlocks = Math.round((result.score / result.totalQuestions) * 10);
   const emptyBlocks = 10 - filledBlocks;
   const scoreBar = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
   
-  // Create ANSI styled header
-  const ansiHeader = '```ansi\n' +
-    '\u001b[1;36m╔══════════════════════════════════════╗\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m  ' + gradeData.emoji + ' \u001b[1;37mQUIZ COMPLETE!\u001b[0m ' + gradeData.emoji + '              \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m║\u001b[0m     \u001b' + gradeData.color + gradeData.title + '\u001b[0m                       \u001b[1;36m║\u001b[0m\n' +
-    '\u001b[1;36m╚══════════════════════════════════════╝\u001b[0m\n' +
-    '```';
+  // Create clean header without ANSI boxes (using markdown formatting)
+  const header = `## ${gradeData.emoji} QUIZ COMPLETE! ${gradeData.emoji}\n### ${gradeData.title}`;
   
-  // Score display with ANSI
-  const scoreDisplay = '```ansi\n' +
-    '\u001b[1;37m┌─────────────────────────────────────┐\u001b[0m\n' +
-    '\u001b[1;37m│\u001b[0m  📊 \u001b[1;33mSCORE:\u001b[0m \u001b[1;32m' + result.score + '\u001b[0m/\u001b[1;36m' + result.totalQuestions + '\u001b[0m              \u001b[1;37m│\u001b[0m\n' +
-    '\u001b[1;37m│\u001b[0m  \u001b[1;36m' + scoreBar + '\u001b[0m \u001b[1;33m' + percentage + '%\u001b[0m       \u001b[1;37m│\u001b[0m\n' +
-    '\u001b[1;37m│\u001b[0m                                     \u001b[1;37m│\u001b[0m\n' +
-    '\u001b[1;37m│\u001b[0m  🏆 \u001b[1;37mGRADE:\u001b[0m \u001b' + gradeData.color + grade + '\u001b[0m                       \u001b[1;37m│\u001b[0m\n' +
-    '\u001b[1;37m│\u001b[0m  ✨ \u001b[1;37mXP EARNED:\u001b[0m \u001b[1;32m+' + (result.xpEarned || 0) + ' XP\u001b[0m               \u001b[1;37m│\u001b[0m\n' +
-    '\u001b[1;37m└─────────────────────────────────────┘\u001b[0m\n' +
-    '```';
+  // Clean score display using markdown code blocks and formatting
+  const scoreDisplay = `\`\`\`\n` +
+    `📊 SCORE: ${result.score}/${result.totalQuestions}\n` +
+    `   ${scoreBar} ${percentage}%\n\n` +
+    `🏆 GRADE:  ${gradeData.emoji} ${gradeLetter}\n` +
+    `✨ XP EARNED: +${result.xpEarned || 0} XP\n` +
+    `\`\`\``;
   
   // Create answer breakdown visualization
   const answerBreakdown = result.answers 
-    ? result.answers.map((a, i) => (a.isCorrect ? '✅' : '❌')).join(' ')
+    ? result.answers.map((a, i) => (a.isCorrect ? '✅' : '❌')).join('')
     : '📝 Answers recorded';
   
   const embed = new EmbedBuilder()
     .setColor(gradeColor)
-    .setDescription(ansiHeader + '\n' + scoreDisplay)
+    .setDescription(header + '\n' + scoreDisplay)
     .addFields(
       { name: '📝 Answer Breakdown', value: answerBreakdown, inline: false }
     );
   
   if (result.leveledUp) {
-    const levelUpArt = '```ansi\n' +
-      '\u001b[1;33m┌─────────────────────────────┐\u001b[0m\n' +
-      '\u001b[1;33m│\u001b[0m  🆙 \u001b[1;32mLEVEL UP!\u001b[0m              \u001b[1;33m│\u001b[0m\n' +
-      '\u001b[1;33m│\u001b[0m  \u001b[1;36mYou reached Level \u001b[1;33m' + result.newLevel + '\u001b[0m        \u001b[1;33m│\u001b[0m\n' +
-      '\u001b[1;33m└─────────────────────────────┘\u001b[0m\n' +
-      '```';
     embed.addFields({
-      name: '\u200b',
-      value: levelUpArt,
+      name: '🎊 LEVEL UP!',
+      value: `⭐ You reached **Level ${result.newLevel}**! Keep going!`,
       inline: false
     });
   }
@@ -415,7 +398,7 @@ export function createProgressEmbed(user, avatarURL) {
     .setTitle(tierEmoji + ' ' + (user.username || 'User') + '\'s Profile')
     .setColor(getTierColor(level))
     .setThumbnail(avatarURL)
-    .setDescription('```ansi\n\u001b[1;33m⭐ Level ' + level + ' Learner\u001b[0m\n```')
+    .setDescription(`\`\`\`\n⭐ Level ${level} Learner\n\`\`\``)
     .addFields(
       { 
         name: '📊 Experience', 
@@ -450,10 +433,8 @@ export function createLeaderboardEmbed(users, page = 1) {
   const startRank = (page - 1) * 10;
   
   // Create header
-  let description = '```ansi\n';
-  description += '\u001b[1;33m╔═══════════════════════════════════════╗\u001b[0m\n';
-  description += '\u001b[1;33m║\u001b[0m      \u001b[1;37m🏆 GLOBAL LEADERBOARD 🏆\u001b[0m        \u001b[1;33m║\u001b[0m\n';
-  description += '\u001b[1;33m╚═══════════════════════════════════════╝\u001b[0m\n';
+  let description = '```\n';
+  description += '🏆 GLOBAL LEADERBOARD 🏆\n';
   description += '```\n\n';
   
   users.forEach((user, index) => {
@@ -495,15 +476,13 @@ export function createLeaderboardEmbed(users, page = 1) {
 // Daily Bonus Embed - Premium V4 Styling
 export function createDailyBonusEmbed(result, motivation, dailyTip) {
   // Create XP breakdown panel
-  let xpPanel = '```ansi\n';
-  xpPanel += '\u001b[1;33m╔═══════════════════════════════════════╗\u001b[0m\n';
-  xpPanel += '\u001b[1;33m║\u001b[0m     \u001b[1;37m🎁 DAILY BONUS CLAIMED! 🎁\u001b[0m       \u001b[1;33m║\u001b[0m\n';
-  xpPanel += '\u001b[1;33m╠═══════════════════════════════════════╣\u001b[0m\n';
-  xpPanel += `\u001b[1;33m║\u001b[0m  💰 Base XP:       \u001b[1;32m+${String(result.baseXp || 75).padStart(4)}\u001b[0m           \u001b[1;33m║\u001b[0m\n`;
-  xpPanel += `\u001b[1;33m║\u001b[0m  🔥 Streak Bonus:  \u001b[1;31m+${String(result.streakBonus || 0).padStart(4)}\u001b[0m           \u001b[1;33m║\u001b[0m\n`;
-  xpPanel += '\u001b[1;33m╠═══════════════════════════════════════╣\u001b[0m\n';
-  xpPanel += `\u001b[1;33m║\u001b[0m  ✨ TOTAL EARNED:  \u001b[1;33m+${String(result.xpEarned).padStart(4)} XP\u001b[0m        \u001b[1;33m║\u001b[0m\n`;
-  xpPanel += '\u001b[1;33m╚═══════════════════════════════════════╝\u001b[0m\n';
+  let xpPanel = '```\n';
+  xpPanel += '🎁 DAILY BONUS CLAIMED! 🎁\n';
+  xpPanel += '──────────────────────────\n';
+  xpPanel += `💰 Base XP:       +${result.baseXp || 75}\n`;
+  xpPanel += `🔥 Streak Bonus:  +${result.streakBonus || 0}\n`;
+  xpPanel += '──────────────────────────\n';
+  xpPanel += `✨ TOTAL: +${result.xpEarned} XP\n`;
   xpPanel += '```';
 
   const embed = new EmbedBuilder()
@@ -521,7 +500,7 @@ export function createDailyBonusEmbed(result, motivation, dailyTip) {
   if (result.leveledUp) {
     embed.addFields({
       name: '🆙 LEVEL UP!',
-      value: '```ansi\n\u001b[1;32m🎉 Congratulations! You reached Level ' + result.newLevel + '! 🎉\u001b[0m\n```',
+      value: '\`\`\`\n🎉 Congratulations! You reached Level ' + result.newLevel + '! 🎉\n\`\`\`',
       inline: false
     });
   }

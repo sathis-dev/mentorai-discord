@@ -43,29 +43,22 @@ export async function execute(interaction) {
     const uptime = formatUptime(interaction.client.uptime);
 
     // ═══ Create Stats Panel ═══
-    const statsPanel = `\`\`\`ansi
-\u001b[1;36m╔═══════════════════════════════════════════════════╗\u001b[0m
-\u001b[1;36m║\u001b[0m          \u001b[1;37m📊 MENTORAI GLOBAL STATISTICS\u001b[0m          \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;33m👥 COMMUNITY\u001b[0m                                    \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ├─ Total Learners:    \u001b[1;32m${String(userCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ├─ Active Servers:    \u001b[1;35m${String(serverCount).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  └─ Average Level:     \u001b[1;36m${String(avgLevel).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;33m📚 CONTENT\u001b[0m                                      \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ├─ Quizzes Created:   \u001b[1;34m${String(quizCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  └─ Lessons Generated: \u001b[1;34m${String(lessonCount.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m╠═══════════════════════════════════════════════════╣\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  \u001b[1;33m✨ ACHIEVEMENTS\u001b[0m                                 \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  ├─ Total XP Earned:   \u001b[1;33m${String(totalXP.toLocaleString()).padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m  └─ Highest Streak:    \u001b[1;31m${String(topStreak + ' days').padStart(10)}\u001b[0m            \u001b[1;36m║\u001b[0m
-\u001b[1;36m║\u001b[0m                                                   \u001b[1;36m║\u001b[0m
-\u001b[1;36m╚═══════════════════════════════════════════════════╝\u001b[0m
+    const statsPanel = `\`\`\`
+📊 MENTORAI GLOBAL STATISTICS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+👥 COMMUNITY
+├─ Total Learners:    ${userCount.toLocaleString()}
+├─ Active Servers:    ${serverCount}
+└─ Average Level:     ${avgLevel}
+
+📚 CONTENT
+├─ Quizzes Created:   ${quizCount.toLocaleString()}
+└─ Lessons Generated: ${lessonCount.toLocaleString()}
+
+✨ ACHIEVEMENTS
+├─ Total XP Earned:   ${totalXP.toLocaleString()}
+└─ Highest Streak:    ${topStreak} days
 \`\`\``;
 
     // ═══ Main Embed ═══

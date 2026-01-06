@@ -1,14 +1,22 @@
 {
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
-    "builder": "DOCKERFILE",
-    "dockerfilePath": "Dockerfile"
+    "builder": "NIXPACKS",
+    "buildCommand": "npm ci --omit=dev",
+    "watchPatterns": [
+      "src/**",
+      "package.json",
+      "package-lock.json"
+    ]
   },
   "deploy": {
+    "startCommand": "node src/index.js",
     "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10,
-    "healthcheckPath": "/",
-    "healthcheckTimeout": 300,
-    "numReplicas": 1
+    "restartPolicyMaxRetries": 5,
+    "healthcheckPath": "/health",
+    "healthcheckTimeout": 120,
+    "sleepApplication": false,
+    "numReplicas": 1,
+    "runtime": "V2"
   }
 }

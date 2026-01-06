@@ -55,7 +55,7 @@ export async function execute(interaction) {
       .setTitle('🔒 Access Denied')
       .setColor(COLORS.ERROR)
       .setDescription(
-        '```ansi\n\u001b[1;31m⛔ UNAUTHORIZED ACCESS ATTEMPT\u001b[0m\n```\n' +
+        '```\n⛔ UNAUTHORIZED ACCESS ATTEMPT\n```\n' +
         'This command is restricted to **bot owners only**.\n\n' +
         'If you are a server admin, you can use `/setup` to configure the bot for your server.'
       )
@@ -105,10 +105,8 @@ async function showDashboard(interaction) {
     .setTitle('🎛️ MentorAI Admin Dashboard')
     .setColor(0x2F3136)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;32m╔═══════════════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;32m║\u001b[0m     \u001b[1;36m🔐 ADMIN CONTROL CENTER v2.0\u001b[0m         \u001b[1;32m║\u001b[0m\n' +
-      '\u001b[1;32m╚═══════════════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🔐 ADMIN CONTROL CENTER v2.0\n' +
       '```'
     )
     .setThumbnail(interaction.client.user.displayAvatarURL({ size: 256 }))
@@ -231,8 +229,8 @@ async function showUserManagement(interaction) {
     .setTitle('👥 User Management Panel')
     .setColor(0x3498DB)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;34m📋 USER ADMINISTRATION\u001b[0m\n' +
+      '```\n' +
+      '📋 USER ADMINISTRATION\n' +
       '```'
     )
     .addFields(
@@ -303,8 +301,8 @@ async function showAnalytics(interaction) {
     .setTitle('📈 Analytics Dashboard')
     .setColor(0x9B59B6)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m📊 PERFORMANCE ANALYTICS\u001b[0m\n' +
+      '```\n' +
+      '📊 PERFORMANCE ANALYTICS\n' +
       '```'
     )
     .addFields(
@@ -425,8 +423,8 @@ async function showConfig(interaction) {
     .setTitle('⚙️ Bot Configuration')
     .setColor(0x95A5A6)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;37m🔧 SYSTEM CONFIGURATION\u001b[0m\n' +
+      '```\n' +
+      '🔧 SYSTEM CONFIGURATION\n' +
       '```'
     )
     .addFields(
@@ -498,8 +496,8 @@ async function showLogs(interaction) {
     .setTitle('📜 System Logs')
     .setColor(0x2C3E50)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m📋 RECENT ACTIVITY LOG\u001b[0m\n' +
+      '```\n' +
+      '📋 RECENT ACTIVITY LOG\n' +
       '```'
     )
     .addFields({
@@ -556,8 +554,8 @@ async function showMaintenance(interaction) {
     .setTitle('🔧 Maintenance Controls')
     .setColor(0xE74C3C)
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;31m⚠️ MAINTENANCE MODE CONTROLS\u001b[0m\n' +
+      '```\n' +
+      '⚠️ MAINTENANCE MODE CONTROLS\n' +
       '```\n' +
       '**Current Status:** 🟢 Normal Operation\n\n' +
       '⚠️ **Warning:** Enabling maintenance mode will:\n' +

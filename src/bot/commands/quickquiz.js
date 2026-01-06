@@ -116,10 +116,8 @@ export async function execute(interaction) {
       .setTitle('⚡ Quick Quiz: ' + topic)
       .setColor(diff.color)
       .setDescription(
-        '```ansi\n' +
-        '\u001b[1;35m╔═══════════════════════════════════╗\u001b[0m\n' +
-        '\u001b[1;35m║\u001b[0m  ⚡ QUICK QUIZ CHALLENGE ⚡   \u001b[1;35m║\u001b[0m\n' +
-        '\u001b[1;35m╚═══════════════════════════════════╝\u001b[0m\n' +
+        '```\n' +
+        '⚡ QUICK QUIZ CHALLENGE ⚡\n' +
         '```\n\n' +
         '### 📝 ' + quizData.question + '\n\n' +
         quizData.options.map((opt, i) => {
@@ -128,9 +126,9 @@ export async function execute(interaction) {
         }).join('\n')
       )
       .addFields(
-        { name: '⏱️ Time Limit', value: '```ansi\n\u001b[1;31m' + diff.time + ' seconds\u001b[0m\n```', inline: true },
-        { name: '🎁 Reward', value: '```ansi\n\u001b[1;32m+' + diff.xp + ' XP\u001b[0m\n```', inline: true },
-        { name: diff.emoji + ' Difficulty', value: '```\n' + difficulty.toUpperCase() + '\n```', inline: true }
+        { name: '⏱️ Time Limit', value: '`' + diff.time + ' seconds`', inline: true },
+        { name: '🎁 Reward', value: '`+' + diff.xp + ' XP`', inline: true },
+        { name: diff.emoji + ' Difficulty', value: '`' + difficulty.toUpperCase() + '`', inline: true }
       )
       .setFooter({ text: '🎓 MentorAI Quick Quiz | Answer before time runs out!' })
       .setTimestamp();
@@ -166,10 +164,8 @@ export async function execute(interaction) {
             .setTitle('⏰ Time\'s Up!')
             .setColor(0xED4245)
             .setDescription(
-              '```ansi\n' +
-              '\u001b[1;31m╔══════════════════════════════╗\u001b[0m\n' +
-              '\u001b[1;31m║\u001b[0m   ⏰ OUT OF TIME! ⏰    \u001b[1;31m║\u001b[0m\n' +
-              '\u001b[1;31m╚══════════════════════════════╝\u001b[0m\n' +
+              '```\n' +
+              '⏰ OUT OF TIME! ⏰\n' +
               '```'
             )
             .addFields(

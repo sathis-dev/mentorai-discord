@@ -127,18 +127,16 @@ function createProgressCard(discordUser, user) {
     })
     .setThumbnail(discordUser.displayAvatarURL({ dynamic: true, size: 512 }))
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;33m╔═══════════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m    🎓 MENTORAI PROGRESS CARD      \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m║\u001b[0m       ' + tier.badge + ' ' + tier.name + ' TIER ' + tier.badge + '           \u001b[1;33m║\u001b[0m\n' +
-      '\u001b[1;33m╚═══════════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🎓 MENTORAI PROGRESS CARD\n' +
+      tier.badge + ' ' + tier.name + ' TIER ' + tier.badge + '\n' +
       '```'
     )
     .addFields(
       { name: '━━━━━━━ STATS ━━━━━━━', value: '\u200b', inline: false },
-      { name: '⭐ Level', value: '```ansi\n\u001b[1;33m' + level + '\u001b[0m\n```', inline: true },
-      { name: '✨ Total XP', value: '```ansi\n\u001b[1;36m' + totalXp + '\u001b[0m\n```', inline: true },
-      { name: '🔥 Streak', value: '```ansi\n\u001b[1;31m' + (user.streak || 0) + ' days\u001b[0m\n```', inline: true },
+      { name: '⭐ Level', value: '`' + level + '`', inline: true },
+      { name: '✨ Total XP', value: '`' + totalXp + '`', inline: true },
+      { name: '🔥 Streak', value: '`' + (user.streak || 0) + ' days`', inline: true },
       { name: '📈 Level Progress', value: '```\n' + progressBar + ' ' + Math.round((xp/xpNeeded)*100) + '%\n' + xp + ' / ' + xpNeeded + ' XP\n```', inline: false },
       { name: '📚 Lessons', value: '```\n' + (user.completedLessons?.length || 0) + '\n```', inline: true },
       { name: '🎯 Quizzes', value: '```\n' + (user.quizzesTaken || 0) + '\n```', inline: true },
@@ -169,10 +167,8 @@ function createAchievementCard(discordUser, user) {
     })
     .setThumbnail(discordUser.displayAvatarURL({ dynamic: true, size: 256 }))
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m╔══════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;35m║\u001b[0m   🏆 ACHIEVEMENT SHOWCASE     \u001b[1;35m║\u001b[0m\n' +
-      '\u001b[1;35m╚══════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🏆 ACHIEVEMENT SHOWCASE\n' +
       '```'
     )
     .addFields(
@@ -200,10 +196,8 @@ function createStreakCard(discordUser, user) {
     })
     .setThumbnail(discordUser.displayAvatarURL({ dynamic: true, size: 256 }))
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;31m╔══════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;31m║\u001b[0m   🔥 STREAK FLEX CARD         \u001b[1;31m║\u001b[0m\n' +
-      '\u001b[1;31m╚══════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🔥 STREAK FLEX CARD\n' +
       '```\n' + flames
     )
     .addFields(
@@ -228,10 +222,8 @@ function createQuizCard(discordUser, user) {
     })
     .setThumbnail(discordUser.displayAvatarURL({ dynamic: true, size: 256 }))
     .setDescription(
-      '```ansi\n' +
-      '\u001b[1;35m╔══════════════════════════════╗\u001b[0m\n' +
-      '\u001b[1;35m║\u001b[0m   🎯 QUIZ MASTER CARD         \u001b[1;35m║\u001b[0m\n' +
-      '\u001b[1;35m╚══════════════════════════════╝\u001b[0m\n' +
+      '```\n' +
+      '🎯 QUIZ MASTER CARD\n' +
       '```'
     )
     .addFields(
