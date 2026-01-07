@@ -29,6 +29,13 @@ import {
   createTopicSelectMenu
 } from '../../config/brandSystem.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
+import { checkMobileUser } from '../../utils/mobileUI.js';
+import { 
+  createMobileHelpEmbed, 
+  createMobileQuickStartEmbed, 
+  createMobileMoreCommandsEmbed,
+  createMobileHelpCategoryEmbed 
+} from '../../embeds/mobile/helpMobile.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
@@ -102,8 +109,15 @@ export async function execute(interaction) {
     // Get user data for personalization
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     
-    // Route to appropriate experience
-    if (isNewUser(user)) {
+    // Check if user is on mobile
+    const isMobile = await checkMobileUser(interaction);
+    
+    // Route to appropriate experience based on device
+    if (isMobile) {
+      // Mobile-optimized UI
+      const response = createMobileHelpEmbed(user, isNewUser(user), interaction.client);
+      await interaction.reply(response);
+    } else if (isNewUser(user)) {
       await showNewUserWelcome(interaction, user);
     } else {
       await showReturningUserDashboard(interaction, user);
@@ -395,6 +409,51 @@ export async function handleQuickStartButton(interaction, action) {
     } catch (e) {
       try { await interaction.deferUpdate(); } catch (_) {}
     }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOBILE BUTTON HANDLERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function handleMobileButton(interaction, action) {
+  try {
+    const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+    
+    switch (action) {
+      case 'quickstart': {
+        const response = createMobileQuickStartEmbed();
+        await safeUpdate(interaction, response);
+        break;
+      }
+      case 'more': {
+        const response = createMobileMoreCommandsEmbed();
+        await safeUpdate(interaction, response);
+        break;
+      }
+      case 'home': {
+        const response = createMobileHelpEmbed(user, isNewUser(user), interaction.client);
+        await safeUpdate(interaction, response);
+        break;
+      }
+      default: {
+        await interaction.reply({ content: '✨ Try `/help` for commands!', ephemeral: true });
+      }
+    }
+  } catch (error) {
+    console.error(`Mobile button error (${action}):`, error);
+    try { await interaction.deferUpdate(); } catch (_) {}
+  }
+}
+
+// Handle mobile category select menu
+export async function handleMobileCategorySelect(interaction, value) {
+  try {
+    const response = createMobileHelpCategoryEmbed(value);
+    await safeUpdate(interaction, response);
+  } catch (error) {
+    console.error(`Mobile category select error (${value}):`, error);
+    try { await interaction.deferUpdate(); } catch (_) {}
   }
 }
 

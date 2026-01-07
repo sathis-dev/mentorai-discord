@@ -148,8 +148,22 @@ async function handleButton(interaction) {
     
     // NEW V5: Handle help_quickstart buttons for new user onboarding
     if (category === 'help' && action === 'quickstart') {
+      // Mobile: help_quickstart (no params) shows quick start panel
+      if (params.length === 0) {
+        const helpModule = await import('../commands/help.js');
+        await helpModule.handleMobileButton(interaction, 'quickstart');
+        return;
+      }
+      // Desktop: help_quickstart_quiz, help_quickstart_learn, etc.
       const helpModule = await import('../commands/help.js');
       await helpModule.handleQuickStartButton(interaction, params[0]);
+      return;
+    }
+    
+    // Handle mobile-specific help buttons (help_more, help_home)
+    if (category === 'help' && (action === 'more' || action === 'home')) {
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleMobileButton(interaction, action);
       return;
     }
     
@@ -381,6 +395,10 @@ async function handleSelectMenu(interaction) {
       // NEW V5: Handle topic selection from new user welcome flow
       // Start a quiz with the selected topic for new users
       await startQuizFromHelpMenu(interaction, value);
+    } else if (customId === 'help_category_mobile') {
+      // MOBILE: Handle mobile help category menu
+      const helpModule = await import('../commands/help.js');
+      await helpModule.handleMobileCategorySelect(interaction, value);
     } else {
       // Unknown select menu - provide fallback
       logger.warn(`Unknown select menu: ${customId}`);

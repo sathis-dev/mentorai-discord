@@ -4,6 +4,8 @@ import {
   BRAND, COLORS, EMOJIS, 
   createLeaderboardEmbed, createNavigationButtons 
 } from '../../config/brandSystem.js';
+import { checkMobileUser } from '../../utils/mobileUI.js';
+import { createMobileLeaderboardEmbed } from '../../embeds/mobile/leaderboardMobile.js';
 
 export const data = new SlashCommandBuilder()
   .setName('leaderboard')
@@ -15,8 +17,17 @@ export async function execute(interaction) {
   try {
     const users = await getLeaderboard(10);
     const totalPages = Math.ceil(users.length / 10) || 1;
+    const isMobile = await checkMobileUser(interaction);
     
-    // Create leaderboard embed with user highlight
+    if (isMobile) {
+      // Mobile: Compact leaderboard
+      const currentUser = await getOrCreateUser(interaction.user.id, interaction.user.username);
+      const response = createMobileLeaderboardEmbed(users, 1, totalPages, currentUser, 'xp');
+      await interaction.editReply(response);
+      return;
+    }
+    
+    // Desktop: Create leaderboard embed with user highlight
     const embed = createLeaderboardEmbed(users, 1, totalPages, interaction.user.id);
     
     // Build component rows

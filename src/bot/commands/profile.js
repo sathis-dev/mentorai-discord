@@ -13,6 +13,8 @@ import {
   formatNumber,
   getStreakMultiplier
 } from '../../config/brandSystem.js';
+import { checkMobileUser } from '../../utils/mobileUI.js';
+import { createMobileProfileEmbed } from '../../embeds/mobile/profileMobile.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 //  🎨 V5 DESIGN SYSTEM - PREMIUM PROFILE CARD
@@ -181,6 +183,19 @@ export async function execute(interaction) {
 
   try {
     const user = await getOrCreateUser(targetUser.id, targetUser.username);
+    
+    // Check if user is on mobile
+    const isMobile = await checkMobileUser(interaction);
+    
+    if (isMobile) {
+      // Mobile-optimized profile
+      const member = interaction.guild?.members.cache.get(targetUser.id) || interaction.member;
+      const response = createMobileProfileEmbed(user, member);
+      await interaction.editReply(response);
+      return;
+    }
+    
+    // ═══ Desktop: Full profile experience ═══
     
     // ═══ Calculate stats with safe defaults ═══
     const level = user?.level || 1;

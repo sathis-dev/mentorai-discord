@@ -197,6 +197,58 @@ export function getStreakTip(streak) {
   return '👑 MAX STREAK! You\'re a legend!';
 }
 
+// ═══════════════════════════════════════════════════════════════
+// MOBILE DETECTION
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Detect if user is on mobile Discord client
+ * Checks presence.clientStatus.mobile
+ * @param {GuildMember} member - The guild member to check
+ * @returns {boolean} - True if user is on mobile
+ */
+export function isMobileUser(member) {
+  try {
+    // If no member or no presence data, default to desktop (false)
+    if (!member?.presence) return false;
+    
+    // Check if mobile client is active
+    const clientStatus = member.presence.clientStatus;
+    if (!clientStatus) return false;
+    
+    // Mobile is primary if ONLY mobile is active, or mobile is explicitly online/dnd/idle
+    const hasMobile = !!clientStatus.mobile;
+    const hasDesktop = !!clientStatus.desktop;
+    const hasWeb = !!clientStatus.web;
+    
+    // If ONLY on mobile, definitely mobile
+    if (hasMobile && !hasDesktop && !hasWeb) return true;
+    
+    // If on multiple platforms, prefer desktop experience
+    return false;
+  } catch (e) {
+    // Any error, default to desktop
+    return false;
+  }
+}
+
+/**
+ * Get mobile status from interaction
+ * Convenience wrapper for commands
+ */
+export async function checkMobileUser(interaction) {
+  try {
+    // Ensure we have fresh member data with presence
+    const member = interaction.member?.presence 
+      ? interaction.member 
+      : await interaction.guild?.members.fetch({ user: interaction.user.id, withPresences: true }).catch(() => null);
+    
+    return isMobileUser(member);
+  } catch (e) {
+    return false;
+  }
+}
+
 export default {
   MOBILE,
   mobileProgressBar,
@@ -210,5 +262,7 @@ export default {
   mobileCompactStats,
   getMultiplier,
   getStreakMessage,
-  getStreakTip
+  getStreakTip,
+  isMobileUser,
+  checkMobileUser
 };

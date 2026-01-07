@@ -6,6 +6,8 @@ import {
   getRank, createProgressBar, formatNumber, getStreakMultiplier 
 } from '../../config/brandSystem.js';
 import { animateStreak, sleep } from '../../utils/animations.js';
+import { checkMobileUser } from '../../utils/mobileUI.js';
+import { createMobileDailyResultEmbed, createMobileDailyAlreadyClaimedEmbed } from '../../embeds/mobile/dailyMobile.js';
 
 export const data = new SlashCommandBuilder()
   .setName('daily')
@@ -17,11 +19,21 @@ export async function execute(interaction) {
   try {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     const result = await claimDailyBonus(user);
+    const isMobile = await checkMobileUser(interaction);
 
     if (!result.success) {
       // Calculate time remaining nicely
       const hours = result.hoursRemaining || 0;
       const minutes = result.minutesRemaining || 0;
+      
+      if (isMobile) {
+        // Mobile: Compact already claimed view
+        const response = createMobileDailyAlreadyClaimedEmbed(hours, minutes, user);
+        await interaction.editReply(response);
+        return;
+      }
+      
+      // Desktop: Full already claimed view
       let timeString = '';
       if (hours > 0) timeString += `${hours} hour${hours !== 1 ? 's' : ''}`;
       if (minutes > 0) timeString += ` ${minutes} min`;
@@ -80,7 +92,16 @@ export async function execute(interaction) {
       return;
     }
 
-    // Streak animation for streaks > 1
+    // For mobile: Skip animation and show compact result
+    if (isMobile) {
+      const baseXP = 50;
+      const streakBonus = result.xpEarned - baseXP;
+      const response = createMobileDailyResultEmbed(baseXP, streakBonus > 0 ? streakBonus : 0, result.xpEarned || 50, result.streak || 1, user);
+      await interaction.editReply(response);
+      return;
+    }
+
+    // Desktop: Streak animation for streaks > 1
     if (result.streak > 1) {
       await animateStreak(interaction, result.streak);
       await sleep(500);
