@@ -65,7 +65,7 @@ function getUserJourneyStage(user) {
 // Safe interaction updater - prevents "This interaction failed" errors
 async function safeUpdate(interaction, payload) {
   try {
-    await safeUpdate(interaction, payload);
+    await interaction.update(payload);
   } catch (error) {
     console.error('Safe update failed:', error.message);
     try {
