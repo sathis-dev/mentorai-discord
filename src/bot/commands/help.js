@@ -62,6 +62,24 @@ function getUserJourneyStage(user) {
   return 'mastery';
 }
 
+// Safe interaction updater - prevents "This interaction failed" errors
+async function safeUpdate(interaction, payload) {
+  try {
+    await safeUpdate(interaction, payload);
+  } catch (error) {
+    console.error('Safe update failed:', error.message);
+    try {
+      // Fallback: try to reply if update fails
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ ...payload, ephemeral: true });
+      }
+    } catch (e) {
+      // Last resort: just acknowledge
+      try { await interaction.deferUpdate(); } catch (_) {}
+    }
+  }
+}
+
 function getNextAction(user) {
   const stage = getUserJourneyStage(user);
   const actions = {
@@ -317,7 +335,32 @@ export async function handleButton(interaction, action) {
   
   const handler = handlers[action];
   if (handler) {
-    await handler(interaction);
+    try {
+      await handler(interaction);
+    } catch (error) {
+      console.error(`Help button handler error (${action}):`, error);
+      // Attempt to show a graceful error
+      try {
+        if (interaction.replied || interaction.deferred) {
+          await interaction.followUp({ content: `❌ Failed to load panel. Try \`/${action}\` directly.`, ephemeral: true });
+        } else {
+          await interaction.reply({ content: `❌ Failed to load panel. Try \`/${action}\` directly.`, ephemeral: true });
+        }
+      } catch (e) {
+        // Last resort - acknowledge the interaction
+        try { await interaction.deferUpdate(); } catch (_) {}
+      }
+    }
+  } else {
+    // Unknown action - provide a helpful fallback
+    try {
+      await interaction.reply({ 
+        content: `✨ Use \`/${action}\` to access this feature!`, 
+        ephemeral: true 
+      });
+    } catch (e) {
+      try { await interaction.deferUpdate(); } catch (_) {}
+    }
   }
 }
 
@@ -326,13 +369,32 @@ export async function handleButton(interaction, action) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function handleQuickStartButton(interaction, action) {
-  if (action === 'quiz') {
-    await showQuizPanel(interaction);
-  } else if (action === 'learn') {
-    await showLearnPanel(interaction);
-  } else if (action === 'explore') {
-    const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
-    await showReturningUserDashboard({ ...interaction, reply: interaction.update.bind(interaction) }, user);
+  try {
+    if (action === 'quiz') {
+      await showQuizPanel(interaction);
+    } else if (action === 'learn') {
+      await showLearnPanel(interaction);
+    } else if (action === 'explore') {
+      const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+      await showReturningUserDashboard({ ...interaction, reply: interaction.update.bind(interaction) }, user);
+    } else {
+      // Unknown action - provide fallback
+      await interaction.reply({ 
+        content: `✨ Getting started? Try \`/quiz\` or \`/learn\` to begin!`, 
+        ephemeral: true 
+      });
+    }
+  } catch (error) {
+    console.error(`QuickStart button error (${action}):`, error);
+    try {
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: '❌ Something went wrong. Try `/help` again!', ephemeral: true });
+      } else {
+        await interaction.reply({ content: '❌ Something went wrong. Try `/help` again!', ephemeral: true });
+      }
+    } catch (e) {
+      try { await interaction.deferUpdate(); } catch (_) {}
+    }
   }
 }
 
@@ -407,7 +469,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [topicMenu, buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [topicMenu, buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -480,7 +542,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [topicMenu, buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [topicMenu, buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -548,7 +610,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -619,7 +681,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -672,7 +734,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -735,7 +797,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -802,7 +864,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -870,7 +932,7 @@ ${VISUALS.separators.fancy}
       .setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.update({ embeds: [embed], components: [buttons] });
+  await safeUpdate(interaction, { embeds: [embed], components: [buttons] });
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -894,6 +956,15 @@ async function showMainMenu(interaction) {
     }
   } catch (error) {
     console.error('Show main menu error:', error);
+    // Must acknowledge the interaction to prevent "This interaction failed"
+    try {
+      await interaction.deferUpdate();
+    } catch (e) {
+      // Fallback to reply if update fails
+      try {
+        await interaction.reply({ content: '❌ Failed to load menu. Try `/help` again!', ephemeral: true });
+      } catch (_) {}
+    }
   }
 }
 
@@ -902,50 +973,59 @@ async function showMainMenu(interaction) {
 // ═══════════════════════════════════════════════════════════════════════════════
 
 export async function handleCategorySelect(interaction, category) {
-  const categoryEmbeds = {
-    learning: createLearningCategoryEmbed(),
-    quizzes: createQuizzesCategoryEmbed(),
-    progress: createProgressCategoryEmbed(),
-    social: createSocialCategoryEmbed(),
-    daily: createDailyCategoryEmbed(),
-    all: createAllCommandsEmbed(),
-  };
-  
-  const embed = categoryEmbeds[category] || categoryEmbeds.all;
-  
-  const categoryMenu = new ActionRowBuilder().addComponents(
-    new StringSelectMenuBuilder()
-      .setCustomId('help_category_v4')
-      .setPlaceholder('📂 Explore command categories...')
-      .addOptions([
-        { label: 'Learning', description: 'AI lessons, explanations, topics', value: 'learning', emoji: '📚' },
-        { label: 'Quizzes & Challenges', description: 'Test knowledge, quiz battles', value: 'quizzes', emoji: '🎯' },
-        { label: 'Progress & Stats', description: 'XP, levels, achievements', value: 'progress', emoji: '📊' },
-        { label: 'Social', description: 'Leaderboards, study parties', value: 'social', emoji: '👥' },
-        { label: 'Daily & Streaks', description: 'Daily bonus, streak rewards', value: 'daily', emoji: '🔥' },
-        { label: 'All Commands', description: 'Complete command reference', value: 'all', emoji: '📋' }
-      ])
-  );
+  try {
+    const categoryEmbeds = {
+      learning: createLearningCategoryEmbed(),
+      quizzes: createQuizzesCategoryEmbed(),
+      progress: createProgressCategoryEmbed(),
+      social: createSocialCategoryEmbed(),
+      daily: createDailyCategoryEmbed(),
+      all: createAllCommandsEmbed(),
+    };
+    
+    const embed = categoryEmbeds[category] || categoryEmbeds.all;
+    
+    const categoryMenu = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId('help_category_v4')
+        .setPlaceholder('📂 Explore command categories...')
+        .addOptions([
+          { label: 'Learning', description: 'AI lessons, explanations, topics', value: 'learning', emoji: '📚' },
+          { label: 'Quizzes & Challenges', description: 'Test knowledge, quiz battles', value: 'quizzes', emoji: '🎯' },
+          { label: 'Progress & Stats', description: 'XP, levels, achievements', value: 'progress', emoji: '📊' },
+          { label: 'Social', description: 'Leaderboards, study parties', value: 'social', emoji: '👥' },
+          { label: 'Daily & Streaks', description: 'Daily bonus, streak rewards', value: 'daily', emoji: '🔥' },
+          { label: 'All Commands', description: 'Complete command reference', value: 'all', emoji: '📋' }
+        ])
+    );
 
-  const buttons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('help_action_quiz')
-      .setLabel('Quiz')
-      .setEmoji(EMOJIS.quiz)
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('help_action_learn')
-      .setLabel('Learn')
-      .setEmoji(EMOJIS.learn)
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('help_action_back')
-      .setLabel('Main Menu')
-      .setEmoji(EMOJIS.home)
-      .setStyle(ButtonStyle.Secondary)
-  );
+    const buttons = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('help_action_quiz')
+        .setLabel('Quiz')
+        .setEmoji(EMOJIS.quiz)
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId('help_action_learn')
+        .setLabel('Learn')
+        .setEmoji(EMOJIS.learn)
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_action_back')
+        .setLabel('Main Menu')
+        .setEmoji(EMOJIS.home)
+        .setStyle(ButtonStyle.Secondary)
+    );
 
-  await interaction.update({ embeds: [embed], components: [categoryMenu, buttons] });
+    await safeUpdate(interaction, { embeds: [embed], components: [categoryMenu, buttons] });
+  } catch (error) {
+    console.error('Category select error:', error);
+    try {
+      await interaction.reply({ content: '❌ Failed to load category. Try `/help` again!', ephemeral: true });
+    } catch (e) {
+      try { await interaction.deferUpdate(); } catch (_) {}
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

@@ -222,6 +222,14 @@ async function handleButton(interaction) {
       // Handle insights buttons
       const { handleInsightsButton } = await import('../commands/insights.js');
       await handleInsightsButton(interaction, action, params);
+    } else {
+      // Unknown button category - provide fallback
+      logger.warn(`Unknown button category: ${category}_${action}`);
+      try {
+        await interaction.reply({ content: '✨ This feature is coming soon! Try `/help` to explore.', ephemeral: true });
+      } catch (e) {
+        try { await interaction.deferUpdate(); } catch (_) {}
+      }
     }
   } catch (error) {
     logger.error('Button error:', error);
@@ -369,9 +377,31 @@ async function handleSelectMenu(interaction) {
     } else if (customId === 'learn_topic_select' || customId === 'learn_topic_select_v4') {
       // NEW: Start lesson with selected topic (both old and V4 versions)
       await startLearnFromHelpMenu(interaction, value);
+    } else if (customId === 'help_topic_select') {
+      // NEW V5: Handle topic selection from new user welcome flow
+      // Start a quiz with the selected topic for new users
+      await startQuizFromHelpMenu(interaction, value);
+    } else {
+      // Unknown select menu - provide fallback
+      logger.warn(`Unknown select menu: ${customId}`);
+      try {
+        await interaction.reply({ content: '✨ Feature coming soon! Try `/help` to explore.', ephemeral: true });
+      } catch (e) {
+        try { await interaction.deferUpdate(); } catch (_) {}
+      }
     }
   } catch (error) {
     logger.error('Select menu error:', error);
+    // Attempt to respond with an error
+    try {
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({ content: '❌ Something went wrong. Please try again!', ephemeral: true });
+      } else {
+        await interaction.reply({ content: '❌ Something went wrong. Please try again!', ephemeral: true });
+      }
+    } catch (e) {
+      try { await interaction.deferUpdate(); } catch (_) {}
+    }
   }
 }
 
@@ -888,7 +918,96 @@ async function executeCommandFromButton(interaction, commandName) {
 
 // NEW V4: Handle exec_ buttons from V4 help menu
 async function handleExecButton(interaction, action, params) {
-  // Map of actions to command names
+  // Commands that need special handling (require options or have interactive flows)
+  const specialHandlers = {
+    'quiz': () => showQuizTopicSelector(interaction),
+    'learn': () => showLearnTopicSelector(interaction),
+    'explain': async () => {
+      // Explain needs a concept - show a prompt
+      await interaction.reply({
+        content: `💡 **Explain a Concept**\n\nUse \`/explain concept:your-topic\` to get AI-powered explanations!\n\n> Example: \`/explain concept:async await\``,
+        ephemeral: true
+      });
+    },
+    'path': async () => {
+      // Path needs subcommand - execute browse by default
+      const command = interaction.client.commands.get('path');
+      if (!command) {
+        return interaction.reply({ content: '❌ Path command not found', ephemeral: true });
+      }
+      try {
+        await interaction.deferReply();
+        const fakeInteraction = {
+          ...interaction,
+          isChatInputCommand: () => true,
+          isButton: () => false,
+          commandName: 'path',
+          options: {
+            getSubcommand: () => 'browse',
+            getString: () => null,
+            getInteger: () => null,
+            getUser: () => null,
+            get: () => null
+          },
+          replied: true,
+          deferred: true,
+          reply: async (opts) => interaction.editReply(opts),
+          deferReply: async () => {},
+          editReply: async (opts) => interaction.editReply(opts),
+          followUp: async (opts) => interaction.followUp(opts)
+        };
+        await command.execute(fakeInteraction);
+      } catch (error) {
+        logger.error('Path exec error:', error);
+        await interaction.editReply({ content: '❌ Failed. Try `/path browse` directly.' });
+      }
+    },
+    'challenge': async () => {
+      await interaction.reply({
+        content: `⚔️ **Challenge a Friend!**\n\nUse \`/challenge @username\` to start a 1v1 quiz battle!\n\n> Example: \`/challenge @${interaction.user.username}\``,
+        ephemeral: true
+      });
+    },
+    'weekly': async () => {
+      const command = interaction.client.commands.get('weekly');
+      if (!command) {
+        return interaction.reply({ content: '❌ Weekly command not found', ephemeral: true });
+      }
+      try {
+        await interaction.deferReply();
+        const fakeInteraction = {
+          ...interaction,
+          isChatInputCommand: () => true,
+          isButton: () => false,
+          commandName: 'weekly',
+          options: {
+            getSubcommand: () => 'challenge',
+            getString: () => null,
+            getInteger: () => null,
+            getUser: () => null,
+            get: () => null
+          },
+          replied: true,
+          deferred: true,
+          reply: async (opts) => interaction.editReply(opts),
+          deferReply: async () => {},
+          editReply: async (opts) => interaction.editReply(opts),
+          followUp: async (opts) => interaction.followUp(opts)
+        };
+        await command.execute(fakeInteraction);
+      } catch (error) {
+        logger.error('Weekly exec error:', error);
+        await interaction.editReply({ content: '❌ Failed to load weekly challenge' });
+      }
+    }
+  };
+  
+  // Check for special handlers first
+  if (specialHandlers[action]) {
+    return await specialHandlers[action]();
+  }
+  
+  // Map of simple commands that can be executed directly
   const commandMap = {
     'daily': 'daily',
     'profile': 'profile',
@@ -899,66 +1018,10 @@ async function handleExecButton(interaction, action, params) {
     'topics': 'topics',
     'help': 'help',
     'stats': 'stats',
-    'weekly': 'weekly',
     'funfact': 'funfact',
-    'path': 'path',
     'share': 'share',
-    'quickquiz': 'quickquiz',
-    'explain': 'explain'
+    'quickquiz': 'quickquiz'
   };
-  
-  // Special commands that need topic selection
-  if (action === 'quiz' || action === 'learn') {
-    if (action === 'quiz') {
-      return showQuizTopicSelector(interaction);
-    } else {
-      return showLearnTopicSelector(interaction);
-    }
-  }
-  
-  // Special handling for challenge command (needs a user mention)
-  if (action === 'challenge') {
-    return interaction.reply({
-      content: `⚔️ **Challenge a Friend!**\n\nUse \`/challenge @username\` to start a 1v1 quiz battle!\n\n> Example: \`/challenge @${interaction.user.username}\``,
-      ephemeral: true
-    });
-  }
-  
-  // Special handling for weekly command (needs subcommand)
-  if (action === 'weekly') {
-    const command = interaction.client.commands.get('weekly');
-    if (!command) {
-      return interaction.reply({ content: '❌ Weekly command not found', ephemeral: true });
-    }
-    
-    try {
-      await interaction.deferReply();
-      const fakeInteraction = {
-        ...interaction,
-        isChatInputCommand: () => true,
-        isButton: () => false,
-        commandName: 'weekly',
-        options: {
-          getSubcommand: () => 'challenge',
-          getString: () => null,
-          getInteger: () => null,
-          getUser: () => null,
-          get: () => null
-        },
-        replied: true,
-        deferred: true,
-        reply: async (opts) => interaction.editReply(opts),
-        deferReply: async () => {},
-        editReply: async (opts) => interaction.editReply(opts),
-        followUp: async (opts) => interaction.followUp(opts)
-      };
-      await command.execute(fakeInteraction);
-      return;
-    } catch (error) {
-      logger.error('Weekly exec error:', error);
-      return interaction.editReply({ content: '❌ Failed to load weekly challenge' });
-    }
-  }
   
   const commandName = commandMap[action];
   if (!commandName) {
@@ -1820,7 +1883,15 @@ async function sendError(interaction, message) {
       await interaction.reply({ embeds: [embed], ephemeral: true });
     }
   } catch (e) {
+    // Last resort - try to acknowledge the interaction to prevent "failed" message
     logger.error('Failed to send error:', e);
+    try {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.deferUpdate();
+      }
+    } catch (_) {
+      // Interaction truly expired, nothing we can do
+    }
   }
 }
 
