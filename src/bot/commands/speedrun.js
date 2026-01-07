@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { getOrCreateUser, addXpToUser } from '../../services/gamificationService.js';
 import { executeCode } from '../../services/codeExecutionService.js';
-import SpeedrunProblem, { SEED_SPEEDRUNS } from '../../database/models/SpeedrunProblem.js';
+import { SpeedrunProblem, SEED_SPEEDRUNS } from '../../database/models/SpeedrunProblem.js';
 import { COLORS, EMOJIS, createProgressBar } from '../../config/designSystem.js';
 
 // Active speedrun sessions

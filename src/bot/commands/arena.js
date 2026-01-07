@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { Arena } from '../../database/models/Arena.js';
 import { getOrCreateUser, addXpToUser } from '../../services/gamificationService.js';
-import { generateQuizQuestions } from '../../services/quizService.js';
+import { generateQuiz } from '../../ai/index.js';
 import { COLORS, EMOJIS, createProgressBar } from '../../config/designSystem.js';
 
 // Active arenas cache (for quick lookups)
@@ -465,8 +465,8 @@ async function startArena(interaction, joinCode) {
 
     await interaction.editReply({ embeds: [loadingEmbed], components: [] });
 
-    // Generate quiz questions
-    const questions = await generateQuizQuestions(arena.topic, arena.questionCount, arena.difficulty);
+    // Generate quiz questions using AI
+    const questions = await generateQuiz(arena.topic, arena.questionCount, arena.difficulty);
     
     if (!questions || questions.length === 0) {
       const errorEmbed = new EmbedBuilder()
