@@ -290,8 +290,8 @@ function initStats() {
 
 async function updateAllStats() {
   try {
-    console.log(`📊 Fetching stats from: ${API_BASE}/api/public/stats`);
-    const response = await fetch(`${API_BASE}/api/public/stats`, {
+    console.log(`📊 Fetching stats from: ${API_BASE}/api/public/website-stats`);
+    const response = await fetch(`${API_BASE}/api/public/website-stats`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       mode: 'cors',
@@ -628,8 +628,8 @@ async function fetchLeaderboard() {
   if (!container) return;
   
   try {
-    console.log(`🏆 Fetching leaderboard from: ${API_BASE}/api/public/leaderboard`);
-    const response = await fetch(`${API_BASE}/api/public/leaderboard?limit=10`, {
+    console.log(`🏆 Fetching leaderboard from: ${API_BASE}/api/public/website-leaderboard`);
+    const response = await fetch(`${API_BASE}/api/public/website-leaderboard?limit=10`, {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       mode: 'cors'

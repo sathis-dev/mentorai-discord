@@ -1056,10 +1056,12 @@ addLog('SYSTEM', 'Admin panel started');
 
 // ============================================================
 // PUBLIC API ENDPOINTS (for website)
+// These routes use /website-* prefix to avoid conflicts with admin routes
+// They're mounted at /api/public, so /website-stats becomes /api/public/website-stats
 // ============================================================
 
-// GET /api/public/stats - Public stats endpoint for website (REAL DATA ONLY)
-router.get('/public/stats', async (req, res) => {
+// GET /api/public/website-stats - Public stats endpoint for website (REAL DATA ONLY)
+router.get('/website-stats', async (req, res) => {
   try {
     const now = new Date();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
@@ -1207,8 +1209,8 @@ function formatLargeNumber(num) {
   return num.toString();
 }
 
-// GET /api/public/leaderboard - Public leaderboard for website
-router.get('/public/leaderboard', async (req, res) => {
+// GET /api/public/website-leaderboard - Public leaderboard for website
+router.get('/website-leaderboard', async (req, res) => {
   try {
     // Check if database is connected
     const mongoose = await import('mongoose');
