@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Build version: 2026-01-08-v3 - Force rebuild
 import { connectDatabase } from '../database/connection.js';
 import apiRoutes from './routes/api.js';
 import authRoutes from './routes/auth.js';
