@@ -5,6 +5,7 @@
     "dockerfilePath": "Dockerfile",
     "watchPatterns": [
       "src/**",
+      "website/**",
       "package.json",
       "Dockerfile"
     ]
