@@ -60,7 +60,7 @@
                 <a href="#how-it-works" class="nav-link">How It Works</a>
                 <a href="#stats" class="nav-link">Stats</a>
                 <a href="#commands" class="nav-link">Commands</a>
-                <a href="#testimonials" class="nav-link">Reviews</a>
+                <a href="#testimonials" class="nav-link">Leaderboard</a>
             </div>
             
             <div class="nav-buttons">
@@ -134,9 +134,9 @@
                 <div class="hero-trust animate-fade-in-up delay-4">
                     <span class="trust-text">Trusted by learners from</span>
                     <div class="trust-logos">
-                        <span class="trust-logo">🌍 50+ Countries</span>
-                        <span class="trust-logo">🏫 100+ Servers</span>
-                        <span class="trust-logo">⭐ 4.9/5 Rating</span>
+                        <span class="trust-logo" id="trust-countries">🌍 Loading...</span>
+                        <span class="trust-logo" id="trust-servers">🏫 Loading...</span>
+                        <span class="trust-logo" id="trust-rating">⭐ Loading...</span>
                     </div>
                 </div>
             </div>
@@ -459,69 +459,69 @@
             </div>
             
             <div class="stats-grid">
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="users">
                     <div class="stat-card-icon">👥</div>
-                    <div class="stat-card-value" data-target="12547" data-suffix="">
-                        <span class="counter">0</span>
+                    <div class="stat-card-value" id="stat-total-users">
+                        <span class="counter">--</span>
                     </div>
                     <div class="stat-card-label">Total Users</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> +234 this week
+                    <div class="stat-card-trend trend-up" id="stat-total-users-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
                 
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="servers">
                     <div class="stat-card-icon">🏫</div>
-                    <div class="stat-card-value" data-target="156" data-suffix="">
-                        <span class="counter">0</span>
+                    <div class="stat-card-value" id="stat-servers">
+                        <span class="counter">--</span>
                     </div>
                     <div class="stat-card-label">Discord Servers</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> +12 this week
+                    <div class="stat-card-trend trend-up" id="stat-servers-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
                 
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="lessons">
                     <div class="stat-card-icon">📚</div>
-                    <div class="stat-card-value" data-target="89432" data-suffix="">
-                        <span class="counter">0</span>
+                    <div class="stat-card-value" id="stat-lessons-card">
+                        <span class="counter">--</span>
                     </div>
-                    <div class="stat-card-label">Lessons Generated</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> +1.2K this week
+                    <div class="stat-card-label">Lessons Completed</div>
+                    <div class="stat-card-trend trend-up" id="stat-lessons-card-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
                 
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="quizzes">
                     <div class="stat-card-icon">🎯</div>
-                    <div class="stat-card-value" data-target="234567" data-suffix="">
-                        <span class="counter">0</span>
+                    <div class="stat-card-value" id="stat-quizzes-card">
+                        <span class="counter">--</span>
                     </div>
                     <div class="stat-card-label">Quizzes Completed</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> +5.6K this week
+                    <div class="stat-card-trend trend-up" id="stat-quizzes-card-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
                 
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="totalXP">
                     <div class="stat-card-icon">✨</div>
-                    <div class="stat-card-value" data-target="45" data-suffix="M">
-                        <span class="counter">0</span>M
+                    <div class="stat-card-value" id="stat-total-xp">
+                        <span class="counter">--</span>
                     </div>
                     <div class="stat-card-label">Total XP Earned</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> +2.1M this week
+                    <div class="stat-card-trend trend-up" id="stat-total-xp-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
                 
-                <div class="stat-card animate-on-scroll">
+                <div class="stat-card animate-on-scroll" data-stat-key="activeStreaks">
                     <div class="stat-card-icon">🔥</div>
-                    <div class="stat-card-value" data-target="847" data-suffix="">
-                        <span class="counter">0</span>
+                    <div class="stat-card-value" id="stat-streaks">
+                        <span class="counter">--</span>
                     </div>
                     <div class="stat-card-label">Active Streaks</div>
-                    <div class="stat-card-trend trend-up">
-                        <i class="fas fa-arrow-up"></i> Longest: 142 days
+                    <div class="stat-card-trend trend-up" id="stat-streaks-trend">
+                        <i class="fas fa-sync fa-spin"></i> Loading...
                     </div>
                 </div>
             </div>
@@ -666,58 +666,35 @@
         </div>
     </section>
 
-    <!-- Testimonials Section -->
+    <!-- Live Leaderboard Section (Real Data) -->
     <section class="testimonials" id="testimonials">
         <div class="container">
             <div class="section-header">
-                <span class="section-badge">💬 Reviews</span>
-                <h2 class="section-title">Loved by <span class="gradient-text">Learners</span></h2>
+                <span class="section-badge">🏆 Leaderboard</span>
+                <h2 class="section-title">Top <span class="gradient-text">Learners</span></h2>
                 <p class="section-description">
-                    See what our community has to say about MentorAI.
+                    Real-time leaderboard of our most dedicated learners. Updated live from the database.
                 </p>
             </div>
             
-            <div class="testimonials-slider">
-                <div class="testimonial-card animate-on-scroll">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">
-                        "MentorAI made learning Python actually fun! The XP system keeps me coming back every day. I've maintained a 45-day streak!"
-                    </p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">👨‍💻</div>
-                        <div class="author-info">
-                            <span class="author-name">Alex K.</span>
-                            <span class="author-level">Level 23 • Python Master</span>
-                        </div>
+            <div class="leaderboard-container animate-on-scroll">
+                <div class="leaderboard-header">
+                    <span class="lb-col lb-rank">Rank</span>
+                    <span class="lb-col lb-user">User</span>
+                    <span class="lb-col lb-level">Level</span>
+                    <span class="lb-col lb-xp">XP</span>
+                    <span class="lb-col lb-streak">Streak</span>
+                </div>
+                <div id="leaderboard-body" class="leaderboard-body">
+                    <div class="leaderboard-loading">
+                        <i class="fas fa-sync fa-spin"></i> Loading leaderboard...
                     </div>
                 </div>
-                
-                <div class="testimonial-card animate-on-scroll">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">
-                        "The AI-generated lessons are incredible. It's like having a personal tutor available 24/7. Best Discord bot I've ever used!"
-                    </p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">👩‍💻</div>
-                        <div class="author-info">
-                            <span class="author-name">Sarah M.</span>
-                            <span class="author-level">Level 31 • Full Stack Dev</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="testimonial-card animate-on-scroll">
-                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
-                    <p class="testimonial-text">
-                        "Our coding community server loves MentorAI. The challenges are so competitive and fun. Engagement is through the roof!"
-                    </p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">🎮</div>
-                        <div class="author-info">
-                            <span class="author-name">Mike R.</span>
-                            <span class="author-level">Server Owner • 500+ Members</span>
-                        </div>
-                    </div>
+                <div class="leaderboard-footer">
+                    <span class="lb-update-time" id="lb-update-time">Last updated: --</span>
+                    <a href="dashboard.html" class="btn btn-small btn-outline">
+                        View Full Leaderboard <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
             </div>
         </div>
