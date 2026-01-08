@@ -1054,6 +1054,134 @@ router.post('/users/:id/revoke-access', async (req, res) => {
 // Initialize with startup log
 addLog('SYSTEM', 'Admin panel started');
 
+// ============================================================
+// PUBLIC API ENDPOINTS (for website)
+// ============================================================
+
+// GET /api/public/stats - Public stats endpoint for website
+router.get('/public/stats', async (req, res) => {
+  try {
+    const [
+      userCount,
+      lessonCountResult,
+      quizCountResult,
+      totalXPResult,
+      activeStreaks
+    ] = await Promise.all([
+      User.countDocuments(),
+      User.aggregate([{ $group: { _id: null, total: { $sum: { $size: { $ifNull: ['$completedLessons', []] } } } } }]),
+      User.aggregate([{ $group: { _id: null, total: { $sum: '$quizzesTaken' } } }]),
+      User.aggregate([{ $group: { _id: null, total: { $sum: '$xp' } } }]),
+      User.countDocuments({ streak: { $gt: 0 } })
+    ]);
+    
+    const stats = {
+      users: userCount,
+      servers: global.discordClient?.guilds?.cache?.size || 100,
+      lessons: lessonCountResult[0]?.total || 0,
+      quizzes: quizCountResult[0]?.total || 0,
+      totalXP: totalXPResult[0]?.total || 0,
+      activeStreaks: activeStreaks,
+      timestamp: Date.now()
+    };
+    
+    res.json({ success: true, data: stats });
+  } catch (error) {
+    console.error('Public stats API error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch stats' });
+  }
+});
+
+// GET /api/public/leaderboard - Public leaderboard for website
+router.get('/public/leaderboard', async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit) || 10, 100);
+    const page = parseInt(req.query.page) || 1;
+    const skip = (page - 1) * limit;
+    
+    const users = await User.find({})
+      .sort({ xp: -1 })
+      .skip(skip)
+      .limit(limit)
+      .select('username xp level streak achievements -_id');
+    
+    const total = await User.countDocuments();
+    
+    res.json({
+      success: true,
+      data: {
+        users: users.map((u, i) => ({
+          rank: skip + i + 1,
+          username: u.username,
+          xp: u.xp,
+          level: u.level,
+          streak: u.streak,
+          achievementCount: u.achievements?.length || 0
+        })),
+        pagination: {
+          page,
+          limit,
+          total,
+          pages: Math.ceil(total / limit)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Public leaderboard API error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// GET /api/user/:discordId - User profile for dashboard
+router.get('/user/:discordId', async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.params.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    // Calculate rank
+    const rank = await User.countDocuments({ xp: { $gt: user.xp } }) + 1;
+    
+    res.json({
+      success: true,
+      data: {
+        username: user.username,
+        xp: user.xp,
+        level: user.level,
+        streak: user.streak,
+        rank: rank,
+        quizzesTaken: user.quizzesTaken || 0,
+        correctAnswers: user.correctAnswers || 0,
+        totalQuestions: user.totalQuestions || 0,
+        accuracy: user.totalQuestions > 0 
+          ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+          : 0,
+        achievements: user.achievements || [],
+        completedLessons: user.completedLessons?.length || 0,
+        topicsStudied: user.topicsStudied?.length || 0,
+        longestStreak: user.longestStreak || user.streak,
+        joinedAt: user.createdAt
+      }
+    });
+  } catch (error) {
+    console.error('User API error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch user' });
+  }
+});
+
+// GET /api/health - Health check for monitoring
+router.get('/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'operational',
+    uptime: process.uptime(),
+    timestamp: Date.now(),
+    version: '3.0.0'
+  });
+});
+
 // Export router as default, and other items as named exports
 export default router;
 export { getAdminStats, addLog, botConfig };

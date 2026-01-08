@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MentorAI</title>
+    
+    <!-- SEO -->
+    <meta name="description" content="Track your MentorAI progress, view achievements, and manage your learning journey.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Dashboard Specific Styles */
+        .dashboard-container {
+            min-height: 100vh;
+            padding-top: 100px;
+        }
+        
+        .dashboard-header {
+            margin-bottom: var(--space-2xl);
+        }
+        
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            gap: var(--space-lg);
+            margin-bottom: var(--space-xl);
+        }
+        
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            border: 3px solid var(--color-primary);
+        }
+        
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .user-info h1 {
+            font-size: 1.75rem;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .user-rank {
+            color: var(--color-primary-light);
+            font-weight: 500;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-lg);
+            margin-bottom: var(--space-2xl);
+        }
+        
+        .dash-stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+            transition: var(--transition-base);
+        }
+        
+        .dash-stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--color-primary);
+        }
+        
+        .dash-stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-md);
+        }
+        
+        .dash-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: var(--space-xs);
+        }
+        
+        .dash-stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .dashboard-sections {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: var(--space-xl);
+        }
+        
+        .section-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xl);
+        }
+        
+        .section-card h2 {
+            font-size: 1.25rem;
+            margin-bottom: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+        }
+        
+        .progress-bar-large {
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: var(--radius-full);
+            overflow: hidden;
+            margin-bottom: var(--space-md);
+        }
+        
+        .progress-bar-large .fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: var(--radius-full);
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        .achievement-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-md);
+        }
+        
+        .achievement-item {
+            text-align: center;
+            padding: var(--space-md);
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius-md);
+            transition: var(--transition-base);
+        }
+        
+        .achievement-item:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .achievement-item.locked {
+            opacity: 0.4;
+            filter: grayscale(1);
+        }
+        
+        .achievement-icon {
+            font-size: 2rem;
+            margin-bottom: var(--space-sm);
+        }
+        
+        .achievement-name {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        
+        .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-md);
+        }
+        
+        .activity-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-md);
+            background: rgba(255,255,255,0.03);
+            border-radius: var(--radius-md);
+        }
+        
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(88, 101, 242, 0.1);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .activity-content {
+            flex: 1;
+        }
+        
+        .activity-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+        
+        .activity-time {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+        
+        .activity-xp {
+            color: var(--color-secondary);
+            font-weight: 600;
+        }
+        
+        .login-prompt {
+            text-align: center;
+            padding: var(--space-3xl);
+        }
+        
+        .login-prompt h2 {
+            font-size: 1.75rem;
+            margin-bottom: var(--space-md);
+        }
+        
+        .login-prompt p {
+            color: var(--text-secondary);
+            margin-bottom: var(--space-xl);
+        }
+        
+        @media (max-width: 1024px) {
+            .dashboard-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .dashboard-sections {
+                grid-template-columns: 1fr;
+            }
+            
+            .achievement-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .achievement-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .user-welcome {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div id="particles-bg"></div>
+    <div class="gradient-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar scrolled" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon">🎓</div>
+                <span class="logo-text">MentorAI</span>
+            </a>
+            
+            <div class="nav-links" id="navLinks">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="index.html#features" class="nav-link">Features</a>
+                <a href="index.html#commands" class="nav-link">Commands</a>
+            </div>
+            
+            <div class="nav-buttons">
+                <a href="https://discord.com/api/oauth2/authorize?client_id=1329498659498438686&permissions=277025704960&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+                    <i class="fab fa-discord"></i>
+                    Add Bot
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Dashboard Content -->
+    <main class="dashboard-container">
+        <div class="container">
+            <!-- Not Logged In State -->
+            <div id="loginPrompt" class="section-card login-prompt">
+                <div class="user-avatar" style="width: 100px; height: 100px; margin: 0 auto var(--space-xl);">
+                    🎓
+                </div>
+                <h2>Welcome to Your Dashboard</h2>
+                <p>Connect your Discord account to view your learning progress, achievements, and statistics.</p>
+                <a href="#" id="discordLoginBtn" class="btn btn-large btn-primary">
+                    <i class="fab fa-discord"></i>
+                    Login with Discord
+                    <span class="btn-shine"></span>
+                </a>
+                <p style="margin-top: var(--space-lg); font-size: 0.85rem; color: var(--text-tertiary);">
+                    Don't have an account? Just use MentorAI in any Discord server and your progress will be saved automatically!
+                </p>
+            </div>
+
+            <!-- Logged In State (Hidden by default) -->
+            <div id="dashboardContent" style="display: none;">
+                <!-- Header -->
+                <div class="dashboard-header">
+                    <div class="user-welcome">
+                        <div class="user-avatar" id="userAvatar">
+                            🎓
+                        </div>
+                        <div class="user-info">
+                            <h1>Welcome back, <span id="userName">Learner</span>!</h1>
+                            <span class="user-rank" id="userRank">🌟 Code Apprentice • Level 12</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Grid -->
+                <div class="dashboard-grid">
+                    <div class="dash-stat-card">
+                        <div class="dash-stat-icon">✨</div>
+                        <div class="dash-stat-value" id="totalXP">0</div>
+                        <div class="dash-stat-label">Total XP</div>
+                    </div>
+                    <div class="dash-stat-card">
+                        <div class="dash-stat-icon">🔥</div>
+                        <div class="dash-stat-value" id="streak">0</div>
+                        <div class="dash-stat-label">Day Streak</div>
+                    </div>
+                    <div class="dash-stat-card">
+                        <div class="dash-stat-icon">📚</div>
+                        <div class="dash-stat-value" id="lessonsCompleted">0</div>
+                        <div class="dash-stat-label">Lessons Completed</div>
+                    </div>
+                    <div class="dash-stat-card">
+                        <div class="dash-stat-icon">🎯</div>
+                        <div class="dash-stat-value" id="quizAccuracy">0%</div>
+                        <div class="dash-stat-label">Quiz Accuracy</div>
+                    </div>
+                </div>
+                
+                <!-- Main Sections -->
+                <div class="dashboard-sections">
+                    <!-- Progress Section -->
+                    <div class="section-card">
+                        <h2>📈 Level Progress</h2>
+                        <div class="progress-bar-large">
+                            <div class="fill" id="levelProgress" style="width: 65%;"></div>
+                        </div>
+                        <div class="progress-text">
+                            <span id="currentXP">3,250 XP</span>
+                            <span id="nextLevelXP">5,000 XP to Level 13</span>
+                        </div>
+                        
+                        <h2 style="margin-top: var(--space-xl);">🏆 Recent Achievements</h2>
+                        <div class="achievement-grid">
+                            <div class="achievement-item">
+                                <div class="achievement-icon">🎯</div>
+                                <div class="achievement-name">First Quiz</div>
+                            </div>
+                            <div class="achievement-item">
+                                <div class="achievement-icon">🔥</div>
+                                <div class="achievement-name">7-Day Streak</div>
+                            </div>
+                            <div class="achievement-item">
+                                <div class="achievement-icon">⚡</div>
+                                <div class="achievement-name">Speed Demon</div>
+                            </div>
+                            <div class="achievement-item">
+                                <div class="achievement-icon">📚</div>
+                                <div class="achievement-name">Bookworm</div>
+                            </div>
+                            <div class="achievement-item locked">
+                                <div class="achievement-icon">🏆</div>
+                                <div class="achievement-name">Champion</div>
+                            </div>
+                            <div class="achievement-item locked">
+                                <div class="achievement-icon">🌟</div>
+                                <div class="achievement-name">All-Star</div>
+                            </div>
+                            <div class="achievement-item locked">
+                                <div class="achievement-icon">💎</div>
+                                <div class="achievement-name">Diamond</div>
+                            </div>
+                            <div class="achievement-item locked">
+                                <div class="achievement-icon">👑</div>
+                                <div class="achievement-name">Legend</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Activity Section -->
+                    <div class="section-card">
+                        <h2>📋 Recent Activity</h2>
+                        <div class="activity-list" id="activityList">
+                            <div class="activity-item">
+                                <div class="activity-icon">📖</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Python Variables</div>
+                                    <div class="activity-time">2 hours ago</div>
+                                </div>
+                                <div class="activity-xp">+40 XP</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">🎯</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Quiz: 5/5 Correct</div>
+                                    <div class="activity-time">3 hours ago</div>
+                                </div>
+                                <div class="activity-xp">+75 XP</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">🔥</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Daily Streak Bonus</div>
+                                    <div class="activity-time">1 day ago</div>
+                                </div>
+                                <div class="activity-xp">+50 XP</div>
+                            </div>
+                            <div class="activity-item">
+                                <div class="activity-icon">⚔️</div>
+                                <div class="activity-content">
+                                    <div class="activity-title">Challenge Won!</div>
+                                    <div class="activity-time">2 days ago</div>
+                                </div>
+                                <div class="activity-xp">+100 XP</div>
+                            </div>
+                        </div>
+                        
+                        <a href="https://discord.gg/mentorai" class="btn btn-outline" style="width: 100%; margin-top: var(--space-lg);" target="_blank">
+                            <i class="fab fa-discord"></i>
+                            Continue Learning
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer" style="margin-top: var(--space-3xl);">
+        <div class="container">
+            <div class="footer-bottom" style="border-top: none; padding-top: 0;">
+                <p class="copyright">© 2026 MentorAI. Made with ❤️ for learners everywhere.</p>
+                <p class="footer-badge">
+                    <span class="status-dot"></span>
+                    All systems operational
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Discord OAuth Configuration
+        const CLIENT_ID = '1329498659498438686';
+        const REDIRECT_URI = window.location.origin + '/dashboard.html';
+        const DISCORD_AUTH_URL = `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+        
+        // Check for token in URL hash
+        document.addEventListener('DOMContentLoaded', () => {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+            
+            if (accessToken) {
+                // Store token and fetch user data
+                localStorage.setItem('discord_token', accessToken);
+                window.location.hash = ''; // Clean URL
+                fetchUserData(accessToken);
+            } else if (localStorage.getItem('discord_token')) {
+                // Use stored token
+                fetchUserData(localStorage.getItem('discord_token'));
+            }
+            
+            // Setup login button
+            document.getElementById('discordLoginBtn').href = DISCORD_AUTH_URL;
+        });
+        
+        async function fetchUserData(token) {
+            try {
+                // Fetch Discord user
+                const userResponse = await fetch('https://discord.com/api/users/@me', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (!userResponse.ok) {
+                    localStorage.removeItem('discord_token');
+                    return;
+                }
+                
+                const user = await userResponse.json();
+                
+                // Fetch MentorAI stats
+                let stats = null;
+                try {
+                    const statsResponse = await fetch(`/api/user/${user.id}`);
+                    if (statsResponse.ok) {
+                        const data = await statsResponse.json();
+                        if (data.success) stats = data.data;
+                    }
+                } catch (e) {
+                    console.log('Using demo stats');
+                }
+                
+                // Show dashboard
+                showDashboard(user, stats);
+                
+            } catch (error) {
+                console.error('Auth error:', error);
+                localStorage.removeItem('discord_token');
+            }
+        }
+        
+        function showDashboard(user, stats) {
+            document.getElementById('loginPrompt').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'block';
+            
+            // User info
+            document.getElementById('userName').textContent = user.username;
+            
+            const avatarEl = document.getElementById('userAvatar');
+            if (user.avatar) {
+                avatarEl.innerHTML = `<img src="https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png" alt="${user.username}">`;
+            }
+            
+            if (stats) {
+                // Real stats
+                document.getElementById('userRank').textContent = `🌟 Level ${stats.level} • Rank #${stats.rank}`;
+                document.getElementById('totalXP').textContent = stats.xp.toLocaleString();
+                document.getElementById('streak').textContent = stats.streak;
+                document.getElementById('lessonsCompleted').textContent = stats.completedLessons;
+                document.getElementById('quizAccuracy').textContent = stats.accuracy + '%';
+                
+                // Level progress
+                const currentLevelXP = stats.xp % 500; // Simplified
+                const progress = (currentLevelXP / 500) * 100;
+                document.getElementById('levelProgress').style.width = progress + '%';
+                document.getElementById('currentXP').textContent = stats.xp.toLocaleString() + ' XP';
+                document.getElementById('nextLevelXP').textContent = `${(500 - currentLevelXP).toLocaleString()} XP to Level ${stats.level + 1}`;
+            } else {
+                // Demo stats
+                document.getElementById('userRank').textContent = '🌟 Code Apprentice • Level 12';
+                document.getElementById('totalXP').textContent = '3,250';
+                document.getElementById('streak').textContent = '7';
+                document.getElementById('lessonsCompleted').textContent = '24';
+                document.getElementById('quizAccuracy').textContent = '87%';
+            }
+        }
+    </script>
+</body>
+</html>

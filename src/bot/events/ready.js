@@ -9,6 +9,9 @@ export async function execute(client) {
   logger.info(`📊 Serving ${client.guilds.cache.size} servers`);
   logger.info(`👥 Watching ${client.users.cache.size} users`);
   
+  // Store client globally for API access
+  global.discordClient = client;
+  
   // Set initial bot status
   client.user.setActivity('🎓 /help to start learning!', { 
     type: ActivityType.Custom 
@@ -24,11 +27,17 @@ export async function execute(client) {
     { name: '🔥 Build Your Daily Streak!', type: ActivityType.Custom },
     { name: '🏆 Unlock Achievements & Level Up', type: ActivityType.Custom },
     { name: '💡 /help - See All Commands', type: ActivityType.Playing },
+    { name: '🌐 mentorai.dev - Website', type: ActivityType.Custom },
+    { name: '⚔️ /challenge - 1v1 Battles', type: ActivityType.Playing },
   ];
   
   let index = 0;
   setInterval(() => {
     index = (index + 1) % statuses.length;
+    // Update server count dynamically
+    if (statuses[index].name.includes('servers')) {
+      statuses[index].name = `📚 Teaching ${client.guilds.cache.size}+ servers`;
+    }
     client.user.setActivity(statuses[index].name, { type: statuses[index].type });
   }, 20000); // Rotate every 20 seconds
 }

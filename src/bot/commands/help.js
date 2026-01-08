@@ -194,9 +194,25 @@ ${VISUALS.separators.fancy}
   // Topic Selection for new users
   const topicRow = createTopicSelectMenu('help_topic');
 
+  // Website links row
+  const websiteRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('🌐 Website')
+      .setURL('https://mentorai.dev')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setLabel('💬 Support')
+      .setURL('https://discord.gg/mentorai')
+      .setStyle(ButtonStyle.Link),
+    new ButtonBuilder()
+      .setLabel('➕ Add Bot')
+      .setURL(`https://discord.com/api/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=277025704960&scope=bot%20applications.commands`)
+      .setStyle(ButtonStyle.Link)
+  );
+
   await interaction.reply({ 
     embeds: [welcomeEmbed], 
-    components: [quickStartRow, topicRow] 
+    components: [quickStartRow, topicRow, websiteRow] 
   });
 }
 
@@ -313,15 +329,13 @@ ${VISUALS.separators.fancy}
       .setEmoji('🎖️')
       .setStyle(ButtonStyle.Secondary),
     new ButtonBuilder()
-      .setCustomId('help_action_streak')
-      .setLabel('Streak')
-      .setEmoji('🔥')
-      .setStyle(ButtonStyle.Secondary),
+      .setLabel('🌐 Website')
+      .setURL('https://mentorai.dev')
+      .setStyle(ButtonStyle.Link),
     new ButtonBuilder()
-      .setCustomId('help_action_topics')
-      .setLabel('Topics')
-      .setEmoji('📖')
-      .setStyle(ButtonStyle.Secondary)
+      .setLabel('💬 Support')
+      .setURL('https://discord.gg/mentorai')
+      .setStyle(ButtonStyle.Link)
   );
 
   await interaction.reply({ 

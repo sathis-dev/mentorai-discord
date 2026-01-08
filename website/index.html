@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MentorAI - Learn to Code Like Playing a Game</title>
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="MentorAI is an AI-powered Discord bot that makes learning to code fun through gamification, quizzes, and challenges.">
+    <meta name="keywords" content="discord bot, learn coding, AI tutor, programming, gamification">
+    <meta name="author" content="MentorAI Team">
+    
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mentorai.dev/">
+    <meta property="og:title" content="MentorAI - AI-Powered Coding Mentor">
+    <meta property="og:description" content="Learn to code like playing a game. AI lessons, quizzes, challenges, and more!">
+    <meta property="og:image" content="https://mentorai.dev/assets/og-image.png">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MentorAI - AI-Powered Coding Mentor">
+    <meta name="twitter:description" content="Learn to code like playing a game!">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+    <!-- Animated Background -->
+    <div id="particles-bg"></div>
+    <div class="gradient-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <div class="logo-icon">🎓</div>
+                <span class="logo-text">MentorAI</span>
+            </a>
+            
+            <div class="nav-links" id="navLinks">
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#how-it-works" class="nav-link">How It Works</a>
+                <a href="#stats" class="nav-link">Stats</a>
+                <a href="#commands" class="nav-link">Commands</a>
+                <a href="#testimonials" class="nav-link">Reviews</a>
+            </div>
+            
+            <div class="nav-buttons">
+                <a href="dashboard.html" class="btn btn-ghost">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+                <a href="https://discord.com/api/oauth2/authorize?client_id=1329498659498438686&permissions=277025704960&scope=bot%20applications.commands" class="btn btn-primary" target="_blank">
+                    <i class="fab fa-discord"></i>
+                    Add to Discord
+                </a>
+            </div>
+            
+            <button class="nav-toggle" id="navToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <div class="hero-badge animate-fade-in">
+                    <span class="badge-icon">🚀</span>
+                    <span class="badge-text">AI-Powered Learning</span>
+                </div>
+                
+                <h1 class="hero-title animate-fade-in-up">
+                    Learn to Code
+                    <span class="gradient-text">Like Playing a Game</span>
+                </h1>
+                
+                <p class="hero-description animate-fade-in-up delay-1">
+                    MentorAI transforms coding education into an adventure. 
+                    AI-generated lessons, interactive quizzes, XP rewards, 
+                    and friendly competition—all inside Discord.
+                </p>
+                
+                <div class="hero-stats animate-fade-in-up delay-2">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-users">0</span>
+                        <span class="stat-label">Active Learners</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-lessons">0</span>
+                        <span class="stat-label">Lessons Generated</span>
+                    </div>
+                    <div class="stat-divider"></div>
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-quizzes">0</span>
+                        <span class="stat-label">Quizzes Completed</span>
+                    </div>
+                </div>
+                
+                <div class="hero-buttons animate-fade-in-up delay-3">
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=1329498659498438686&permissions=277025704960&scope=bot%20applications.commands" class="btn btn-large btn-primary" target="_blank">
+                        <i class="fab fa-discord"></i>
+                        Add to Discord
+                        <span class="btn-shine"></span>
+                    </a>
+                    <a href="https://discord.gg/mentorai" class="btn btn-large btn-outline" target="_blank">
+                        <i class="fas fa-users"></i>
+                        Join Community
+                    </a>
+                </div>
+                
+                <div class="hero-trust animate-fade-in-up delay-4">
+                    <span class="trust-text">Trusted by learners from</span>
+                    <div class="trust-logos">
+                        <span class="trust-logo">🌍 50+ Countries</span>
+                        <span class="trust-logo">🏫 100+ Servers</span>
+                        <span class="trust-logo">⭐ 4.9/5 Rating</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-visual animate-float">
+                <div class="discord-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="mockup-title">Discord</span>
+                    </div>
+                    <div class="mockup-content">
+                        <div class="mock-message bot-message">
+                            <div class="mock-avatar">🎓</div>
+                            <div class="mock-embed">
+                                <div class="embed-accent"></div>
+                                <div class="embed-content">
+                                    <div class="embed-author">📖 MentorAI Lesson</div>
+                                    <div class="embed-title">🐍 Python Variables</div>
+                                    <div class="embed-desc">
+                                        Variables are containers for storing data values...
+                                    </div>
+                                    <div class="embed-fields">
+                                        <div class="embed-field">
+                                            <span class="field-name">✨ XP Earned</span>
+                                            <span class="field-value">+40 XP</span>
+                                        </div>
+                                        <div class="embed-field">
+                                            <span class="field-name">🔥 Streak</span>
+                                            <span class="field-value">5 days</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mock-buttons">
+                                <button class="mock-btn mock-btn-success">🟢 Easy Quiz</button>
+                                <button class="mock-btn mock-btn-primary">🟡 Medium</button>
+                                <button class="mock-btn mock-btn-danger">🔴 Hard</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Floating Elements -->
+                <div class="floating-card card-xp">
+                    <span class="card-icon">✨</span>
+                    <span class="card-text">+150 XP</span>
+                </div>
+                <div class="floating-card card-level">
+                    <span class="card-icon">⬆️</span>
+                    <span class="card-text">Level Up!</span>
+                </div>
+                <div class="floating-card card-achievement">
+                    <span class="card-icon">🏆</span>
+                    <span class="card-text">Achievement!</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-scroll">
+            <a href="#features" class="scroll-indicator">
+                <span class="scroll-text">Scroll to explore</span>
+                <div class="scroll-arrow">
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+            </a>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">✨ Features</span>
+                <h2 class="section-title">Everything You Need to <span class="gradient-text">Master Coding</span></h2>
+                <p class="section-description">
+                    MentorAI combines AI-powered content generation with game mechanics to create the most engaging learning experience.
+                </p>
+            </div>
+            
+            <div class="features-grid">
+                <!-- Feature 1 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">🧠</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">AI-Generated Lessons</h3>
+                    <p class="feature-description">
+                        GPT-4 powered lessons on any programming topic. Personalized explanations that adapt to your level.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">GPT-4o</span>
+                        <span class="tag">Personalized</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">🎯</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Interactive Quizzes</h3>
+                    <p class="feature-description">
+                        Test your knowledge with AI-generated quizzes. Multiple difficulties, instant feedback, and explanations.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">Instant Feedback</span>
+                        <span class="tag">3 Difficulties</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">✨</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">XP & Leveling</h3>
+                    <p class="feature-description">
+                        Earn XP for every activity. Level up, unlock ranks, and climb the global leaderboard.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">50 Levels</span>
+                        <span class="tag">7 Ranks</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">🔥</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Streak System</h3>
+                    <p class="feature-description">
+                        Build daily learning habits. Maintain streaks for XP multipliers up to 2x bonus!
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">Daily Rewards</span>
+                        <span class="tag">2x Multiplier</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">⚔️</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">1v1 Challenges</h3>
+                    <p class="feature-description">
+                        Challenge friends to quiz battles. Real-time competition with XP rewards for winners.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">Real-time</span>
+                        <span class="tag">Competitive</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">🏟️</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Multiplayer Arena</h3>
+                    <p class="feature-description">
+                        Join up to 8 players in quiz arenas. First to answer correctly gets bonus points!
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">8 Players</span>
+                        <span class="tag">Speed Bonus</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 7 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">💻</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Code Execution</h3>
+                    <p class="feature-description">
+                        Run code in 15+ languages directly in Discord. Instant output with syntax highlighting.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">15+ Languages</span>
+                        <span class="tag">Sandboxed</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 8 -->
+                <div class="feature-card animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">🏆</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Achievements</h3>
+                    <p class="feature-description">
+                        Unlock 30+ achievements across 6 categories. Showcase your accomplishments on your profile.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">30+ Badges</span>
+                        <span class="tag">5 Rarities</span>
+                    </div>
+                </div>
+                
+                <!-- Feature 9 -->
+                <div class="feature-card feature-card-highlight animate-on-scroll">
+                    <div class="feature-icon-wrap">
+                        <div class="feature-icon">📱</div>
+                        <div class="feature-glow"></div>
+                    </div>
+                    <h3 class="feature-title">Mobile Optimized</h3>
+                    <p class="feature-description">
+                        Beautiful UI on both desktop and mobile Discord. Responsive embeds that look perfect everywhere.
+                    </p>
+                    <div class="feature-tags">
+                        <span class="tag">Responsive</span>
+                        <span class="tag">Touch-friendly</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">🚀 Get Started</span>
+                <h2 class="section-title">Start Learning in <span class="gradient-text">30 Seconds</span></h2>
+                <p class="section-description">
+                    No complicated setup. Just add the bot and start your coding journey.
+                </p>
+            </div>
+            
+            <div class="steps-container">
+                <div class="steps-line"></div>
+                
+                <div class="step animate-on-scroll">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fab fa-discord"></i>
+                        </div>
+                        <h3 class="step-title">Add to Discord</h3>
+                        <p class="step-description">
+                            Click the button and add MentorAI to your Discord server. Takes 10 seconds!
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step animate-on-scroll">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <h3 class="step-title">Type /help</h3>
+                        <p class="step-description">
+                            Use the /help command to see all features and start the quick setup wizard.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step animate-on-scroll">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3 class="step-title">Pick a Topic</h3>
+                        <p class="step-description">
+                            Choose what you want to learn—Python, JavaScript, Web Dev, or any programming topic.
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step animate-on-scroll">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <h3 class="step-title">Learn & Level Up</h3>
+                        <p class="step-description">
+                            Take lessons, complete quizzes, earn XP, and watch yourself level up!
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cta-box animate-on-scroll">
+                <div class="cta-content">
+                    <h3 class="cta-title">Ready to Start Your Journey?</h3>
+                    <p class="cta-description">Join thousands of learners already using MentorAI</p>
+                </div>
+                <a href="https://discord.com/api/oauth2/authorize?client_id=1329498659498438686&permissions=277025704960&scope=bot%20applications.commands" class="btn btn-large btn-primary" target="_blank">
+                    <i class="fab fa-discord"></i>
+                    Add MentorAI Now
+                    <span class="btn-shine"></span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Live Stats Section -->
+    <section class="stats-section" id="stats">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">📊 Live Stats</span>
+                <h2 class="section-title">Growing <span class="gradient-text">Every Day</span></h2>
+                <p class="section-description">
+                    Real-time statistics from our community of learners.
+                </p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">👥</div>
+                    <div class="stat-card-value" data-target="12547" data-suffix="">
+                        <span class="counter">0</span>
+                    </div>
+                    <div class="stat-card-label">Total Users</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> +234 this week
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">🏫</div>
+                    <div class="stat-card-value" data-target="156" data-suffix="">
+                        <span class="counter">0</span>
+                    </div>
+                    <div class="stat-card-label">Discord Servers</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> +12 this week
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">📚</div>
+                    <div class="stat-card-value" data-target="89432" data-suffix="">
+                        <span class="counter">0</span>
+                    </div>
+                    <div class="stat-card-label">Lessons Generated</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> +1.2K this week
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">🎯</div>
+                    <div class="stat-card-value" data-target="234567" data-suffix="">
+                        <span class="counter">0</span>
+                    </div>
+                    <div class="stat-card-label">Quizzes Completed</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> +5.6K this week
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">✨</div>
+                    <div class="stat-card-value" data-target="45" data-suffix="M">
+                        <span class="counter">0</span>M
+                    </div>
+                    <div class="stat-card-label">Total XP Earned</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> +2.1M this week
+                    </div>
+                </div>
+                
+                <div class="stat-card animate-on-scroll">
+                    <div class="stat-card-icon">🔥</div>
+                    <div class="stat-card-value" data-target="847" data-suffix="">
+                        <span class="counter">0</span>
+                    </div>
+                    <div class="stat-card-label">Active Streaks</div>
+                    <div class="stat-card-trend trend-up">
+                        <i class="fas fa-arrow-up"></i> Longest: 142 days
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Commands Section -->
+    <section class="commands-section" id="commands">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">⚡ Commands</span>
+                <h2 class="section-title">35 Powerful <span class="gradient-text">Commands</span></h2>
+                <p class="section-description">
+                    Everything you need for a complete learning experience.
+                </p>
+            </div>
+            
+            <div class="commands-tabs">
+                <button class="tab-btn active" data-tab="learning">📚 Learning</button>
+                <button class="tab-btn" data-tab="gamification">🏆 Gamification</button>
+                <button class="tab-btn" data-tab="social">⚔️ Social</button>
+                <button class="tab-btn" data-tab="tools">💻 Tools</button>
+            </div>
+            
+            <div class="commands-content">
+                <div class="tab-content active" id="learning">
+                    <div class="commands-grid">
+                        <div class="command-card">
+                            <code class="command-name">/learn</code>
+                            <p class="command-desc">AI-generated lesson on any topic</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/quiz</code>
+                            <p class="command-desc">Take an interactive quiz</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/quickquiz</code>
+                            <p class="command-desc">Instant one-question quiz</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/explain</code>
+                            <p class="command-desc">Get AI explanation of any concept</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/topics</code>
+                            <p class="command-desc">Browse available topics</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/path</code>
+                            <p class="command-desc">View learning paths</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="gamification">
+                    <div class="commands-grid">
+                        <div class="command-card">
+                            <code class="command-name">/profile</code>
+                            <p class="command-desc">View your profile card</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/daily</code>
+                            <p class="command-desc">Claim daily XP bonus</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/streak</code>
+                            <p class="command-desc">View streak status</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/achievements</code>
+                            <p class="command-desc">View all achievements</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/leaderboard</code>
+                            <p class="command-desc">Global rankings</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/progress</code>
+                            <p class="command-desc">Detailed progress stats</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="social">
+                    <div class="commands-grid">
+                        <div class="command-card">
+                            <code class="command-name">/challenge</code>
+                            <p class="command-desc">1v1 quiz battle</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/studyparty</code>
+                            <p class="command-desc">Group study sessions</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/weekly</code>
+                            <p class="command-desc">Weekly challenges</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/referral</code>
+                            <p class="command-desc">Invite friends for rewards</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/share</code>
+                            <p class="command-desc">Share your progress</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/invite</code>
+                            <p class="command-desc">Get bot invite link</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tools">
+                    <div class="commands-grid">
+                        <div class="command-card">
+                            <code class="command-name">/run</code>
+                            <p class="command-desc">Execute code in 15+ languages</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/review</code>
+                            <p class="command-desc">AI code review</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/funfact</code>
+                            <p class="command-desc">Random programming fun fact</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/certificate</code>
+                            <p class="command-desc">Generate certificates</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/feedback</code>
+                            <p class="command-desc">Send feedback to devs</p>
+                        </div>
+                        <div class="command-card">
+                            <code class="command-name">/stats</code>
+                            <p class="command-desc">View server statistics</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials" id="testimonials">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">💬 Reviews</span>
+                <h2 class="section-title">Loved by <span class="gradient-text">Learners</span></h2>
+                <p class="section-description">
+                    See what our community has to say about MentorAI.
+                </p>
+            </div>
+            
+            <div class="testimonials-slider">
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "MentorAI made learning Python actually fun! The XP system keeps me coming back every day. I've maintained a 45-day streak!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">👨‍💻</div>
+                        <div class="author-info">
+                            <span class="author-name">Alex K.</span>
+                            <span class="author-level">Level 23 • Python Master</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "The AI-generated lessons are incredible. It's like having a personal tutor available 24/7. Best Discord bot I've ever used!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">👩‍💻</div>
+                        <div class="author-info">
+                            <span class="author-name">Sarah M.</span>
+                            <span class="author-level">Level 31 • Full Stack Dev</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="testimonial-card animate-on-scroll">
+                    <div class="testimonial-stars">⭐⭐⭐⭐⭐</div>
+                    <p class="testimonial-text">
+                        "Our coding community server loves MentorAI. The challenges are so competitive and fun. Engagement is through the roof!"
+                    </p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">🎮</div>
+                        <div class="author-info">
+                            <span class="author-name">Mike R.</span>
+                            <span class="author-level">Server Owner • 500+ Members</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="final-cta">
+        <div class="container">
+            <div class="cta-card animate-on-scroll">
+                <div class="cta-glow"></div>
+                <div class="cta-content">
+                    <h2 class="cta-title">Ready to <span class="gradient-text">Level Up</span> Your Coding Skills?</h2>
+                    <p class="cta-description">
+                        Join thousands of learners who are mastering programming with MentorAI. It's free, fun, and powered by AI!
+                    </p>
+                    <div class="cta-buttons">
+                        <a href="https://discord.com/api/oauth2/authorize?client_id=1329498659498438686&permissions=277025704960&scope=bot%20applications.commands" class="btn btn-large btn-primary" target="_blank">
+                            <i class="fab fa-discord"></i>
+                            Add to Discord — It's Free
+                            <span class="btn-shine"></span>
+                        </a>
+                        <a href="https://discord.gg/mentorai" class="btn btn-large btn-outline" target="_blank">
+                            <i class="fas fa-users"></i>
+                            Join Our Community
+                        </a>
+                    </div>
+                    <div class="cta-features">
+                        <span class="cta-feature">✅ Free Forever</span>
+                        <span class="cta-feature">✅ No Credit Card</span>
+                        <span class="cta-feature">✅ Instant Setup</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="#" class="footer-logo">
+                        <span class="logo-icon">🎓</span>
+                        <span class="logo-text">MentorAI</span>
+                    </a>
+                    <p class="footer-tagline">Learn to code like playing a game.</p>
+                    <div class="footer-social">
+                        <a href="https://discord.gg/mentorai" class="social-link" target="_blank">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                        <a href="https://twitter.com/mentorai" class="social-link" target="_blank">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://github.com/sathis-dev/mentorai-discord" class="social-link" target="_blank">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="footer-links">
+                    <h4 class="footer-heading">Quick Links</h4>
+                    <a href="#features">Features</a>
+                    <a href="#commands">Commands</a>
+                    <a href="#stats">Statistics</a>
+                    <a href="dashboard.html">Dashboard</a>
+                </div>
+                
+                <div class="footer-links">
+                    <h4 class="footer-heading">Resources</h4>
+                    <a href="https://discord.gg/mentorai">Support Server</a>
+                    <a href="#commands">Commands List</a>
+                    <a href="#">FAQ</a>
+                    <a href="#">Changelog</a>
+                </div>
+                
+                <div class="footer-links">
+                    <h4 class="footer-heading">Legal</h4>
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Cookie Policy</a>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p class="copyright">© 2026 MentorAI. Made with ❤️ for learners everywhere.</p>
+                <p class="footer-badge">
+                    <span class="status-dot"></span>
+                    All systems operational
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/particles.js/2.0.0/particles.min.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

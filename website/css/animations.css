@@ -1,0 +1,376 @@
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATION STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────
+   Fade Animations
+   ───────────────────────────────────────────────────────────────── */
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 0.6s ease forwards;
+}
+
+.animate-fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+.animate-fade-in-down {
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: fadeInDown 0.6s ease forwards;
+}
+
+.animate-fade-in-left {
+  opacity: 0;
+  transform: translateX(-20px);
+  animation: fadeInLeft 0.6s ease forwards;
+}
+
+.animate-fade-in-right {
+  opacity: 0;
+  transform: translateX(20px);
+  animation: fadeInRight 0.6s ease forwards;
+}
+
+/* Delays */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+@keyframes fadeIn {
+  to { opacity: 1; }
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInLeft {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInRight {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Float Animations
+   ───────────────────────────────────────────────────────────────── */
+.animate-float {
+  animation: heroFloat 6s infinite ease-in-out;
+}
+
+.animate-float-slow {
+  animation: heroFloat 8s infinite ease-in-out;
+}
+
+.animate-float-fast {
+  animation: heroFloat 4s infinite ease-in-out;
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Scale Animations
+   ───────────────────────────────────────────────────────────────── */
+.animate-scale-in {
+  opacity: 0;
+  transform: scale(0.9);
+  animation: scaleIn 0.5s ease forwards;
+}
+
+@keyframes scaleIn {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Pulse Animations
+   ───────────────────────────────────────────────────────────────── */
+.animate-pulse {
+  animation: pulse 2s infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse 3s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Glow Animations
+   ───────────────────────────────────────────────────────────────── */
+.animate-glow {
+  animation: glow 2s infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    box-shadow: 0 0 10px rgba(88, 101, 242, 0.3);
+  }
+  to {
+    box-shadow: 0 0 30px rgba(88, 101, 242, 0.6);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Scroll Animations (Intersection Observer based)
+   ───────────────────────────────────────────────────────────────── */
+.animate-on-scroll {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.6s ease;
+}
+
+.animate-on-scroll.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.animate-on-scroll-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: all 0.6s ease;
+}
+
+.animate-on-scroll-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.animate-on-scroll-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: all 0.6s ease;
+}
+
+.animate-on-scroll-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.animate-on-scroll-scale {
+  opacity: 0;
+  transform: scale(0.8);
+  transition: all 0.6s ease;
+}
+
+.animate-on-scroll-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger delays for scroll animations */
+.stagger-1 { transition-delay: 0.1s; }
+.stagger-2 { transition-delay: 0.2s; }
+.stagger-3 { transition-delay: 0.3s; }
+.stagger-4 { transition-delay: 0.4s; }
+.stagger-5 { transition-delay: 0.5s; }
+.stagger-6 { transition-delay: 0.6s; }
+
+/* ─────────────────────────────────────────────────────────────────
+   Typing Animation
+   ───────────────────────────────────────────────────────────────── */
+.typing-effect {
+  overflow: hidden;
+  border-right: 3px solid var(--color-primary);
+  white-space: nowrap;
+  animation: 
+    typing 3.5s steps(40, end),
+    blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink-caret {
+  from, to { border-color: transparent; }
+  50% { border-color: var(--color-primary); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Shake Animation (for errors/attention)
+   ───────────────────────────────────────────────────────────────── */
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Rotate Animation
+   ───────────────────────────────────────────────────────────────── */
+.animate-rotate {
+  animation: rotate 10s linear infinite;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Gradient Text Animation
+   ───────────────────────────────────────────────────────────────── */
+.animate-gradient-text {
+  background: linear-gradient(
+    90deg,
+    #5865F2,
+    #7289DA,
+    #57F287,
+    #FEE75C,
+    #5865F2
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shift 3s linear infinite;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Bounce Animation
+   ───────────────────────────────────────────────────────────────── */
+.animate-bounce {
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+  40% { transform: translateY(-15px); }
+  60% { transform: translateY(-8px); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Shimmer/Skeleton Loading
+   ───────────────────────────────────────────────────────────────── */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Parallax Effect (CSS only)
+   ───────────────────────────────────────────────────────────────── */
+.parallax {
+  background-attachment: fixed;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Hover Lift Effect
+   ───────────────────────────────────────────────────────────────── */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Ripple Effect
+   ───────────────────────────────────────────────────────────────── */
+.ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.ripple:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   Disable animations for reduced motion preference
+   ───────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .animate-on-scroll,
+  .animate-on-scroll-left,
+  .animate-on-scroll-right,
+  .animate-on-scroll-scale {
+    opacity: 1;
+    transform: none;
+  }
+}
