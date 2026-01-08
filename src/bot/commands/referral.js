@@ -237,7 +237,7 @@ async function claimRewards(interaction) {
 
   if (pendingRewards <= 0) {
     const noRewardsEmbed = new EmbedBuilder()
-      .setColor(COLORS.ERROR_RED)
+      .setColor(COLORS.ERROR)
       .setDescription(
         '```\n' +
         '❌ NO PENDING REWARDS\n' +
@@ -256,7 +256,7 @@ async function claimRewards(interaction) {
 
   const embed = new EmbedBuilder()
     .setTitle('🎁 Rewards Claimed!')
-    .setColor(COLORS.SUCCESS_GREEN)
+    .setColor(COLORS.SUCCESS)
     .setDescription(
       '```\n' +
       '🎉 CONGRATULATIONS! 🎉\n' +

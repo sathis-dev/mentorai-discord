@@ -189,7 +189,8 @@ async function handleButton(interaction) {
     } else if (category === 'execute') {
       // NEW: Execute actual commands
       await handleExecuteButton(interaction, action, params);
-    } else if (category === 'lesson') {
+    } else if (category === 'lesson' || category === 'learn') {
+      // Handle both lesson_ and learn_ button prefixes
       await handleLessonButton(interaction, action, params);
     } else if (category === 'progress' || category === 'profile') {
       await handleProfileButton(interaction, action, params);
@@ -1394,7 +1395,8 @@ async function handleQuizButton(interaction, action, params) {
     
     await interaction.update({ components: [updatedRow, controlRow] });
     
-  } else if (action === 'restart' || action === 'start') {
+  } else if (action === 'retry' || action === 'restart' || action === 'start') {
+    // Handle quiz retry/restart buttons
     const topic = decodeURIComponent(params.join('_') || 'JavaScript');
     
     // Start a new quiz directly
@@ -1441,6 +1443,29 @@ async function handleQuizButton(interaction, action, params) {
         await interaction.editReply({ content: `Starting quiz on ${topic}...` });
       }
     }
+  } else if (action === 'new') {
+    // Show topic selection for new quiz
+    const selectEmbed = new EmbedBuilder()
+      .setTitle('🎯 Choose a Quiz Topic')
+      .setColor(COLORS.QUIZ_PINK)
+      .setDescription('Select a topic for your new quiz:')
+      .setFooter({ text: '🎓 MentorAI' });
+    
+    const topicRow1 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('quiz_start_JavaScript').setLabel('JavaScript').setEmoji('🟨').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('quiz_start_Python').setLabel('Python').setEmoji('🐍').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('quiz_start_React').setLabel('React').setEmoji('⚛️').setStyle(ButtonStyle.Primary),
+      new ButtonBuilder().setCustomId('quiz_start_TypeScript').setLabel('TypeScript').setEmoji('🔷').setStyle(ButtonStyle.Primary)
+    );
+    
+    const topicRow2 = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('quiz_start_Node.js').setLabel('Node.js').setEmoji('🟢').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('quiz_start_SQL').setLabel('SQL').setEmoji('🗃️').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('quiz_start_Git').setLabel('Git').setEmoji('📚').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('help_main').setLabel('Menu').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+    );
+    
+    await interaction.update({ embeds: [selectEmbed], components: [topicRow1, topicRow2] });
   }
 }
 
@@ -1449,7 +1474,13 @@ async function handleQuizButton(interaction, action, params) {
 // ============================================================
 
 async function handleLessonButton(interaction, action, params) {
-  const topic = decodeURIComponent(params.join('_') || 'programming');
+  // Handle both formats:
+  // lesson_topic (action=topic, params=[])
+  // learn_JavaScript (action=JavaScript, params=[])
+  // lesson_start_JavaScript (action=start, params=[JavaScript])
+  const topic = params.length > 0 
+    ? decodeURIComponent(params.join('_')) 
+    : decodeURIComponent(action || 'programming');
   
   // Execute learn command directly
   const learnCommand = interaction.client.commands.get('learn');
@@ -1509,6 +1540,12 @@ async function handleProfileButton(interaction, action, params) {
         await profileModule.handleButton(interaction, action, params);
         return;
       }
+    }
+    
+    // Handle profile_view button from post-quiz
+    if (action === 'view') {
+      await executeCommandFromButton(interaction, 'profile');
+      return;
     }
     
     const user = await getOrCreateUser(userId, username);
@@ -2069,7 +2106,7 @@ async function handleQuickQuizAnswer(interaction, quizId, params) {
   
   const resultEmbed = new EmbedBuilder()
     .setTitle(isCorrect ? '✅ Correct!' : '❌ Wrong!')
-    .setColor(isCorrect ? COLORS.SUCCESS_GREEN : COLORS.ERROR_RED)
+    .setColor(isCorrect ? COLORS.SUCCESS : COLORS.ERROR)
     .setDescription(
       '**Question:** ' + quiz.question + '\n\n' +
       '**Your Answer:** ' + quiz.options[answerIndex] + '\n' +
