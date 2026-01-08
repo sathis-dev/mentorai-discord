@@ -135,7 +135,105 @@ const userSchema = new mongoose.Schema({
   mentorMinutes: { type: Number, default: 0 },
   
   // Longest streak ever (for achievements)
-  longestStreak: { type: Number, default: 0 }
+  longestStreak: { type: Number, default: 0 },
+
+  // ============================================
+  // ULTIMATE UPGRADE FEATURES V2
+  // ============================================
+
+  // Prestige System
+  prestige: {
+    level: { type: Number, default: 0 },
+    totalXpEarned: { type: Number, default: 0 },
+    bonusMultiplier: { type: Number, default: 1.0 },
+    prestigeHistory: [{
+      level: Number,
+      xpAtPrestige: Number,
+      date: { type: Date, default: Date.now }
+    }]
+  },
+
+  // Custom Theme System
+  theme: { type: String, default: 'default' },
+  unlockedThemes: [{ type: String }],
+
+  // Interview Prep Stats
+  interviewStats: {
+    totalSessions: { type: Number, default: 0 },
+    averageScore: { type: Number, default: 0 },
+    categoryScores: {
+      type: Map,
+      of: {
+        sessions: { type: Number, default: 0 },
+        averageScore: { type: Number, default: 0 }
+      },
+      default: new Map()
+    },
+    companiesPracticed: [{ type: String }],
+    readinessScore: { type: Number, default: 0 }
+  },
+
+  // Flashcard/SRS Stats
+  flashcardStats: {
+    totalCards: { type: Number, default: 0 },
+    cardsReviewed: { type: Number, default: 0 },
+    accuracy: { type: Number, default: 0 },
+    streakDays: { type: Number, default: 0 },
+    lastReviewDate: { type: Date }
+  },
+
+  // Tournament Stats
+  tournamentStats: {
+    participated: { type: Number, default: 0 },
+    wins: { type: Number, default: 0 },
+    topThreeFinishes: { type: Number, default: 0 },
+    totalPrizeXp: { type: Number, default: 0 }
+  },
+
+  // Daily Challenge Stats
+  dailyChallengeStats: {
+    completed: { type: Number, default: 0 },
+    currentStreak: { type: Number, default: 0 },
+    longestStreak: { type: Number, default: 0 },
+    lastCompletedDate: { type: Date },
+    averageTime: { type: Number, default: 0 }
+  },
+
+  // Team Battle Stats
+  teamBattleStats: {
+    participated: { type: Number, default: 0 },
+    wins: { type: Number, default: 0 },
+    xpContributed: { type: Number, default: 0 }
+  },
+
+  // Seasonal Event Stats
+  eventStats: {
+    eventsParticipated: { type: Number, default: 0 },
+    exclusiveRewards: [{ type: String }],
+    totalEventPoints: { type: Number, default: 0 }
+  },
+
+  // Skill Radar Data (for visualization)
+  skillRadar: {
+    type: Map,
+    of: { type: Number, default: 0 },
+    default: new Map()
+  },
+
+  // Activity Heatmap Data (last 365 days)
+  activityLog: [{
+    date: { type: Date },
+    activities: { type: Number, default: 0 },
+    xpEarned: { type: Number, default: 0 }
+  }],
+
+  // Trading Card Collection
+  tradingCards: [{
+    cardId: String,
+    style: String,
+    rarity: String,
+    earnedAt: { type: Date, default: Date.now }
+  }]
 });
 
 // Calculate XP needed for next level

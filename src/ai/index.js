@@ -58,6 +58,44 @@ export async function generateWithAI(systemPrompt, userPrompt, options = {}) {
 }
 
 /**
+ * Generate AI response from messages array (for chat-style interactions)
+ * Used by tutor, interview, flashcard generation, etc.
+ */
+export async function generateAIResponse(messages, options = {}) {
+  const { 
+    maxTokens = 2000, 
+    temperature = 0.7,
+    model = 'gpt-4o'
+  } = options;
+
+  if (!openai) {
+    console.log('No OpenAI client available');
+    return null;
+  }
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: model,
+      messages: messages,
+      max_completion_tokens: maxTokens,
+      temperature: temperature
+    });
+
+    return response.choices[0]?.message?.content || null;
+  } catch (error) {
+    console.error('OpenAI API error:', error.message);
+    
+    // Retry with fallback model if rate limited
+    if (error.status === 429 && model !== 'gpt-4o') {
+      console.log('Retrying with gpt-4o...');
+      return generateAIResponse(messages, { ...options, model: 'gpt-4o' });
+    }
+    
+    return null;
+  }
+}
+
+/**
  * Parse JSON from AI response safely
  */
 function parseAIJson(response) {
