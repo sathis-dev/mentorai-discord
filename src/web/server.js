@@ -56,21 +56,68 @@ app.get('/health', (req, res) => {
 // Auth routes (no auth required)
 app.use('/api/auth', authRoutes);
 
-// Protected API routes
+// PUBLIC API routes (no auth required) - for website
+app.use('/api/public', apiRoutes);
+app.use('/api/user', apiRoutes);
+app.use('/api/health', apiRoutes);
+
+// Protected API routes (require auth)
 app.use('/api', authMiddleware, apiRoutes);
 
-// Pages - serve directly with no cache
+// Serve the main website assets (from /website folder) at root for production
+// Static files like CSS, JS, and assets
+app.use('/css', express.static(path.join(__dirname, '..', '..', 'website', 'css'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
+
+app.use('/js', express.static(path.join(__dirname, '..', '..', 'website', 'js'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
+
+app.use('/assets', express.static(path.join(__dirname, '..', '..', 'website', 'assets'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
+
+// Also serve from /site for backwards compatibility
+app.use('/site', express.static(path.join(__dirname, '..', '..', 'website'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: (res) => {
+    res.set('Cache-Control', 'no-store');
+  }
+}));
+
+// Website home page - serve main website at root
 app.get('/', (req, res) => {
   res.set('Cache-Control', 'no-store');
-  res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+  res.sendFile(path.join(__dirname, '..', '..', 'website', 'index.html'));
 });
 
+// Dashboard page from website folder
+app.get('/dashboard', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, '..', '..', 'website', 'dashboard.html'));
+});
+
+// Admin panel routes
 app.get('/admin', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/dashboard', (req, res) => {
+app.get('/admin/dashboard', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });

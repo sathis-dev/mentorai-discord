@@ -1064,6 +1064,39 @@ router.get('/public/stats', async (req, res) => {
     const now = new Date();
     const weekAgo = new Date(now - 7 * 24 * 60 * 60 * 1000);
     
+    // Check if database is connected
+    const mongoose = await import('mongoose');
+    const dbConnected = mongoose.default.connection.readyState === 1;
+    
+    if (!dbConnected) {
+      // Return minimal stats when DB is not connected
+      const serverCount = global.discordClient?.guilds?.cache?.size || 0;
+      return res.json({
+        success: true,
+        data: {
+          users: 0,
+          usersThisWeek: 0,
+          servers: serverCount,
+          lessons: 0,
+          quizzes: 0,
+          totalXP: 0,
+          activeStreaks: 0,
+          longestStreak: 0,
+          correctAnswers: 0,
+          totalQuestions: 0,
+          accuracy: 0,
+          topicsCount: 0,
+          countriesCount: 1,
+          botOnline: !!global.discordClient,
+          dbConnected: false,
+          uptime: process.uptime(),
+          timestamp: Date.now(),
+          weeklyChanges: { users: '+0', quizzes: '+0', xp: '+0', lessons: '+0' },
+          message: 'Database not connected - showing live bot status only'
+        }
+      });
+    }
+    
     // Fetch all real stats from database
     const [
       userCount,
@@ -1147,6 +1180,7 @@ router.get('/public/stats', async (req, res) => {
       
       // System info
       botOnline: !!global.discordClient,
+      dbConnected: true,
       uptime: process.uptime(),
       timestamp: Date.now(),
       
@@ -1176,6 +1210,21 @@ function formatLargeNumber(num) {
 // GET /api/public/leaderboard - Public leaderboard for website
 router.get('/public/leaderboard', async (req, res) => {
   try {
+    // Check if database is connected
+    const mongoose = await import('mongoose');
+    const dbConnected = mongoose.default.connection.readyState === 1;
+    
+    if (!dbConnected) {
+      return res.json({
+        success: true,
+        data: {
+          users: [],
+          pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+          message: 'Database not connected'
+        }
+      });
+    }
+    
     const limit = Math.min(parseInt(req.query.limit) || 10, 100);
     const page = parseInt(req.query.page) || 1;
     const skip = (page - 1) * limit;

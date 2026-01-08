@@ -1,6 +1,6 @@
 import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
-import ServerSettings from '../../database/models/ServerSettings.js';
+import { ServerSettings } from '../../database/models/ServerSettings.js';
 import { COLORS, EMOJIS } from '../../config/brandSystem.js';
 import logger from '../../utils/logger.js';
 

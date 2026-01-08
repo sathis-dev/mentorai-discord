@@ -247,10 +247,32 @@ function initParticles() {
 // Live Stats from API - REAL DATA ONLY (No Fallbacks)
 // ─────────────────────────────────────────────────────────────────
 
-// API Base URL - Update this in production
-const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:3000'
-  : ''; // Same origin in production
+// API Base URL - Detect environment automatically
+// For static hosting: point to the live API server
+// For same-origin hosting: use relative paths
+function getApiBase() {
+  const hostname = window.location.hostname;
+  const port = window.location.port;
+  
+  // Local development - API runs on port 3000
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    // If website is on different port (e.g., npx serve on 3001), point to API on 3000
+    if (port !== '3000') {
+      return 'http://localhost:3000';
+    }
+    return ''; // Same origin
+  }
+  
+  // Production - Railway (same origin, API at /api)
+  // The website is served from the same server as the API
+  return '';
+}
+
+const API_BASE = getApiBase();
+let apiRetryCount = 0;
+const MAX_API_RETRIES = 3;
+let statsRefreshInterval = null;
+let isApiConnected = false;
 
 // Store stats globally for updates
 let liveStats = null;
@@ -258,20 +280,35 @@ let lastUpdateTime = null;
 
 function initStats() {
   updateAllStats();
-  // Refresh every 30 seconds for live updates
-  setInterval(updateAllStats, 30000);
+  // Refresh every 30 seconds for live updates (but only if API is connected)
+  statsRefreshInterval = setInterval(() => {
+    if (isApiConnected || apiRetryCount < MAX_API_RETRIES) {
+      updateAllStats();
+    }
+  }, 30000);
 }
 
 async function updateAllStats() {
   try {
-    const response = await fetch(`${API_BASE}/api/public/stats`);
-    if (!response.ok) throw new Error('API unavailable');
+    console.log(`📊 Fetching stats from: ${API_BASE}/api/public/stats`);
+    const response = await fetch(`${API_BASE}/api/public/stats`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      mode: 'cors',
+      cache: 'no-cache'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}: ${response.statusText}`);
+    }
     
     const result = await response.json();
     if (!result.success) throw new Error('API returned error');
     
     liveStats = result.data;
     lastUpdateTime = new Date();
+    apiRetryCount = 0; // Reset on success
+    isApiConnected = true;
     
     // Update all stat displays on the page
     updateHeroStats(liveStats);
@@ -283,7 +320,14 @@ async function updateAllStats() {
     
   } catch (error) {
     console.error('❌ Stats API error:', error);
-    showStatsError();
+    apiRetryCount++;
+    isApiConnected = false;
+    
+    if (apiRetryCount >= MAX_API_RETRIES) {
+      showStatsOffline();
+    } else {
+      showStatsRetrying();
+    }
   }
 }
 
@@ -360,14 +404,67 @@ function updateSystemStatus(stats) {
   }
 }
 
-function showStatsError() {
-  // Show loading/error state instead of fake data
-  const errorText = 'Loading...';
+function showStatsRetrying() {
+  const retryText = 'Loading...';
+  const trendText = '<i class="fas fa-sync fa-spin"></i> Connecting...';
   
+  // Update hero stats
   ['stat-users', 'stat-lessons', 'stat-quizzes'].forEach(id => {
     const el = document.getElementById(id);
-    if (el) el.textContent = errorText;
+    if (el) el.textContent = retryText;
   });
+  
+  // Update stat cards
+  const statCards = ['stat-total-users', 'stat-servers', 'stat-lessons-card', 'stat-quizzes-card', 'stat-total-xp', 'stat-streaks'];
+  statCards.forEach(id => {
+    const valueEl = document.getElementById(id);
+    const trendEl = document.getElementById(`${id}-trend`);
+    if (valueEl) {
+      const counter = valueEl.querySelector('.counter');
+      if (counter) counter.textContent = retryText;
+    }
+    if (trendEl) trendEl.innerHTML = trendText;
+  });
+  
+  console.log(`⏳ Stats loading... (attempt ${apiRetryCount}/${MAX_API_RETRIES})`);
+}
+
+function showStatsOffline() {
+  const offlineText = '--';
+  const offlineTrend = '<i class="fas fa-cloud-slash"></i> Offline';
+  
+  // Update hero stats
+  ['stat-users', 'stat-lessons', 'stat-quizzes'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = offlineText;
+  });
+  
+  // Update trust badges
+  const trustEls = ['trust-countries', 'trust-servers', 'trust-rating'];
+  trustEls.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = '--';
+  });
+  
+  // Update stat cards
+  const statCards = ['stat-total-users', 'stat-servers', 'stat-lessons-card', 'stat-quizzes-card', 'stat-total-xp', 'stat-streaks'];
+  statCards.forEach(id => {
+    const valueEl = document.getElementById(id);
+    const trendEl = document.getElementById(`${id}-trend`);
+    if (valueEl) {
+      const counter = valueEl.querySelector('.counter');
+      if (counter) counter.textContent = offlineText;
+    }
+    if (trendEl) trendEl.innerHTML = offlineTrend;
+  });
+  
+  // Update footer status
+  const statusText = document.querySelector('.footer-badge');
+  if (statusText) {
+    statusText.innerHTML = `<span class="status-dot offline"></span> API offline`;
+  }
+  
+  console.log(`⚠️ API offline after ${MAX_API_RETRIES} attempts`);
 }
 
 function animateStatUpdate(element, value) {
@@ -531,8 +628,16 @@ async function fetchLeaderboard() {
   if (!container) return;
   
   try {
-    const response = await fetch(`${API_BASE}/api/public/leaderboard?limit=10`);
-    if (!response.ok) throw new Error('API unavailable');
+    console.log(`🏆 Fetching leaderboard from: ${API_BASE}/api/public/leaderboard`);
+    const response = await fetch(`${API_BASE}/api/public/leaderboard?limit=10`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API returned ${response.status}`);
+    }
     
     const result = await response.json();
     if (!result.success) throw new Error('API error');
