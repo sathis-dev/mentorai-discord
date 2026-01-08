@@ -127,6 +127,11 @@ button {
   background: var(--gradient-dark);
 }
 
+/* Ensure particles canvas doesn't have light background */
+#particles-bg canvas {
+  background: transparent !important;
+}
+
 .gradient-orbs {
   position: fixed;
   top: 0;
@@ -1327,6 +1332,7 @@ section {
 
 .leaderboard-body {
   min-height: 300px;
+  background: var(--bg-secondary);
 }
 
 .leaderboard-row {
@@ -1435,6 +1441,8 @@ section {
   padding: var(--space-2xl);
   color: var(--text-tertiary);
   gap: var(--space-md);
+  background: var(--bg-secondary);
+  min-height: 300px;
 }
 
 .leaderboard-loading i,
