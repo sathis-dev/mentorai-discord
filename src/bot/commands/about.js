@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { COLORS, EMOJIS, VISUALS } from '../../config/brandSystem.js';
-import User from '../../database/models/User.js';
+import { User } from '../../database/models/User.js';
 
 export const data = new SlashCommandBuilder()
   .setName('about')
