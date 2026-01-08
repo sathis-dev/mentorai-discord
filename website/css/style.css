@@ -1064,10 +1064,10 @@ section {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Testimonials Section
+   Testimonials Section (Leaderboard)
    ───────────────────────────────────────────────────────────────── */
 .testimonials {
-  background: linear-gradient(180deg, transparent 0%, rgba(88, 101, 242, 0.05) 100%);
+  background: var(--bg-secondary);
 }
 
 .testimonials-slider {
