@@ -39,10 +39,11 @@ app.use((req, res, next) => {
 // Make io accessible
 app.set('io', io);
 
-// Static files with no cache
+// Static files with no cache - but NOT index.html (to avoid conflict with website root)
 app.use(express.static(path.join(__dirname, 'public'), {
   etag: false,
   lastModified: false,
+  index: false, // Don't serve index.html automatically
   setHeaders: (res) => {
     res.set('Cache-Control', 'no-store');
   }
@@ -64,8 +65,21 @@ app.use('/api/health', apiRoutes);
 // Protected API routes (require auth)
 app.use('/api', authMiddleware, apiRoutes);
 
-// Serve the main website assets (from /website folder) at root for production
-// Static files like CSS, JS, and assets
+// ====== WEBSITE ROUTES (Main public website) ======
+
+// Website home page - serve main website at root (MUST be before static middleware)
+app.get('/', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, '..', '..', 'website', 'index.html'));
+});
+
+// Dashboard page from website folder
+app.get('/dashboard', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, '..', '..', 'website', 'dashboard.html'));
+});
+
+// Serve the main website assets (from /website folder)
 app.use('/css', express.static(path.join(__dirname, '..', '..', 'website', 'css'), {
   etag: false,
   lastModified: false,
@@ -99,19 +113,7 @@ app.use('/site', express.static(path.join(__dirname, '..', '..', 'website'), {
   }
 }));
 
-// Website home page - serve main website at root
-app.get('/', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.sendFile(path.join(__dirname, '..', '..', 'website', 'index.html'));
-});
-
-// Dashboard page from website folder
-app.get('/dashboard', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.sendFile(path.join(__dirname, '..', '..', 'website', 'dashboard.html'));
-});
-
-// Admin panel routes
+// ====== ADMIN PANEL ROUTES ======
 app.get('/admin', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
