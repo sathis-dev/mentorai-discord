@@ -29,8 +29,8 @@ export async function execute(interaction) {
 
   const topic = interaction.options.getString('topic');
   const difficulty = interaction.options.getString('difficulty') || 'beginner';
-  const topicEmoji = getTopicEmoji(topic);
-  const topicColor = getTopicColor(topic);
+  const topicEmoji = getTopicEmoji(topic) || '📚';
+  const topicColor = getTopicColor(topic) || 0x5865F2; // Fallback to blurple
 
   try {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
@@ -89,7 +89,7 @@ export async function execute(interaction) {
     if (lesson.codeExample && lesson.codeExample.code) {
       const codeEmbed = new EmbedBuilder()
         .setTitle(`${EMOJIS.code} Code Example`)
-        .setColor(COLORS.QUIZ_GREEN)
+        .setColor(COLORS.SUCCESS)
         .setDescription('```' + (lesson.codeExample.language || 'javascript') + '\n' + 
           lesson.codeExample.code.substring(0, 1500) + '\n```')
         .addFields({
@@ -104,7 +104,7 @@ export async function execute(interaction) {
     if (lesson.practiceChallenge) {
       const challengeEmbed = new EmbedBuilder()
         .setTitle(`${EMOJIS.quiz} Practice Challenge`)
-        .setColor(COLORS.QUIZ_PINK)
+        .setColor(COLORS.ACCENT)
         .setDescription(`**${lesson.practiceChallenge.task}**`)
         .addFields({
           name: `${EMOJIS.tip} Hint`,
