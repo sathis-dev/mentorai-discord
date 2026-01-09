@@ -230,6 +230,46 @@ export async function handleButton(interaction, action, params) {
   const lastResponse = lastMessages.find(m => m.role === 'assistant')?.content || '';
   
   try {
+    // Special case: Quiz Me button redirects to actual quiz system
+    if (action === 'quiz') {
+      const embed = new EmbedBuilder()
+        .setTitle('🎯 Choose a Quiz Topic')
+        .setColor(COLORS.SUCCESS)
+        .setDescription('**Select a topic to start your quiz!**\n\nEach quiz gives you XP based on performance.')
+        .addFields({
+          name: '🏆 Earn XP',
+          value: 'Correct answers earn you XP and help build your streak!',
+          inline: false
+        });
+
+      const { StringSelectMenuBuilder } = await import('discord.js');
+      const topicMenu = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('quiz_topic_select')
+          .setPlaceholder('🎯 Select a topic...')
+          .addOptions([
+            { label: 'JavaScript', value: 'JavaScript', emoji: '🟨', description: 'Test your JS skills' },
+            { label: 'Python', value: 'Python', emoji: '🐍', description: 'Python programming quiz' },
+            { label: 'React', value: 'React', emoji: '⚛️', description: 'React & components' },
+            { label: 'Node.js', value: 'Node.js', emoji: '🟢', description: 'Backend JS quiz' },
+            { label: 'HTML & CSS', value: 'HTML and CSS', emoji: '🌐', description: 'Web fundamentals' },
+            { label: 'TypeScript', value: 'TypeScript', emoji: '🔷', description: 'Typed JavaScript' },
+            { label: conversation.topic || 'General', value: conversation.topic || 'Programming', emoji: '📚', description: 'Based on your session' }
+          ])
+      );
+
+      const backButton = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('help_main')
+          .setLabel('Menu')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Secondary)
+      );
+
+      await interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+      return;
+    }
+    
     await interaction.deferUpdate();
     
     let prompt = '';
@@ -241,9 +281,6 @@ export async function handleButton(interaction, action, params) {
     } else if (action === 'example') {
       prompt = `Give me a practical code example for what you just explained about "${lastQuestion.slice(0, 100)}". Include working code with comments.`;
       title = '📝 Code Example';
-    } else if (action === 'quiz') {
-      prompt = `Create a quick quiz question to test my understanding of "${lastQuestion.slice(0, 100)}". Give me the question, 4 options (A-D), and then the correct answer with explanation.`;
-      title = '🎯 Quick Quiz';
     } else if (action === 'explain' && params[0] === 'simpler') {
       prompt = `Explain "${lastQuestion.slice(0, 100)}" in simpler terms. Use an analogy or real-world example. Make it beginner-friendly.`;
       title = '🔽 Simpler Explanation';
