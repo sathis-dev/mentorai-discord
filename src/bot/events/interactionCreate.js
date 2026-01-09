@@ -1380,7 +1380,21 @@ async function handleQuizButton(interaction, action, params) {
         inline: false
       })
       .setFooter({ text: '🎓 MentorAI' });
-    await interaction.update({ embeds: [cancelEmbed], components: [] });
+    
+    const menuRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('quiz_new')
+        .setLabel('New Quiz')
+        .setEmoji('🎯')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_main')
+        .setLabel('Menu')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Secondary)
+    );
+    
+    await interaction.update({ embeds: [cancelEmbed], components: [menuRow] });
   } else if (action === 'hint') {
     // Handle hint button (now async)
     const hintResult = await useHint(userId);
