@@ -252,18 +252,20 @@ export async function handleButton(interaction, action, params) {
       return;
     }
     
-    // Generate AI response
-    const response = await generateTutorResponse(
-      prompt,
-      conversation.messages,
-      conversation.topic,
-      conversation.learningGoals
-    );
+    // Generate AI response with correct parameter format
+    const response = await generateTutorResponse({
+      question: prompt,
+      history: conversation.messages.map(m => ({ role: m.role, content: m.content })),
+      topic: conversation.topic,
+      goals: conversation.learningGoals,
+      weaknesses: conversation.identifiedWeaknesses,
+      userName: interaction.user.username
+    });
     
-    // Save to conversation
+    // Save to conversation (response.content is the AI message)
     conversation.messages.push(
       { role: 'user', content: prompt, timestamp: new Date() },
-      { role: 'assistant', content: response.message, timestamp: new Date() }
+      { role: 'assistant', content: response.content, timestamp: new Date() }
     );
     conversation.messageCount += 2;
     await conversation.save();
@@ -273,7 +275,7 @@ export async function handleButton(interaction, action, params) {
       .setColor(COLORS.PRIMARY)
       .setAuthor({ name: '🎓 AI Tutor', iconURL: interaction.client.user.displayAvatarURL() })
       .setTitle(title)
-      .setDescription(response.message.slice(0, 4000))
+      .setDescription(response.content.slice(0, 4000))
       .setFooter({ text: `Session: ${conversation.messageCount} messages • /tutor history to review` })
       .setTimestamp();
     
