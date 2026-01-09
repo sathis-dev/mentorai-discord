@@ -244,6 +244,50 @@ export async function handleHelpInteraction(interaction) {
 
             return interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
           }
+          
+          // Special case: learn should show topic selector
+          if (action.command === 'learn') {
+            const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+            
+            const embed = new EmbedBuilder()
+              .setTitle('📚 Choose a Learning Topic')
+              .setColor(0x5865F2)
+              .setDescription('**Select a topic to start your AI-powered lesson!**\n\nLearn anything with personalized explanations.')
+              .addFields({
+                name: '💡 Tip',
+                value: 'Use `/learn topic:YourTopic` for custom topics!',
+                inline: false
+              });
+
+            const topicMenu = new ActionRowBuilder().addComponents(
+              new StringSelectMenuBuilder()
+                .setCustomId('learn_topic_select')
+                .setPlaceholder('📚 Select a topic...')
+                .addOptions([
+                  { label: 'JavaScript Basics', value: 'JavaScript basics', emoji: '🟨', description: 'Learn JS fundamentals' },
+                  { label: 'Python Basics', value: 'Python basics', emoji: '🐍', description: 'Learn Python fundamentals' },
+                  { label: 'React Fundamentals', value: 'React fundamentals', emoji: '⚛️', description: 'Learn React basics' },
+                  { label: 'Node.js Basics', value: 'Node.js basics', emoji: '🟢', description: 'Learn backend JS' },
+                  { label: 'HTML & CSS', value: 'HTML and CSS basics', emoji: '🌐', description: 'Web fundamentals' },
+                  { label: 'TypeScript', value: 'TypeScript basics', emoji: '🔷', description: 'Typed JavaScript' },
+                  { label: 'SQL Basics', value: 'SQL basics', emoji: '🗄️', description: 'Database fundamentals' },
+                  { label: 'Git & GitHub', value: 'Git and GitHub', emoji: '📦', description: 'Version control' },
+                  { label: 'APIs & REST', value: 'REST APIs', emoji: '🔌', description: 'API concepts' },
+                  { label: 'Data Structures', value: 'Data structures', emoji: '🧮', description: 'CS fundamentals' }
+                ])
+            );
+
+            const backButton = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('help_main')
+                .setLabel('Back to Help')
+                .setEmoji('◀️')
+                .setStyle(ButtonStyle.Secondary)
+            );
+
+            return interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+          }
+          
           return showQuickActionPrompt(interaction, action);
         }
       }
