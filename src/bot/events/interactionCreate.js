@@ -1087,6 +1087,43 @@ async function handleExecButton(interaction, action, params) {
         logger.error('Weekly exec error:', error);
         await interaction.editReply({ content: '❌ Failed to load weekly challenge' });
       }
+    },
+    'profile': async () => {
+      // Execute profile command with correct user context
+      const command = interaction.client.commands.get('profile');
+      if (!command) {
+        return interaction.reply({ content: '❌ Profile command not found', ephemeral: true });
+      }
+      try {
+        await interaction.deferReply();
+        const fakeInteraction = {
+          ...interaction,
+          isChatInputCommand: () => true,
+          isButton: () => false,
+          commandName: 'profile',
+          options: {
+            getSubcommand: () => null,
+            getString: () => null,
+            getInteger: () => null,
+            getUser: () => null, // null = show own profile
+            get: () => null,
+            getBoolean: () => null
+          },
+          user: interaction.user, // Ensure correct user
+          member: interaction.member,
+          guild: interaction.guild,
+          replied: true,
+          deferred: true,
+          reply: async (opts) => interaction.editReply(opts),
+          deferReply: async () => {},
+          editReply: async (opts) => interaction.editReply(opts),
+          followUp: async (opts) => interaction.followUp(opts)
+        };
+        await command.execute(fakeInteraction);
+      } catch (error) {
+        logger.error('Profile exec error:', error);
+        await interaction.editReply({ content: '❌ Failed. Try `/profile` directly.' });
+      }
     }
   };
   
