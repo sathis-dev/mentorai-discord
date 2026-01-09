@@ -188,7 +188,7 @@ function buildMainHubComponents(user) {
         .setLabel('Website')
         .setEmoji('🌐')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://web-production-e09e9.up.railway.app'),
+        .setURL('https://mentorai.up.railway.app'),
       new ButtonBuilder()
         .setLabel('Support')
         .setEmoji('💬')
