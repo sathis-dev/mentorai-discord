@@ -23,6 +23,7 @@ import {
   createProTipsEmbed
 } from '../../utils/helpEmbeds.js';
 import logger from '../../utils/logger.js';
+import { handleHelpInteraction } from '../commands/help.js';
 import {
   toggleMaintenanceMode,
   toggleFeature,
@@ -139,37 +140,9 @@ async function handleButton(interaction) {
       return;
     }
     
-    // NEW V4: Handle help_action buttons from new help menu
-    if (category === 'help' && action === 'action') {
-      const helpModule = await import('../commands/help.js');
-      await helpModule.handleButton(interaction, params[0]);
-      return;
-    }
-    
-    // NEW V5: Handle help_quickstart buttons for new user onboarding
-    if (category === 'help' && action === 'quickstart') {
-      // Mobile: help_quickstart (no params) shows quick start panel
-      if (params.length === 0) {
-        const helpModule = await import('../commands/help.js');
-        await helpModule.handleMobileButton(interaction, 'quickstart');
-        return;
-      }
-      // Desktop: help_quickstart_quiz, help_quickstart_learn, etc.
-      const helpModule = await import('../commands/help.js');
-      await helpModule.handleQuickStartButton(interaction, params[0]);
-      return;
-    }
-    
-    // Handle mobile-specific help buttons (help_more, help_home)
-    if (category === 'help' && (action === 'more' || action === 'home')) {
-      const helpModule = await import('../commands/help.js');
-      await helpModule.handleMobileButton(interaction, action);
-      return;
-    }
-    
-    // NEW V5: Handle help_topic selection from new user flow  
-    if (category === 'help' && action === 'topic') {
-      // This is handled in select menu handler
+    // ULTIMATE V6: Handle ALL help-related buttons with new unified handler
+    if (category === 'help' || category === 'quick' || category === 'try') {
+      await handleHelpInteraction(interaction);
       return;
     }
     
@@ -364,6 +337,12 @@ async function handleSelectMenu(interaction) {
   const value = interaction.values[0];
 
   try {
+    // ULTIMATE V6: Handle help-related select menus with unified handler
+    if (customId === 'help_category_select' || customId === 'help_command_select') {
+      await handleHelpInteraction(interaction);
+      return;
+    }
+    
     if (customId === 'topic_select') {
       const embed = new EmbedBuilder()
         .setTitle('📚 ' + value.charAt(0).toUpperCase() + value.slice(1))
@@ -376,16 +355,12 @@ async function handleSelectMenu(interaction) {
         .setFooter({ text: '🎓 MentorAI' });
 
       await interaction.reply({ embeds: [embed], ephemeral: true });
-    } else if (customId === 'help_category_select') {
-      await handleHelpCategorySelect(interaction, value);
     } else if (customId === 'help_category') {
-      // NEW: Handle new help category menu
-      const helpModule = await import('../commands/help.js');
-      await helpModule.handleCategorySelect(interaction, value);
+      // Legacy: Handle old help category menu
+      await handleHelpInteraction(interaction);
     } else if (customId === 'help_category_v4') {
-      // NEW V4: Handle help category menu from V4 design
-      const helpModule = await import('../commands/help.js');
-      await helpModule.handleCategorySelect(interaction, value);
+      // Legacy V4: Handle help category menu from V4 design
+      await handleHelpInteraction(interaction);
     } else if (customId === 'quiz_topic_select' || customId === 'quiz_topic_select_v4') {
       // NEW: Start quiz with selected topic (both old and V4 versions)
       await startQuizFromHelpMenu(interaction, value);
@@ -1850,6 +1825,12 @@ async function handleReviewButton(interaction, action, params) {
 }
 
 async function handleModal(interaction) {
+  // ULTIMATE V6: Handle help-related modals
+  if (interaction.customId === 'help_search_modal' || interaction.customId === 'help_feedback_modal') {
+    await handleHelpInteraction(interaction);
+    return;
+  }
+  
   // Handle code execution modal
   if (interaction.customId.startsWith('run_code_')) {
     const language = interaction.customId.replace('run_code_', '');
