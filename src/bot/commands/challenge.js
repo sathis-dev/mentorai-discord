@@ -125,39 +125,18 @@ export async function execute(interaction) {
   // Create challenge embed
   const challengeEmbed = new EmbedBuilder()
     .setColor(QUIZ_COLORS.STREAK_FIRE)
-    .setTitle(`${QUIZ_EMOJIS.SWORD} CHALLENGE ISSUED!`)
+    .setTitle(`⚔️ CHALLENGE ISSUED!`)
     .setDescription(`
-${ASCII_ART.header.challenge}
-
 ${challengerRank.emoji} **${interaction.user.username}** challenges ${opponentRank.emoji} **${opponent.username}**!
-
-${ASCII_ART.dividerThin}
-
-⚔️ **BATTLE DETAILS**
-
-\`\`\`
-┌─────────────────────────────────────┐
-│  CHALLENGER      VS      OPPONENT   │
-├─────────────────────────────────────┤
-│  ${interaction.user.username.slice(0, 12).padEnd(12)}      ⚔️      ${opponent.username.slice(0, 12).padEnd(12)} │
-│  Lv.${String(challenger.level || 1).padEnd(4)}              Lv.${String(opponentData.level || 1).padEnd(4)}  │
-│  ${formatNumber(challenger.xp || 0).padStart(8)} XP      ${formatNumber(opponentData.xp || 0).padStart(8)} XP │
-└─────────────────────────────────────┘
-\`\`\`
-
-${ASCII_ART.dividerThin}
-
-${topicData.emoji} **Topic:** ${topicData.name || topic}
-${diffData.emoji} **Difficulty:** ${diffData.name}
-❓ **Rounds:** ${rounds}
-${QUIZ_EMOJIS.XP} **Stakes:** ${xpStake} XP
-
-${ASCII_ART.dividerThin}
-
-⏰ *Challenge expires in 60 seconds*
     `)
+    .addFields(
+      { name: '📋 Battle Info', value: `${topicData.emoji} **Topic:** ${topicData.name || topic}\n${diffData.emoji} **Difficulty:** ${diffData.name}\n❓ **Rounds:** ${rounds}\n✨ **Stakes:** ${xpStake} XP`, inline: false },
+      { name: `${challengerRank.emoji} Challenger`, value: `**${interaction.user.username}**\nLevel ${challenger.level || 1} • ${formatNumber(challenger.xp || 0)} XP`, inline: true },
+      { name: '⚔️', value: 'VS', inline: true },
+      { name: `${opponentRank.emoji} Opponent`, value: `**${opponent.username}**\nLevel ${opponentData.level || 1} • ${formatNumber(opponentData.xp || 0)} XP`, inline: true }
+    )
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-    .setFooter({ text: `${QUIZ_EMOJIS.LIGHTNING} MentorAI Battle System` })
+    .setFooter({ text: '⏰ Challenge expires in 60 seconds • ⚡ MentorAI' })
     .setTimestamp();
 
   // Challenge buttons
