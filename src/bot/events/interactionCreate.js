@@ -1831,6 +1831,51 @@ async function handleModal(interaction) {
     return;
   }
   
+  // Handle quick action input modals (from help quick actions)
+  if (interaction.customId.startsWith('quick_input_')) {
+    const commandName = interaction.customId.replace('quick_input_', '');
+    const inputValue = interaction.fields.getTextInputValue('input_value');
+    
+    await interaction.deferReply();
+    
+    try {
+      const commandModule = await import(`../commands/${commandName}.js`);
+      
+      if (commandModule.execute) {
+        // Create mock options with the user's input
+        const mockOptions = {
+          getString: (name) => {
+            if (name === 'topic' || name === 'question' || name === 'message') return inputValue;
+            return null;
+          },
+          getSubcommand: () => commandName === 'tutor' ? 'ask' : null,
+          getInteger: () => null,
+          getBoolean: () => null,
+          getUser: () => null,
+          getMember: () => null
+        };
+
+        const wrappedInteraction = new Proxy(interaction, {
+          get(target, prop) {
+            if (prop === 'options') return mockOptions;
+            if (prop === 'isChatInputCommand') return () => false;
+            if (prop === 'isModalSubmit') return () => true;
+            return target[prop];
+          }
+        });
+
+        await commandModule.execute(wrappedInteraction);
+      }
+    } catch (error) {
+      logger.error(`Error executing quick input command ${commandName}:`, error);
+      await interaction.editReply({ 
+        content: `❌ Something went wrong. Try using \`/${commandName}\` directly.`,
+        ephemeral: true 
+      });
+    }
+    return;
+  }
+  
   // Handle code execution modal
   if (interaction.customId.startsWith('run_code_')) {
     const language = interaction.customId.replace('run_code_', '');

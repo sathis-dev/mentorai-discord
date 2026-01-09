@@ -718,42 +718,64 @@ The command will guide you through any options.
 }
 
 export async function showQuickActionPrompt(interaction, action) {
-  // Map quick actions to actual command executions
-  const commandName = action.command.split(' ')[0]; // Get base command name
+  const commandName = action.command;
   
+  // If command needs input, show a modal
+  if (action.needsInput) {
+    const modal = new ModalBuilder()
+      .setCustomId(`quick_input_${commandName}`)
+      .setTitle(`${action.emoji} ${action.label}`);
+
+    const input = new TextInputBuilder()
+      .setCustomId('input_value')
+      .setLabel(action.inputLabel === 'topic' ? 'What topic?' : 'Your question')
+      .setPlaceholder(action.inputLabel === 'topic' ? 'e.g., JavaScript, Python, React...' : 'Ask anything...')
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(input));
+    return interaction.showModal(modal);
+  }
+
+  // For commands that don't need input, execute directly
   try {
-    // Import and execute the actual command
     const commandModule = await import(`../bot/commands/${commandName}.js`);
     
     if (commandModule.execute) {
-      // Acknowledge the button first
-      await interaction.deferUpdate();
-      
-      // Create a mock interaction-like object for commands that need options
-      // For now, just run the command directly
-      await commandModule.execute(interaction);
-    } else {
-      // Fallback if command doesn't have execute
-      await interaction.reply({
-        content: `Use \`/${action.command}\` to start ${action.label}!`,
-        ephemeral: true
+      // Create a proxy interaction that mocks the options
+      const mockOptions = {
+        getString: (name) => {
+          if (name === 'subcommand' || action.subcommand) return action.subcommand || null;
+          return null;
+        },
+        getSubcommand: () => action.subcommand || null,
+        getInteger: () => null,
+        getBoolean: () => null,
+        getUser: () => null,
+        getMember: () => null
+      };
+
+      // Wrap the interaction with mocked options
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'isChatInputCommand') return () => false;
+          if (prop === 'isButton') return () => true;
+          return target[prop];
+        }
       });
+
+      await commandModule.execute(wrappedInteraction);
     }
   } catch (error) {
     console.error(`Error executing quick action ${commandName}:`, error);
     
-    // Fallback message
+    // Fallback - just tell them the command worked or show error
     const embed = new EmbedBuilder()
-      .setColor(HELP_COLORS.PRIMARY)
+      .setColor(HELP_COLORS.WARNING)
       .setTitle(`${action.emoji} ${action.label}`)
-      .setDescription(`
-Use this command to get started:
-
-\`/${action.command}\`
-
-Type it in the chat to begin!
-      `)
-      .setFooter({ text: 'Commands work in any channel with MentorAI' });
+      .setDescription(`Use \`/${action.command}${action.subcommand ? ' ' + action.subcommand : ''}\` to start!`)
+      .setFooter({ text: 'Type the command in chat' });
 
     const row = new ActionRowBuilder()
       .addComponents(

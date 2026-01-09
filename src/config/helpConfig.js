@@ -674,16 +674,16 @@ export const HELP_CATEGORIES = {
 
 export const QUICK_ACTIONS = {
   row1: [
-    { id: 'quick_quiz', label: 'Quick Quiz', emoji: '🎯', style: ButtonStyle.Primary, command: 'quiz' },
-    { id: 'quick_lesson', label: 'Start Lesson', emoji: '📚', style: ButtonStyle.Success, command: 'learn' },
-    { id: 'quick_daily', label: 'Daily Bonus', emoji: '🎁', style: ButtonStyle.Danger, command: 'daily' },
-    { id: 'quick_profile', label: 'My Profile', emoji: '👤', style: ButtonStyle.Secondary, command: 'profile' }
+    { id: 'quick_quiz', label: 'Quick Quiz', emoji: '🎯', style: ButtonStyle.Primary, command: 'quickquiz', needsInput: false },
+    { id: 'quick_lesson', label: 'Start Lesson', emoji: '📚', style: ButtonStyle.Success, command: 'learn', needsInput: true, inputLabel: 'topic' },
+    { id: 'quick_daily', label: 'Daily Bonus', emoji: '🎁', style: ButtonStyle.Danger, command: 'daily', needsInput: false },
+    { id: 'quick_profile', label: 'My Profile', emoji: '👤', style: ButtonStyle.Secondary, command: 'profile', needsInput: false }
   ],
   row2: [
-    { id: 'quick_flashcard', label: 'Flashcards', emoji: '🃏', style: ButtonStyle.Primary, command: 'flashcard study' },
-    { id: 'quick_challenge', label: 'Daily Challenge', emoji: '💻', style: ButtonStyle.Success, command: 'dailychallenge' },
-    { id: 'quick_tournament', label: 'Tournament', emoji: '🏆', style: ButtonStyle.Danger, command: 'tournament' },
-    { id: 'quick_tutor', label: 'AI Tutor', emoji: '🤖', style: ButtonStyle.Secondary, command: 'tutor ask' }
+    { id: 'quick_flashcard', label: 'Flashcards', emoji: '🃏', style: ButtonStyle.Primary, command: 'flashcard', needsInput: false, subcommand: 'study' },
+    { id: 'quick_challenge', label: 'Daily Challenge', emoji: '💻', style: ButtonStyle.Success, command: 'dailychallenge', needsInput: false, subcommand: 'today' },
+    { id: 'quick_tournament', label: 'Tournament', emoji: '🏆', style: ButtonStyle.Danger, command: 'tournament', needsInput: false, subcommand: 'view' },
+    { id: 'quick_tutor', label: 'AI Tutor', emoji: '🤖', style: ButtonStyle.Secondary, command: 'tutor', needsInput: true, inputLabel: 'question' }
   ]
 };
 
