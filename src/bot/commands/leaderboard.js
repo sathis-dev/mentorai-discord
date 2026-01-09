@@ -17,6 +17,7 @@ import {
   formatNumber,
   getRankFromXP
 } from '../../utils/quizUtils.js';
+import { QUIZ_EMOJIS } from '../../config/quizConfig.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
