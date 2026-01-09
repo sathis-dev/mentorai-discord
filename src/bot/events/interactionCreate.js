@@ -1456,52 +1456,66 @@ async function handleQuizButton(interaction, action, params) {
     await interaction.update({ components: [updatedRow, controlRow] });
     
   } else if (action === 'retry' || action === 'restart' || action === 'start') {
-    // Handle quiz retry/restart buttons
+    // Handle quiz retry/restart buttons - Start new quiz directly
     const topic = decodeURIComponent(params.join('_') || 'JavaScript');
     
-    // Start a new quiz directly
-    const quizCommand = interaction.client.commands.get('quiz');
-    if (!quizCommand) {
-      return interaction.reply({ content: '❌ Quiz command not found', ephemeral: true });
-    }
-    
     try {
-      await interaction.deferReply();
-      let hasResponded = false;
+      await interaction.deferUpdate();
       
-      const fakeInteraction = {
-        ...interaction,
-        isChatInputCommand: () => true,
-        isButton: () => false,
-        commandName: 'quiz',
-        options: {
-          getString: (name) => name === 'topic' ? topic : null,
-          getInteger: (name) => name === 'questions' ? 5 : null,
-          getUser: () => null,
-          getSubcommand: () => null,
-          get: () => null
-        },
-        replied: true,
-        deferred: true,
-        reply: async (opts) => {
-          if (hasResponded) return interaction.followUp(opts);
-          hasResponded = true;
-          return interaction.editReply(opts);
-        },
-        deferReply: async () => {},
-        editReply: async (opts) => {
-          hasResponded = true;
-          return interaction.editReply(opts);
-        },
-        followUp: async (opts) => interaction.followUp(opts)
-      };
+      // Get user
+      const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+      if (user.updateStreak) await user.updateStreak();
       
-      await quizCommand.execute(fakeInteraction);
+      // Show loading
+      const loadingEmbed = new EmbedBuilder()
+        .setTitle('🎯 Generating Your Quiz...')
+        .setColor(COLORS.QUIZ_PINK)
+        .setDescription(`🧠 Creating 5 questions on **${topic}**...`)
+        .setFooter({ text: '🎓 MentorAI - Please wait' });
+      await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+      
+      // Generate quiz
+      const session = await createQuizSession(interaction.user.id, topic, 5, 'medium');
+      
+      if (!session || !session.questions || session.questions.length === 0) {
+        const errorEmbed = new EmbedBuilder()
+          .setTitle('❌ Quiz Generation Failed')
+          .setColor(COLORS.ERROR)
+          .setDescription('Could not generate quiz. Try a different topic!')
+          .setFooter({ text: '🎓 MentorAI' });
+        return interaction.editReply({ embeds: [errorEmbed], components: [] });
+      }
+      
+      // Get first question
+      const questionData = await getCurrentQuestion(interaction.user.id);
+      if (!questionData || !questionData.question) {
+        throw new Error('Failed to get question');
+      }
+      
+      const questionEmbed = createQuizQuestionEmbed(
+        questionData.question,
+        questionData.questionNum,
+        questionData.totalQuestions,
+        topic,
+        'medium'
+      );
+      
+      const answerButtons = createQuizAnswerButtons();
+      const controlButtons = createQuizControlButtons();
+      
+      await interaction.editReply({
+        embeds: [questionEmbed],
+        components: [answerButtons, controlButtons]
+      });
+      
     } catch (error) {
       logger.error('Quiz restart error:', error);
-      if (interaction.deferred) {
-        await interaction.editReply({ content: `Starting quiz on ${topic}...` });
-      }
+      const errorEmbed = new EmbedBuilder()
+        .setTitle('❌ Error')
+        .setColor(COLORS.ERROR)
+        .setDescription('Failed to start quiz. Please try `/quiz` command.')
+        .setFooter({ text: '🎓 MentorAI' });
+      await interaction.editReply({ embeds: [errorEmbed], components: [] }).catch(() => {});
     }
   } else if (action === 'new') {
     // Show topic selection for new quiz
