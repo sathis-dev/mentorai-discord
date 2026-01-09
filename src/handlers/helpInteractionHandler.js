@@ -679,20 +679,31 @@ export async function showFeedbackModal(interaction) {
 }
 
 export async function showTryCommandPrompt(interaction, commandName) {
+  try {
+    // Import and execute the actual command directly
+    const commandModule = await import(`../bot/commands/${commandName}.js`);
+    
+    if (commandModule.execute) {
+      await interaction.deferUpdate();
+      await commandModule.execute(interaction);
+      return;
+    }
+  } catch (error) {
+    console.error(`Error executing command ${commandName}:`, error);
+  }
+
+  // Fallback if command fails or doesn't exist
   const embed = new EmbedBuilder()
     .setColor(HELP_COLORS.SUCCESS)
     .setTitle('▶️ Try This Command')
     .setDescription(`
-To use **\`/${commandName}\`**, simply type it in any channel where MentorAI is active!
+To use **\`/${commandName}\`**, type it in the chat:
 
-**Quick Copy:**
-\`\`\`
-/${commandName}
-\`\`\`
+\`/${commandName}\`
 
-The command will guide you through any required options.
+The command will guide you through any options.
     `)
-    .setFooter({ text: 'Tip: Most commands work in any channel!' });
+    .setFooter({ text: 'Type the command in chat to use it!' });
 
   const row = new ActionRowBuilder()
     .addComponents(
@@ -707,28 +718,56 @@ The command will guide you through any required options.
 }
 
 export async function showQuickActionPrompt(interaction, action) {
-  const embed = new EmbedBuilder()
-    .setColor(HELP_COLORS.PRIMARY)
-    .setTitle(`${action.emoji} ${action.label}`)
-    .setDescription(`
-To use this feature, type:
+  // Map quick actions to actual command executions
+  const commandName = action.command.split(' ')[0]; // Get base command name
+  
+  try {
+    // Import and execute the actual command
+    const commandModule = await import(`../bot/commands/${commandName}.js`);
+    
+    if (commandModule.execute) {
+      // Acknowledge the button first
+      await interaction.deferUpdate();
+      
+      // Create a mock interaction-like object for commands that need options
+      // For now, just run the command directly
+      await commandModule.execute(interaction);
+    } else {
+      // Fallback if command doesn't have execute
+      await interaction.reply({
+        content: `Use \`/${action.command}\` to start ${action.label}!`,
+        ephemeral: true
+      });
+    }
+  } catch (error) {
+    console.error(`Error executing quick action ${commandName}:`, error);
+    
+    // Fallback message
+    const embed = new EmbedBuilder()
+      .setColor(HELP_COLORS.PRIMARY)
+      .setTitle(`${action.emoji} ${action.label}`)
+      .setDescription(`
+Use this command to get started:
 
-\`\`\`
-/${action.command}
-\`\`\`
+\`/${action.command}\`
 
-This will start the **${action.label}** feature!
-    `)
-    .setFooter({ text: 'Commands work in any channel with MentorAI' });
+Type it in the chat to begin!
+      `)
+      .setFooter({ text: 'Commands work in any channel with MentorAI' });
 
-  const row = new ActionRowBuilder()
-    .addComponents(
-      new ButtonBuilder()
-        .setCustomId('help_back_main')
-        .setLabel('Back to Help')
-        .setEmoji('🏠')
-        .setStyle(ButtonStyle.Secondary)
-    );
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('help_back_main')
+          .setLabel('Back to Help')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Secondary)
+      );
 
-  await interaction.update({ embeds: [embed], components: [row] });
+    if (interaction.replied || interaction.deferred) {
+      await interaction.editReply({ embeds: [embed], components: [row] });
+    } else {
+      await interaction.update({ embeds: [embed], components: [row] });
+    }
+  }
 }
