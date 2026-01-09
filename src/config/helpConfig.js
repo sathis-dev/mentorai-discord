@@ -674,7 +674,7 @@ export const HELP_CATEGORIES = {
 
 export const QUICK_ACTIONS = {
   row1: [
-    { id: 'quick_quiz', label: 'Quick Quiz', emoji: '🎯', style: ButtonStyle.Primary, command: 'quickquiz', needsInput: false },
+    { id: 'quick_quiz', label: 'Quick Quiz', emoji: '🎯', style: ButtonStyle.Primary, command: 'quiz', needsInput: true, inputLabel: 'topic' },
     { id: 'quick_lesson', label: 'Start Lesson', emoji: '📚', style: ButtonStyle.Success, command: 'learn', needsInput: true, inputLabel: 'topic' },
     { id: 'quick_daily', label: 'Daily Bonus', emoji: '🎁', style: ButtonStyle.Danger, command: 'daily', needsInput: false },
     { id: 'quick_profile', label: 'My Profile', emoji: '👤', style: ButtonStyle.Secondary, command: 'profile', needsInput: false }

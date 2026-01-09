@@ -172,10 +172,13 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
   
-  // Create progress bar
-  const filled = Math.floor((questionNum / totalQuestions) * 10);
-  const empty = 10 - filled;
-  const progressBar = '█'.repeat(filled) + '░'.repeat(empty);
+  // Create colorful progress bar (consistent style)
+  const totalBlocks = 10;
+  const filledCount = Math.floor((questionNum / totalQuestions) * totalBlocks);
+  const emptyCount = totalBlocks - filledCount;
+  
+  // Use colorful filled blocks and gray empty blocks  
+  const progressBar = '🟦'.repeat(filledCount) + '⬜'.repeat(emptyCount);
   
   // Format question text
   let questionText = question.question || 'Loading question...';
@@ -197,7 +200,7 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
       { name: '🟣 Option D', value: cleanOptions[3], inline: false },
       { name: '⚡ Topic', value: topic, inline: true },
       { name: `${diffData.dot} Difficulty`, value: diffData.label, inline: true },
-      { name: '📊 Progress', value: `\`${progressBar}\``, inline: false }
+      { name: '📊 Progress', value: progressBar, inline: false }
     )
     .setFooter({ text: '🎓 MentorAI • Select an answer below' })
     .setTimestamp();
