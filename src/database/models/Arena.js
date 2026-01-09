@@ -89,8 +89,7 @@ arenaSchema.methods.getXpReward = function(rank) {
   return rewards[rank] || 50; // Participation XP
 };
 
-// Index for efficient lookups
-arenaSchema.index({ joinCode: 1 });
+// Index for efficient lookups (joinCode already has unique:true, no need for separate index)
 arenaSchema.index({ status: 1, createdAt: -1 });
 arenaSchema.index({ hostId: 1 });
 
