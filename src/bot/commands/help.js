@@ -202,6 +202,48 @@ export async function handleHelpInteraction(interaction) {
         const allActions = [...QUICK_ACTIONS.row1, ...QUICK_ACTIONS.row2];
         const action = allActions.find(a => a.id === actionId);
         if (action) {
+          // Special case: quiz should show topic selector, not modal
+          if (action.command === 'quiz') {
+            const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+            
+            const embed = new EmbedBuilder()
+              .setTitle('🎯 Choose a Quiz Topic')
+              .setColor(0x57F287)
+              .setDescription('**Select a topic to start your quiz!**\n\nEach quiz gives you XP based on performance.')
+              .addFields({
+                name: '🏆 Earn XP',
+                value: 'Correct answers earn you XP and help build your streak!',
+                inline: false
+              });
+
+            const topicMenu = new ActionRowBuilder().addComponents(
+              new StringSelectMenuBuilder()
+                .setCustomId('quiz_topic_select')
+                .setPlaceholder('🎯 Select a topic...')
+                .addOptions([
+                  { label: 'JavaScript', value: 'JavaScript', emoji: '🟨', description: 'Test your JS skills' },
+                  { label: 'Python', value: 'Python', emoji: '🐍', description: 'Python programming quiz' },
+                  { label: 'React', value: 'React', emoji: '⚛️', description: 'React & components' },
+                  { label: 'Node.js', value: 'Node.js', emoji: '🟢', description: 'Backend JS quiz' },
+                  { label: 'HTML & CSS', value: 'HTML and CSS', emoji: '🌐', description: 'Web fundamentals' },
+                  { label: 'TypeScript', value: 'TypeScript', emoji: '🔷', description: 'Typed JavaScript' },
+                  { label: 'SQL', value: 'SQL', emoji: '🗄️', description: 'Database quiz' },
+                  { label: 'Git', value: 'Git', emoji: '📦', description: 'Version control' },
+                  { label: 'APIs', value: 'APIs', emoji: '🔌', description: 'API concepts' },
+                  { label: 'General', value: 'Programming', emoji: '💻', description: 'Mixed topics' }
+                ])
+            );
+
+            const backButton = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('help_main')
+                .setLabel('Back to Help')
+                .setEmoji('◀️')
+                .setStyle(ButtonStyle.Secondary)
+            );
+
+            return interaction.update({ embeds: [embed], components: [topicMenu, backButton] });
+          }
           return showQuickActionPrompt(interaction, action);
         }
       }
