@@ -1,5 +1,5 @@
 import { Events, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits, ChannelSelectMenuBuilder, ChannelType, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
-import { submitAnswer, getCurrentQuestion, cancelSession, useHint, useFiftyFifty, resetEliminatedOptions } from '../../services/quizService.js';
+import { submitAnswer, getCurrentQuestion, cancelSession, useHint, useFiftyFifty, resetEliminatedOptions, createQuizSession } from '../../services/quizService.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { ServerSettings } from '../../database/models/ServerSettings.js';
 import { 
