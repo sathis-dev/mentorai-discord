@@ -1124,6 +1124,44 @@ async function handleExecButton(interaction, action, params) {
         logger.error('Profile exec error:', error);
         await interaction.editReply({ content: '❌ Failed. Try `/profile` directly.' });
       }
+    },
+    'leaderboard': async () => {
+      // Execute leaderboard command directly
+      try {
+        const leaderboardModule = await import('../commands/leaderboard.js');
+        await interaction.deferReply();
+        const fakeInteraction = {
+          ...interaction,
+          isChatInputCommand: () => true,
+          isButton: () => false,
+          commandName: 'leaderboard',
+          options: {
+            getSubcommand: () => null,
+            getString: () => null,
+            getInteger: () => null,
+            getUser: () => null,
+            get: () => null,
+            getBoolean: () => null
+          },
+          user: interaction.user,
+          member: interaction.member,
+          guild: interaction.guild,
+          replied: true,
+          deferred: true,
+          reply: async (opts) => interaction.editReply(opts),
+          deferReply: async () => {},
+          editReply: async (opts) => interaction.editReply(opts),
+          followUp: async (opts) => interaction.followUp(opts)
+        };
+        await leaderboardModule.execute(fakeInteraction);
+      } catch (error) {
+        logger.error('Leaderboard exec error:', error);
+        if (interaction.deferred) {
+          await interaction.editReply({ content: '❌ Failed. Try `/leaderboard` directly.' });
+        } else {
+          await interaction.reply({ content: '❌ Failed. Try `/leaderboard` directly.', ephemeral: true });
+        }
+      }
     }
   };
   
