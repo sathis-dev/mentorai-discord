@@ -679,13 +679,83 @@ export async function showFeedbackModal(interaction) {
 }
 
 export async function showTryCommandPrompt(interaction, commandName) {
-  try {
-    // Import and execute the actual command directly
-    const commandModule = await import(`../bot/commands/${commandName}.js`);
+  // Commands that need special handling (require user input)
+  const specialCommands = {
+    'learn': 'showTopicSelector',
+    'quiz': 'showTopicSelector',
+    'explain': 'needsModal',
+    'tutor': 'needsModal'
+  };
+  
+  // Check if it's a special command that needs a topic selector or modal
+  if (specialCommands[commandName] === 'showTopicSelector') {
+    // Show topic selector instead of executing
+    const embed = new EmbedBuilder()
+      .setColor(HELP_COLORS.PRIMARY)
+      .setTitle(`🎯 Choose a Topic for /${commandName}`)
+      .setDescription('Select a topic to get started:')
+      .setFooter({ text: 'MentorAI' });
+
+    const { StringSelectMenuBuilder } = await import('discord.js');
     
-    if (commandModule.execute) {
-      await interaction.deferUpdate();
-      await commandModule.execute(interaction);
+    const topicMenu = new ActionRowBuilder().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(`${commandName === 'quiz' ? 'quiz_topic_select' : 'learn_topic_select'}`)
+        .setPlaceholder('🎯 Select a topic...')
+        .addOptions([
+          { label: 'JavaScript', value: 'JavaScript', emoji: '🟨' },
+          { label: 'Python', value: 'Python', emoji: '🐍' },
+          { label: 'React', value: 'React', emoji: '⚛️' },
+          { label: 'Node.js', value: 'Node.js', emoji: '🟢' },
+          { label: 'TypeScript', value: 'TypeScript', emoji: '🔷' },
+          { label: 'HTML & CSS', value: 'HTML and CSS', emoji: '🌐' },
+          { label: 'SQL', value: 'SQL', emoji: '🗃️' },
+          { label: 'Git', value: 'Git', emoji: '📚' }
+        ])
+    );
+
+    const backRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('help_back_main')
+        .setLabel('Back')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.update({ embeds: [embed], components: [topicMenu, backRow] });
+    return;
+  }
+  
+  // For commands that don't need special handling, execute directly
+  try {
+    const command = interaction.client.commands.get(commandName);
+    
+    if (command) {
+      await interaction.deferReply();
+      
+      // Create a fake interaction with mocked options
+      const fakeInteraction = {
+        ...interaction,
+        isChatInputCommand: () => true,
+        isButton: () => false,
+        commandName: commandName,
+        options: {
+          getString: () => null,
+          getInteger: () => null,
+          getUser: () => null,
+          getSubcommand: () => null,
+          get: () => null,
+          getBoolean: () => null
+        },
+        replied: true,
+        deferred: true,
+        reply: async (opts) => interaction.editReply(opts),
+        deferReply: async () => {},
+        editReply: async (opts) => interaction.editReply(opts),
+        followUp: async (opts) => interaction.followUp(opts)
+      };
+      
+      await command.execute(fakeInteraction);
       return;
     }
   } catch (error) {
@@ -694,16 +764,10 @@ export async function showTryCommandPrompt(interaction, commandName) {
 
   // Fallback if command fails or doesn't exist
   const embed = new EmbedBuilder()
-    .setColor(HELP_COLORS.SUCCESS)
-    .setTitle('▶️ Try This Command')
-    .setDescription(`
-To use **\`/${commandName}\`**, type it in the chat:
-
-\`/${commandName}\`
-
-The command will guide you through any options.
-    `)
-    .setFooter({ text: 'Type the command in chat to use it!' });
+    .setColor(HELP_COLORS.WARNING)
+    .setTitle(`⚠️ Command: /${commandName}`)
+    .setDescription(`Use \`/${commandName}\` in chat to execute this command.`)
+    .setFooter({ text: 'Type the command in chat' });
 
   const row = new ActionRowBuilder()
     .addComponents(
@@ -714,7 +778,11 @@ The command will guide you through any options.
         .setStyle(ButtonStyle.Secondary)
     );
 
-  await interaction.update({ embeds: [embed], components: [row] });
+  if (interaction.replied || interaction.deferred) {
+    await interaction.editReply({ embeds: [embed], components: [row] });
+  } else {
+    await interaction.update({ embeds: [embed], components: [row] });
+  }
 }
 
 export async function showQuickActionPrompt(interaction, action) {

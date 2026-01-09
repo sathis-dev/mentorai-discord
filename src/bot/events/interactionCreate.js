@@ -208,8 +208,74 @@ async function handleButton(interaction) {
       await handleSkillTreeButton(interaction, action, params);
     } else if (category === 'insights') {
       // Handle insights buttons
-      const { handleInsightsButton } = await import('../commands/insights.js');
-      await handleInsightsButton(interaction, action, params);
+      const { handleInsightButton } = await import('../commands/insights.js');
+      await handleInsightButton(interaction, action, params);
+    } else if (category === 'tutor') {
+      // Handle AI tutor buttons
+      await handleDynamicButton(interaction, 'tutor', action, params);
+    } else if (category === 'flashcard') {
+      // Handle flashcard buttons
+      await handleDynamicButton(interaction, 'flashcard', action, params);
+    } else if (category === 'prestige') {
+      // Handle prestige system buttons
+      await handleDynamicButton(interaction, 'prestige', action, params);
+    } else if (category === 'theme') {
+      // Handle theme buttons
+      await handleDynamicButton(interaction, 'theme', action, params);
+    } else if (category === 'event') {
+      // Handle event buttons
+      await handleDynamicButton(interaction, 'event', action, params);
+    } else if (category === 'interview') {
+      // Handle interview prep buttons
+      await handleDynamicButton(interaction, 'interview', action, params);
+    } else if (category === 'studyparty') {
+      // Handle study party buttons
+      await handleDynamicButton(interaction, 'studyparty', action, params);
+    } else if (category === 'tournament') {
+      // Handle tournament buttons
+      await handleDynamicButton(interaction, 'tournament', action, params);
+    } else if (category === 'streak') {
+      // Handle streak buttons
+      await handleStreakButton(interaction, action, params);
+    } else if (category === 'daily') {
+      // Handle daily bonus buttons
+      await handleDailyButton(interaction, action, params);
+    } else if (category === 'weakspots') {
+      // Handle weakspots buttons
+      await handleWeakspotsButton(interaction, action, params);
+    } else if (category === 'lb') {
+      // Handle leaderboard buttons (lb_ prefix)
+      await handleLeaderboardButton(interaction, action, params);
+    } else if (category === 'page') {
+      // Handle pagination buttons
+      await handlePaginationButton(interaction, action, params);
+    } else if (category === 'confirm') {
+      // Handle confirmation buttons - these are context-specific
+      await handleConfirmButton(interaction, action, params);
+    } else if (category === 'try') {
+      // Handle try_command_* buttons - execute commands directly
+      await handleTryCommandButton(interaction, action, params);
+    } else if (category === 'practice') {
+      // Handle practice buttons
+      await handlePracticeButton(interaction, action, params);
+    } else if (category === 'review') {
+      // Handle code review buttons
+      await handleDynamicButton(interaction, 'review', action, params);
+    } else if (category === 'card') {
+      // Handle trading card buttons
+      await handleDynamicButton(interaction, 'card', action, params);
+    } else if (category === 'remind') {
+      // Handle reminder buttons
+      await handleDynamicButton(interaction, 'remind', action, params);
+    } else if (category === 'teambattle') {
+      // Handle team battle buttons
+      await handleDynamicButton(interaction, 'teambattle', action, params);
+    } else if (category === 'dailychallenge') {
+      // Handle daily challenge buttons
+      await handleDynamicButton(interaction, 'dailychallenge', action, params);
+    } else if (category === 'certificate') {
+      // Handle certificate buttons
+      await handleDynamicButton(interaction, 'certificate', action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -773,6 +839,7 @@ async function handleExecuteButton(interaction, action, params) {
     return specialCommands[action](interaction);
   }
   
+  // Comprehensive list of all commands that can be executed from buttons
   const commandMap = {
     'daily': 'daily',
     'profile': 'profile', 
@@ -781,11 +848,38 @@ async function handleExecuteButton(interaction, action, params) {
     'achievements': 'achievements',
     'leaderboard': 'leaderboard',
     'topics': 'topics',
-    'help': 'help'
+    'help': 'help',
+    'quickquiz': 'quickquiz',
+    'funfact': 'funfact',
+    'stats': 'stats',
+    'invite': 'invite',
+    'about': 'about',
+    'weekly': 'weekly',
+    'challenge': 'challenge',
+    'dailychallenge': 'dailychallenge',
+    'flashcard': 'flashcard',
+    'tournament': 'tournament',
+    'skilltree': 'skilltree',
+    'heatmap': 'heatmap',
+    'insights': 'insights',
+    'certificate': 'certificate',
+    'path': 'path',
+    'project': 'project',
+    'arena': 'arena',
+    'tutor': 'tutor',
+    'card': 'card',
+    'theme': 'theme',
+    'prestige': 'prestige'
   };
   
   const commandName = commandMap[action];
   if (!commandName) {
+    // Try to execute the action as a command name directly
+    const directCommand = interaction.client.commands.get(action);
+    if (directCommand) {
+      return executeCommandFromButton(interaction, action);
+    }
+    
     // If not a command, show a helpful message
     return interaction.reply({ 
       content: `Use \`/${action}\` to access this feature!`, 
@@ -1441,6 +1535,19 @@ async function handleQuizButton(interaction, action, params) {
     );
     
     await interaction.update({ embeds: [selectEmbed], components: [topicRow1, topicRow2] });
+  } else if (action === 'review') {
+    // Show quiz review - weakspots analysis
+    await executeCommandFromButton(interaction, 'weakspots');
+  } else if (action === 'share') {
+    // Handle quiz share
+    await interaction.reply({ 
+      content: '📤 Share your results! Screenshot or copy this message to share with friends.',
+      ephemeral: true 
+    });
+  } else if (action === 'topic') {
+    // Handle quiz_topic_* buttons - start quiz with selected topic
+    const topic = params.length > 0 ? decodeURIComponent(params.join('_')) : 'JavaScript';
+    await startQuizWithTopic(interaction, topic);
   }
 }
 
@@ -1674,10 +1781,36 @@ async function shareProfile(interaction, user) {
 }
 
 async function handleLeaderboardButton(interaction, action, params) {
-  // Handle pagination
-  if (action === 'page') {
+  // Handle pagination buttons (lb_first, lb_prev, lb_next, lb_last, lb_page, leaderboard_page)
+  if (action === 'page' || action === 'first' || action === 'prev' || action === 'next' || action === 'last') {
     const { handleButton } = await import('../commands/leaderboard.js');
     await handleButton(interaction, action, params);
+    return;
+  }
+  
+  // Handle filter buttons (lb_filter_xp, lb_filter_level, etc.)
+  if (action === 'filter') {
+    const filterType = params[0] || 'xp';
+    // For now, just re-show the leaderboard - filter implementation can be added
+    await executeCommandFromButton(interaction, 'leaderboard');
+    return;
+  }
+  
+  // Handle lb_me button - show user's rank
+  if (action === 'me') {
+    await executeCommandFromButton(interaction, 'profile');
+    return;
+  }
+  
+  // Handle lb_global, lb_weekly, lb_sort_*
+  if (action === 'global' || action === 'weekly' || action === 'sort') {
+    await executeCommandFromButton(interaction, 'leaderboard');
+    return;
+  }
+  
+  // Handle lb_back - go back to main leaderboard
+  if (action === 'back') {
+    await executeCommandFromButton(interaction, 'leaderboard');
     return;
   }
   
@@ -2246,6 +2379,265 @@ async function handleReferralButton(interaction, action, params) {
       getSubcommand: () => 'claim'
     };
     await command.execute(interaction);
+  }
+}
+
+// ============================================================
+// UNIVERSAL BUTTON HANDLERS - Execute commands directly
+// ============================================================
+
+/**
+ * Dynamic button handler - imports and executes command handlers
+ * Used for commands that export their own button handlers
+ */
+async function handleDynamicButton(interaction, commandName, action, params) {
+  try {
+    const commandModule = await import(`../commands/${commandName}.js`);
+    
+    // Check if command has a button handler
+    if (commandModule.handleButton) {
+      await commandModule.handleButton(interaction, action, params);
+      return;
+    }
+    
+    // If command has handleXxxButton, try that
+    const handlerName = `handle${commandName.charAt(0).toUpperCase() + commandName.slice(1)}Button`;
+    if (commandModule[handlerName]) {
+      await commandModule[handlerName](interaction, action, params);
+      return;
+    }
+    
+    // Otherwise try to execute the command directly
+    await executeCommandFromButton(interaction, commandName);
+  } catch (error) {
+    logger.error(`Dynamic button error for ${commandName}:`, error);
+    // Try to execute the command as fallback
+    try {
+      await executeCommandFromButton(interaction, commandName);
+    } catch (e) {
+      if (!interaction.replied && !interaction.deferred) {
+        await interaction.reply({ content: '⏳ This feature is loading...', ephemeral: true });
+      }
+    }
+  }
+}
+
+/**
+ * Handle streak-related buttons
+ */
+async function handleStreakButton(interaction, action, params) {
+  if (action === 'share') {
+    await interaction.reply({ 
+      content: '🔥 Share your streak! Copy and paste this message.',
+      ephemeral: true 
+    });
+  } else if (action === 'claim' || action === 'protect') {
+    await executeCommandFromButton(interaction, 'streak');
+  } else {
+    await executeCommandFromButton(interaction, 'streak');
+  }
+}
+
+/**
+ * Handle daily bonus buttons
+ */
+async function handleDailyButton(interaction, action, params) {
+  if (action === 'claim') {
+    await executeCommandFromButton(interaction, 'daily');
+  } else if (action === 'share') {
+    await interaction.reply({ 
+      content: '✨ Share your daily reward! Copy the message above.',
+      ephemeral: true 
+    });
+  } else if (action === 'quiz') {
+    await executeCommandFromButton(interaction, 'quickquiz');
+  } else if (action === 'learn') {
+    await showLearnTopicSelector(interaction);
+  } else {
+    await executeCommandFromButton(interaction, 'daily');
+  }
+}
+
+/**
+ * Handle weakspots buttons - execute directly instead of instructions
+ */
+async function handleWeakspotsButton(interaction, action, params) {
+  if (action === 'quiz') {
+    // Get the topic from params and start a quiz
+    const topic = params.length > 0 ? decodeURIComponent(params.join('_')) : null;
+    if (topic) {
+      await startQuizWithTopic(interaction, topic);
+    } else {
+      await showQuizTopicSelector(interaction);
+    }
+  } else if (action === 'learn') {
+    const topic = params.length > 0 ? decodeURIComponent(params.join('_')) : null;
+    if (topic) {
+      await startLearnWithTopic(interaction, topic);
+    } else {
+      await showLearnTopicSelector(interaction);
+    }
+  } else if (action === 'practice') {
+    await showQuizTopicSelector(interaction);
+  } else {
+    await executeCommandFromButton(interaction, 'weakspots');
+  }
+}
+
+/**
+ * Handle pagination buttons
+ */
+async function handlePaginationButton(interaction, action, params) {
+  // Pagination is usually handled by collectors, but if not:
+  if (action === 'first' || action === 'prev' || action === 'next' || action === 'last') {
+    await interaction.deferUpdate().catch(() => {});
+    // Page state should be maintained by the original command's collector
+  } else if (action === 'indicator') {
+    // Just acknowledge - this button shows current page
+    await interaction.deferUpdate().catch(() => {});
+  }
+}
+
+/**
+ * Handle confirmation buttons
+ */
+async function handleConfirmButton(interaction, action, params) {
+  // Confirmation buttons are context-specific and usually handled by collectors
+  // This is a fallback for orphaned confirmations
+  if (action === 'yes') {
+    await interaction.update({ 
+      content: '✅ Confirmed! The action has been processed.',
+      embeds: [],
+      components: []
+    }).catch(async () => {
+      await interaction.reply({ content: '✅ Confirmed!', ephemeral: true });
+    });
+  } else if (action === 'no') {
+    await interaction.update({ 
+      content: '❌ Cancelled.',
+      embeds: [],
+      components: []
+    }).catch(async () => {
+      await interaction.reply({ content: '❌ Cancelled.', ephemeral: true });
+    });
+  }
+}
+
+/**
+ * Handle try_command_* buttons - execute the command directly
+ */
+async function handleTryCommandButton(interaction, action, params) {
+  // action will be 'command' and params[0] will be the command name
+  const commandName = params.length > 0 ? params.join('_') : action;
+  
+  // Commands that need input - show selectors
+  const needsInput = ['learn', 'quiz', 'explain', 'tutor'];
+  
+  if (needsInput.includes(commandName)) {
+    if (commandName === 'learn') {
+      await showLearnTopicSelector(interaction);
+    } else if (commandName === 'quiz') {
+      await showQuizTopicSelector(interaction);
+    } else if (commandName === 'explain' || commandName === 'tutor') {
+      // These need user input - execute and let the command handle it
+      await executeCommandFromButton(interaction, commandName);
+    }
+  } else {
+    // Execute the command directly
+    await executeCommandFromButton(interaction, commandName);
+  }
+}
+
+/**
+ * Handle practice buttons
+ */
+async function handlePracticeButton(interaction, action, params) {
+  const topic = params.length > 0 ? decodeURIComponent(params.join('_')) : null;
+  
+  if (topic) {
+    // Start a quiz with this topic
+    await startQuizWithTopic(interaction, topic);
+  } else {
+    // Show topic selector
+    await showQuizTopicSelector(interaction);
+  }
+}
+
+/**
+ * Helper: Start quiz with a specific topic
+ */
+async function startQuizWithTopic(interaction, topic) {
+  const command = interaction.client.commands.get('quiz');
+  if (!command) {
+    return executeCommandFromButton(interaction, 'quickquiz');
+  }
+  
+  try {
+    await interaction.deferReply();
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: 'quiz',
+      options: {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      deferReply: async () => {},
+      reply: async (opts) => interaction.editReply(opts),
+      editReply: async (opts) => interaction.editReply(opts),
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await command.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Start quiz with topic error:', error);
+    await interaction.editReply({ content: `❌ Failed to start quiz. Try \`/quiz topic:${topic}\`` });
+  }
+}
+
+/**
+ * Helper: Start learn with a specific topic
+ */
+async function startLearnWithTopic(interaction, topic) {
+  const command = interaction.client.commands.get('learn');
+  if (!command) {
+    return interaction.reply({ content: '❌ Command not available', ephemeral: true });
+  }
+  
+  try {
+    await interaction.deferReply();
+    
+    const fakeInteraction = {
+      ...interaction,
+      isChatInputCommand: () => true,
+      isButton: () => false,
+      commandName: 'learn',
+      options: {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: () => null,
+        getUser: () => null,
+        getSubcommand: () => null,
+        get: () => null
+      },
+      replied: true,
+      deferred: true,
+      deferReply: async () => {},
+      reply: async (opts) => interaction.editReply(opts),
+      editReply: async (opts) => interaction.editReply(opts),
+      followUp: async (opts) => interaction.followUp(opts)
+    };
+    
+    await command.execute(fakeInteraction);
+  } catch (error) {
+    logger.error('Start learn with topic error:', error);
+    await interaction.editReply({ content: `❌ Failed to start lesson. Try \`/learn topic:${topic}\`` });
   }
 }
 
