@@ -1351,15 +1351,6 @@ async function handleQuizButton(interaction, action, params) {
       return;
     }
 
-    // Create styled transition embed
-    const transitionEmbed = new EmbedBuilder()
-      .setTitle('⏳ Loading Next Question...')
-      .setColor(COLORS.PRIMARY)
-      .setDescription(`\`\`\`\n▓▓▓▓▓▓▓▓▓▓ Question ${questionData.questionNum}/${questionData.totalQuestions}\n\`\`\``);
-
-    await interaction.update({ embeds: [transitionEmbed], components: [] });
-    await sleep(800);
-
     const questionEmbed = createQuizQuestionEmbed(
       questionData.question, 
       questionData.questionNum, 
@@ -1368,11 +1359,11 @@ async function handleQuizButton(interaction, action, params) {
       questionData.difficulty || 'medium'
     );
     
-    // Check if 50/50 was already used (new feature)
+    // Check if 50/50 was already used
     const answerButtons = createQuizAnswerButtons(questionData.eliminatedOptions);
     const controlButtons = createQuizControlButtons(questionData.hintUsed, questionData.fiftyUsed);
     
-    await interaction.editReply({ 
+    await interaction.update({ 
       embeds: [questionEmbed], 
       components: [answerButtons, controlButtons] 
     });
