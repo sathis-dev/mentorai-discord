@@ -624,18 +624,20 @@ export function createQuizAnswerButtons(eliminatedOptions = []) {
   return row;
 }
 
-export function createQuizControlButtons() {
+export function createQuizControlButtons(hintUsed = false, fiftyUsed = false) {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId('quiz_hint')
       .setLabel('Hint')
       .setEmoji('💡')
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(!!hintUsed),
     new ButtonBuilder()
       .setCustomId('quiz_fifty')
       .setLabel('50/50')
       .setEmoji('✂️')
-      .setStyle(ButtonStyle.Secondary),
+      .setStyle(ButtonStyle.Secondary)
+      .setDisabled(!!fiftyUsed),
     new ButtonBuilder()
       .setCustomId('quiz_cancel')
       .setLabel('Quit')
