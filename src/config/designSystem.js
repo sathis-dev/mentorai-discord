@@ -189,11 +189,11 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   const embed = new EmbedBuilder()
     .setColor(difficultyColors[difficulty] || difficultyColors.medium)
     .setTitle(`🎯 Question ${questionNum}/${totalQuestions}`)
-    .setDescription(`${VISUALS.separators.fancy}\n**${questionText}**\n${VISUALS.separators.fancy}`)
+    .setDescription(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n**${questionText}**\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`)
     .addFields(
       {
         name: '🎯 Options',
-        value: `🔵 ${cleanOptions[0]}\n🟢 ${cleanOptions[1]}\n🟡 ${cleanOptions[2]}\n🟣 ${cleanOptions[3]}`,
+        value: `🔵 ${cleanOptions[0]}\n\n🟢 ${cleanOptions[1]}\n\n🟡 ${cleanOptions[2]}\n\n🟣 ${cleanOptions[3]}`,
         inline: false
       },
       { name: '⚡ Topic', value: topic, inline: true },
