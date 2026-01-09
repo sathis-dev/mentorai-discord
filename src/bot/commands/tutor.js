@@ -206,3 +206,113 @@ Ask your first question with \`/tutor ask\`!
     await interaction.showModal(modal);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// BUTTON HANDLERS
+// ═══════════════════════════════════════════════════════════════════
+
+export async function handleButton(interaction, action, params) {
+  const userId = interaction.user.id;
+  
+  // Get conversation context
+  let conversation = await Conversation.findOne({ discordId: userId });
+  if (!conversation) {
+    conversation = await Conversation.create({
+      discordId: userId,
+      guildId: interaction.guildId,
+      messages: []
+    });
+  }
+  
+  // Get the last tutor response for context
+  const lastMessages = conversation.messages.slice(-2);
+  const lastQuestion = lastMessages.find(m => m.role === 'user')?.content || '';
+  const lastResponse = lastMessages.find(m => m.role === 'assistant')?.content || '';
+  
+  try {
+    await interaction.deferUpdate();
+    
+    let prompt = '';
+    let title = '';
+    
+    if (action === 'followup') {
+      prompt = `Based on your previous explanation about "${lastQuestion.slice(0, 100)}", suggest a natural follow-up question and answer it. Start with the follow-up question.`;
+      title = '🔄 Follow-up';
+    } else if (action === 'example') {
+      prompt = `Give me a practical code example for what you just explained about "${lastQuestion.slice(0, 100)}". Include working code with comments.`;
+      title = '📝 Code Example';
+    } else if (action === 'quiz') {
+      prompt = `Create a quick quiz question to test my understanding of "${lastQuestion.slice(0, 100)}". Give me the question, 4 options (A-D), and then the correct answer with explanation.`;
+      title = '🎯 Quick Quiz';
+    } else if (action === 'explain' && params[0] === 'simpler') {
+      prompt = `Explain "${lastQuestion.slice(0, 100)}" in simpler terms. Use an analogy or real-world example. Make it beginner-friendly.`;
+      title = '🔽 Simpler Explanation';
+    } else {
+      await interaction.followUp({ content: '❓ Unknown action', ephemeral: true });
+      return;
+    }
+    
+    // Generate AI response
+    const response = await generateTutorResponse(
+      prompt,
+      conversation.messages,
+      conversation.topic,
+      conversation.learningGoals
+    );
+    
+    // Save to conversation
+    conversation.messages.push(
+      { role: 'user', content: prompt, timestamp: new Date() },
+      { role: 'assistant', content: response.message, timestamp: new Date() }
+    );
+    conversation.messageCount += 2;
+    await conversation.save();
+    
+    // Build response embed
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.PRIMARY)
+      .setAuthor({ name: '🎓 AI Tutor', iconURL: interaction.client.user.displayAvatarURL() })
+      .setTitle(title)
+      .setDescription(response.message.slice(0, 4000))
+      .setFooter({ text: `Session: ${conversation.messageCount} messages • /tutor history to review` })
+      .setTimestamp();
+    
+    // Same buttons for continued interaction
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId('tutor_followup')
+          .setLabel('Follow-up')
+          .setEmoji('🔄')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('tutor_example')
+          .setLabel('Show Example')
+          .setEmoji('📝')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId('tutor_quiz')
+          .setLabel('Quiz Me')
+          .setEmoji('🎯')
+          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder()
+          .setCustomId('tutor_explain_simpler')
+          .setLabel('Simpler')
+          .setEmoji('🔽')
+          .setStyle(ButtonStyle.Secondary)
+      );
+    
+    await interaction.editReply({ embeds: [embed], components: [row] });
+    
+  } catch (error) {
+    console.error('Tutor button error:', error);
+    try {
+      await interaction.followUp({ 
+        content: '❌ Sorry, I encountered an error. Please try `/tutor ask` again!',
+        ephemeral: true 
+      });
+    } catch (e) {
+      // Already replied
+    }
+  }
+}
