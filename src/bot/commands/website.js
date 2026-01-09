@@ -41,8 +41,8 @@ Full command reference and guides
       {
         name: '🔗 Quick Links',
         value: [
-          '• **Website**: mentorai.dev',
-          '• **Dashboard**: mentorai.dev/dashboard',
+          '• **Website**: mentorai.up.railway.app',
+          '• **Dashboard**: mentorai.up.railway.app/dashboard',
           '• **GitHub**: github.com/sathis-dev/mentorai-discord'
         ].join('\n'),
         inline: false
@@ -58,15 +58,15 @@ Full command reference and guides
     .addComponents(
       new ButtonBuilder()
         .setLabel('🌐 Website')
-        .setURL('https://mentorai.dev')
+        .setURL('https://mentorai.up.railway.app')
         .setStyle(ButtonStyle.Link),
       new ButtonBuilder()
         .setLabel('📊 Dashboard')
-        .setURL('https://mentorai.dev/dashboard')
+        .setURL('https://mentorai.up.railway.app/dashboard')
         .setStyle(ButtonStyle.Link),
       new ButtonBuilder()
         .setLabel('💬 Support Server')
-        .setURL('https://discord.gg/mentorai')
+        .setURL('https://discord.gg/kU4kACs6kZ')
         .setStyle(ButtonStyle.Link)
     );
 

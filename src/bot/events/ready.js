@@ -27,7 +27,6 @@ export async function execute(client) {
     { name: '🔥 Build Your Daily Streak!', type: ActivityType.Custom },
     { name: '🏆 Unlock Achievements & Level Up', type: ActivityType.Custom },
     { name: '💡 /help - See All Commands', type: ActivityType.Playing },
-    { name: '🌐 mentorai.dev - Website', type: ActivityType.Custom },
     { name: '⚔️ /challenge - 1v1 Battles', type: ActivityType.Playing },
   ];
   

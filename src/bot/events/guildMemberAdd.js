@@ -87,7 +87,7 @@ ${EMOJIS.SPARKLE} **Your Stats:**
           .setStyle(ButtonStyle.Primary),
         new ButtonBuilder()
           .setLabel('🌐 Website')
-          .setURL('https://mentorai.dev')
+          .setURL('https://mentorai.up.railway.app')
           .setStyle(ButtonStyle.Link)
       );
 

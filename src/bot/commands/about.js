@@ -112,7 +112,7 @@ Uptime      : ${uptimeStr}
     .addComponents(
       new ButtonBuilder()
         .setLabel('🌐 Website')
-        .setURL('https://mentorai.dev')
+        .setURL('https://mentorai.up.railway.app')
         .setStyle(ButtonStyle.Link),
       new ButtonBuilder()
         .setLabel('➕ Add Bot')
@@ -120,7 +120,7 @@ Uptime      : ${uptimeStr}
         .setStyle(ButtonStyle.Link),
       new ButtonBuilder()
         .setLabel('💬 Support')
-        .setURL('https://discord.gg/mentorai')
+        .setURL('https://discord.gg/kU4kACs6kZ')
         .setStyle(ButtonStyle.Link),
       new ButtonBuilder()
         .setLabel('⭐ GitHub')

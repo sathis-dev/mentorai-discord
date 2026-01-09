@@ -72,7 +72,7 @@ certificateSchema.statics.createForUser = async function(user, skill, level) {
   });
   
   // Generate verification URL
-  certificate.verificationUrl = `https://mentorai.dev/verify/${certificate.certificateId}`;
+  certificate.verificationUrl = `https://mentorai.up.railway.app/verify/${certificate.certificateId}`;
   
   await certificate.save();
   return certificate;

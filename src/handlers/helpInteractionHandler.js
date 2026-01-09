@@ -193,7 +193,7 @@ function buildMainHubComponents(user) {
         .setLabel('Support')
         .setEmoji('💬')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.gg/mentorai'),
+        .setURL('https://discord.gg/kU4kACs6kZ'),
       new ButtonBuilder()
         .setCustomId('help_feedback')
         .setLabel('Feedback')
