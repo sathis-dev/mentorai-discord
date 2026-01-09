@@ -165,52 +165,42 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
   };
   
   const difficultyInfo = {
-    easy: { dot: '🟢', label: 'EASY', xp: '+20 XP', time: '45s' },
-    medium: { dot: '🟡', label: 'MEDIUM', xp: '+25 XP', time: '30s' },
-    hard: { dot: '🔴', label: 'HARD', xp: '+35 XP', time: '20s' }
+    easy: { dot: '🟢', label: 'Easy' },
+    medium: { dot: '🟡', label: 'Medium' },
+    hard: { dot: '🔴', label: 'Hard' }
   };
   
   const diffData = difficultyInfo[difficulty] || difficultyInfo.medium;
   
-  // Create progress bar (filled/empty) - 20 characters for better visuals
-  const filled = Math.floor((questionNum / totalQuestions) * 20);
-  const empty = 20 - filled;
+  // Create progress bar
+  const filled = Math.floor((questionNum / totalQuestions) * 10);
+  const empty = 10 - filled;
   const progressBar = '█'.repeat(filled) + '░'.repeat(empty);
   
   // Format question text
   let questionText = question.question || 'Loading question...';
   
-  // Format answers with quote blocks and consistent colored dots
+  // Format answers - ensure single line display
   const options = question.options || ['N/A', 'N/A', 'N/A', 'N/A'];
-  const formattedAnswers = [
-    `> 🔵 **A** ║ ${options[0]}`,
-    `> 🟢 **B** ║ ${options[1]}`,
-    `> 🟡 **C** ║ ${options[2]}`,
-    `> 🟣 **D** ║ ${options[3]}`
-  ].join('\n\n');
-
-  // Build premium description with diamond separators
-  const description = `**\` 📚 ${topic.toUpperCase()} \`**
-
-${diffData.dot} **${diffData.label}** ◈ 💎 **${diffData.xp}** ◈ ⏱️ **${diffData.time}**
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-**❓ ${questionText}**
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-
-${formattedAnswers}
-
-▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬▬
-\`${progressBar}\` **${questionNum}/${totalQuestions}**`;
-
+  
+  // Replace newlines in options with spaces to keep them single-line
+  const cleanOptions = options.map(opt => String(opt).replace(/\n/g, ' '));
+  
   const embed = new EmbedBuilder()
     .setColor(difficultyColors[difficulty] || difficultyColors.medium)
-    .setAuthor({ name: '⚡ MENTOR AI QUIZ ⚡' })
-    .setDescription(description)
-    .setFooter({ 
-      text: '💡 Use buttons below to answer',
-    })
+    .setTitle(`🎯 Question ${questionNum}/${totalQuestions}`)
+    .setDescription(`${VISUALS.separators.fancy}\n**${questionText}**\n${VISUALS.separators.fancy}`)
+    .addFields(
+      {
+        name: '🎯 Options',
+        value: `🔵 ${cleanOptions[0]}\n🟢 ${cleanOptions[1]}\n🟡 ${cleanOptions[2]}\n🟣 ${cleanOptions[3]}`,
+        inline: false
+      },
+      { name: '⚡ Topic', value: topic, inline: true },
+      { name: `${diffData.dot} Difficulty`, value: diffData.label, inline: true },
+      { name: '📊 Progress', value: `\`${progressBar}\``, inline: false }
+    )
+    .setFooter({ text: '🎓 MentorAI • Select an answer below' })
     .setTimestamp();
   
   return embed;
@@ -596,8 +586,11 @@ export function createHelpEmbed() {
 // BUTTON BUILDERS
 // ============================================================
 
-export function createQuizAnswerButtons(disabled = false) {
+export function createQuizAnswerButtons(eliminatedOptions = []) {
   const row = new ActionRowBuilder();
+  
+  // Convert to array if not already (handle both boolean and array)
+  const eliminated = Array.isArray(eliminatedOptions) ? eliminatedOptions : [];
   
   // A=Blue (Primary), B=Green (Success), C=Gray (Secondary), D=Gray (Secondary)
   // With colored circle emojis to match the embed
@@ -607,25 +600,25 @@ export function createQuizAnswerButtons(disabled = false) {
       .setLabel('A')
       .setEmoji('🔵')
       .setStyle(ButtonStyle.Primary)
-      .setDisabled(disabled),
+      .setDisabled(eliminated.includes(0)),
     new ButtonBuilder()
       .setCustomId('quiz_answer_1')
       .setLabel('B')
       .setEmoji('🟢')
       .setStyle(ButtonStyle.Success)
-      .setDisabled(disabled),
+      .setDisabled(eliminated.includes(1)),
     new ButtonBuilder()
       .setCustomId('quiz_answer_2')
       .setLabel('C')
       .setEmoji('🟡')
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled),
+      .setDisabled(eliminated.includes(2)),
     new ButtonBuilder()
       .setCustomId('quiz_answer_3')
       .setLabel('D')
       .setEmoji('🟣')
       .setStyle(ButtonStyle.Secondary)
-      .setDisabled(disabled)
+      .setDisabled(eliminated.includes(3))
   );
   
   return row;
