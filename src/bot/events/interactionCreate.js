@@ -467,9 +467,16 @@ async function handleSelectMenu(interaction) {
 
 // NEW: Start quiz from help menu topic selection
 async function startQuizFromHelpMenu(interaction, topic) {
+  // Immediately acknowledge the select menu to prevent timeout
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    // If deferUpdate fails, try to continue anyway
+  }
+  
   if (topic === 'custom') {
-    await interaction.reply({ 
-      content: '📚 Use `/learn topic:your-topic` to learn about any topic!', 
+    await interaction.followUp({ 
+      content: '📚 Use `/quiz topic:your-topic` to start a quiz on any topic!', 
       ephemeral: true 
     });
     return;
@@ -477,15 +484,13 @@ async function startQuizFromHelpMenu(interaction, topic) {
   
   const quizCommand = interaction.client.commands.get('quiz');
   if (!quizCommand) {
-    return interaction.reply({ content: '❌ Quiz command not found', ephemeral: true });
+    return interaction.followUp({ content: '❌ Quiz command not found', ephemeral: true });
   }
   
   try {
-    // Defer first
-    await interaction.deferReply();
     let hasResponded = false;
     
-    // Start quiz with selected topic
+    // Start quiz with selected topic - use channel.send for new message
     const fakeInteraction = {
       ...interaction,
       isChatInputCommand: () => true,
@@ -500,17 +505,19 @@ async function startQuizFromHelpMenu(interaction, topic) {
         getSubcommand: () => null,
         get: () => null
       },
-      replied: true,
-      deferred: true,
+      replied: false,
+      deferred: false,
       reply: async (opts) => {
-        if (hasResponded) return interaction.followUp(opts);
         hasResponded = true;
-        return interaction.editReply(opts);
+        // Send as new message in channel
+        return interaction.followUp(opts);
       },
-      deferReply: async () => {},
+      deferReply: async () => {
+        // Already deferred via deferUpdate
+      },
       editReply: async (opts) => {
         hasResponded = true;
-        return interaction.editReply(opts);
+        return interaction.followUp(opts);
       },
       followUp: async (opts) => interaction.followUp(opts)
     };
@@ -518,18 +525,25 @@ async function startQuizFromHelpMenu(interaction, topic) {
     await quizCommand.execute(fakeInteraction);
   } catch (error) {
     logger.error('Quiz from help error:', error);
-    if (interaction.deferred) {
-      await interaction.editReply({ content: `Use \`/quiz topic:${topic}\` to start!` });
-    } else {
-      await interaction.reply({ content: `Use \`/quiz topic:${topic}\` to start!`, ephemeral: true });
+    try {
+      await interaction.followUp({ content: `Use \`/quiz topic:${topic}\` to start!`, ephemeral: true });
+    } catch (e) {
+      // Silently fail if we can't follow up
     }
   }
 }
 
 // NEW: Start lesson from help menu topic selection  
 async function startLearnFromHelpMenu(interaction, topic) {
+  // Immediately acknowledge the select menu to prevent timeout
+  try {
+    await interaction.deferUpdate();
+  } catch (e) {
+    // If deferUpdate fails, try to continue anyway
+  }
+  
   if (topic === 'custom') {
-    await interaction.reply({ 
+    await interaction.followUp({ 
       content: '🤖 Use `/learn topic:your-topic` to learn about anything!\n\nExample: `/learn topic:async await in JavaScript`', 
       ephemeral: true 
     });
@@ -548,14 +562,12 @@ async function startLearnFromHelpMenu(interaction, topic) {
   
   const learnCommand = interaction.client.commands.get('learn');
   if (!learnCommand) {
-    return interaction.reply({ content: '❌ Learn command not found', ephemeral: true });
+    return interaction.followUp({ content: '❌ Learn command not found', ephemeral: true });
   }
   
   const actualTopic = topicMap[topic] || topic;
   
   try {
-    // Defer first
-    await interaction.deferReply();
     let hasResponded = false;
     
     const fakeInteraction = {
@@ -571,17 +583,18 @@ async function startLearnFromHelpMenu(interaction, topic) {
         getSubcommand: () => null,
         get: () => null
       },
-      replied: true,
-      deferred: true,
+      replied: false,
+      deferred: false,
       reply: async (opts) => {
-        if (hasResponded) return interaction.followUp(opts);
         hasResponded = true;
-        return interaction.editReply(opts);
+        return interaction.followUp(opts);
       },
-      deferReply: async () => {},
+      deferReply: async () => {
+        // Already deferred via deferUpdate
+      },
       editReply: async (opts) => {
         hasResponded = true;
-        return interaction.editReply(opts);
+        return interaction.followUp(opts);
       },
       followUp: async (opts) => interaction.followUp(opts)
     };
@@ -589,10 +602,10 @@ async function startLearnFromHelpMenu(interaction, topic) {
     await learnCommand.execute(fakeInteraction);
   } catch (error) {
     logger.error('Learn from help error:', error);
-    if (interaction.deferred) {
-      await interaction.editReply({ content: `Use \`/learn topic:${actualTopic}\` to start!` });
-    } else {
-      await interaction.reply({ content: `Use \`/learn topic:${actualTopic}\` to start!`, ephemeral: true });
+    try {
+      await interaction.followUp({ content: `Use \`/learn topic:${actualTopic}\` to start!`, ephemeral: true });
+    } catch (e) {
+      // Silently fail if we can't follow up
     }
   }
 }
