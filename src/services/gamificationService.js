@@ -45,13 +45,16 @@ export const ACHIEVEMENTS = {
  */
 export async function getOrCreateUser(discordId, username) {
   try {
+    // Ensure we have a valid username
+    const safeUsername = username || 'User';
+    
     let user = await User.findOne({ discordId });
 
     if (!user) {
       // Create new user in MongoDB
       user = new User({
         discordId,
-        username,
+        username: safeUsername,
         xp: 0,
         level: 1,
         streak: 0,
@@ -65,21 +68,25 @@ export async function getOrCreateUser(discordId, username) {
         createdAt: new Date()
       });
       await user.save();
-      console.log(`✨ Created new user: ${username} (${discordId})`);
+      console.log(`✨ Created new user: ${safeUsername} (${discordId})`);
       broadcastUserUpdate(user.toObject(), 'create');
-    } else if (user.username !== username) {
-      // Update username if changed
-      user.username = username;
-      await user.save();
+    } else {
+      // Always sync username and lastActive
+      if (user.username !== safeUsername || !user.lastActive) {
+        user.username = safeUsername;
+        user.lastActive = new Date();
+        await user.save();
+      }
     }
 
     return user;
   } catch (error) {
     console.error('Error in getOrCreateUser:', error);
     // Return a minimal user object to prevent crashes
+    const safeUsername = username || 'User';
     return {
       discordId,
-      username,
+      username: safeUsername,
       xp: 0,
       level: 1,
       streak: 0,
@@ -88,6 +95,7 @@ export async function getOrCreateUser(discordId, username) {
       correctAnswers: 0,
       totalQuestions: 0,
       topicsStudied: [],
+      completedLessons: [],
       xpForNextLevel: () => 100,
       addXp: async () => ({ leveledUp: false, newLevel: 1 }),
       updateStreak: async () => 0,

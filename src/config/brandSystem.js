@@ -91,6 +91,8 @@ export const EMOJIS = {
   debug: '🐛',
   review: '🔍',
   explain: '💡',
+  profile: '👤',
+  error: '❌',
   
   // Progress & Stats
   xp: '✨',

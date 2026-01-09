@@ -123,7 +123,7 @@ async function getLeaderboardData(type, scope, guildId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// CREATE LEADERBOARD EMBED
+// CREATE LEADERBOARD EMBED - PREMIUM DESIGN
 // ═══════════════════════════════════════════════════════════════════
 
 function createLeaderboardEmbed(users, type, scope, currentUser, page) {
@@ -131,35 +131,25 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
   const startIndex = (page - 1) * usersPerPage;
   const pageUsers = users.slice(startIndex, startIndex + usersPerPage);
   const totalPages = Math.ceil(users.length / usersPerPage) || 1;
+  const medals = ['🥇', '🥈', '🥉'];
 
   // Type info
   const typeInfo = {
-    xp: { emoji: '✨', name: 'XP Leaderboard', color: 0xFFD700, field: 'xp', format: (v) => `${formatNumber(v || 0)} XP` },
-    streak: { emoji: '🔥', name: 'Streak Champions', color: 0xFF6B35, field: 'streak', format: (v) => `${v || 0} days` },
-    quizzes: { emoji: '🎯', name: 'Quiz Masters', color: 0x5865F2, field: 'quizzesCompleted', format: (v) => `${v || 0} quizzes` },
-    wins: { emoji: '🏆', name: 'Tournament Champions', color: 0x57F287, field: 'tournamentWins', format: (v) => `${v || 0} wins` },
-    accuracy: { emoji: '📊', name: 'Accuracy Leaders', color: 0x3498DB, field: 'stats.accuracy', format: (v) => `${(v || 0).toFixed(1)}%` }
+    xp: { emoji: '✨', name: 'XP LEADERBOARD', color: 0xFFD700, field: 'xp', format: (v) => `${formatNumber(v || 0)} XP` },
+    streak: { emoji: '🔥', name: 'STREAK CHAMPIONS', color: 0xFF6B35, field: 'streak', format: (v) => `${v || 0} days` },
+    quizzes: { emoji: '🎯', name: 'QUIZ MASTERS', color: 0x5865F2, field: 'quizzesCompleted', format: (v) => `${v || 0} quizzes` },
+    wins: { emoji: '🏆', name: 'TOURNAMENT CHAMPIONS', color: 0x57F287, field: 'tournamentWins', format: (v) => `${v || 0} wins` },
+    accuracy: { emoji: '📊', name: 'ACCURACY LEADERS', color: 0x3498DB, field: 'stats.accuracy', format: (v) => `${(v || 0).toFixed(1)}%` }
   };
 
   const info = typeInfo[type] || typeInfo.xp;
 
-  // Scope info
-  const scopeEmoji = scope === 'global' ? '🌍' : scope === 'server' ? '🏠' : '📅';
-  const scopeName = scope === 'global' ? 'Global' : scope === 'server' ? 'This Server' : 'This Week';
-
-  // Build leaderboard entries with proper formatting
-  let leaderboardText = '';
+  // Build ranking list
+  let rankingText = '';
   
   pageUsers.forEach((user, index) => {
     const position = startIndex + index + 1;
-    const rank = getRankFromXP(user.xp || 0);
-    
-    // Medal emojis for top 3
-    let medal = '';
-    if (position === 1) medal = '🥇';
-    else if (position === 2) medal = '🥈';
-    else if (position === 3) medal = '🥉';
-    else medal = `\`${position}.\``;
+    const medal = position <= 3 ? medals[position - 1] : `\`#${position}\``;
 
     // Get the value based on type
     let value;
@@ -173,21 +163,18 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
 
     const isCurrentUser = user.discordId === currentUser.discordId;
     const username = user.username || 'Unknown';
+    const arrow = isCurrentUser ? '**→**' : '   ';
+    const name = isCurrentUser ? `**${username}**` : username;
     
-    if (isCurrentUser) {
-      leaderboardText += `${medal} **${rank.emoji} ${username}** › \`${info.format(value)}\` ⬅️\n`;
-    } else {
-      leaderboardText += `${medal} ${rank.emoji} ${username} › \`${info.format(value)}\`\n`;
-    }
+    rankingText += `${arrow} ${medal} ${name} • \`${info.format(value)}\`\n`;
   });
 
-  if (!leaderboardText) {
-    leaderboardText = '*No users found yet. Be the first!*';
+  if (!rankingText) {
+    rankingText = '*No players found yet. Be the first!*';
   }
 
   // Find current user's position
   const userPosition = users.findIndex(u => u.discordId === currentUser.discordId) + 1;
-  const userRank = getRankFromXP(currentUser.xp || 0);
   let userValue;
   if (type === 'accuracy') {
     userValue = currentUser.stats?.accuracy || (currentUser.correctAnswers && currentUser.totalAnswers 
@@ -199,24 +186,29 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
 
   const embed = new EmbedBuilder()
     .setColor(info.color)
-    .setTitle(`${info.emoji} ${info.name}`)
-    .setDescription(`${scopeEmoji} **${scopeName}** Rankings`)
-    .addFields(
-      {
-        name: '🏅 Top Players',
-        value: leaderboardText || '*No data*',
-        inline: false
-      },
-      {
-        name: '📍 Your Rank',
-        value: userPosition > 0 
-          ? `${userRank.emoji} **#${userPosition}** › \`${info.format(userValue)}\``
-          : `${userRank.emoji} Not ranked yet • Take a quiz to join!`,
-        inline: false
-      }
-    )
-    .setFooter({ text: `Page ${page}/${totalPages} • ${users.length} learners • Updated live` })
+    .setAuthor({ name: `🏆 ${info.name}` })
+    .setDescription(`
+\`\`\`
+╔══════════════════════════════════════╗
+║         GLOBAL RANKINGS              ║
+╚══════════════════════════════════════╝
+\`\`\`
+
+${rankingText}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+**📍 Your Position**
+> 🏅 **#${userPosition > 0 ? userPosition : '—'}** • ${currentUser.username} • \`${info.format(userValue)}\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Page **${page}/${totalPages}** • **${users.length}** total players
+    `)
+    .setFooter({ text: '⚡ Updated live • Keep learning to climb!' })
     .setTimestamp();
+
+  return embed;
+}
 
   return embed;
 }

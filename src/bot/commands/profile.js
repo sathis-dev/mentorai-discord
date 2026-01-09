@@ -340,8 +340,9 @@ export async function execute(interaction) {
     // ═══ Fallback Profile ═══
     try {
       const rank = RANKS.novice;
+      const displayName = targetUser?.displayName || targetUser?.username || 'User';
       const fallbackEmbed = new EmbedBuilder()
-        .setTitle(`${EMOJIS.profile} ${targetUser?.username || 'User'}'s Profile`)
+        .setTitle(`${EMOJIS.profile || '👤'} ${displayName}'s Profile`)
         .setColor(rank.color)
         .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
         .setDescription(`\`\`\`

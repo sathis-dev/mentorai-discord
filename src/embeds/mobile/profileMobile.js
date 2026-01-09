@@ -55,13 +55,17 @@ export function createMobileProfileEmbed(user, member) {
     ? Math.round((user.correctAnswers / user.totalQuestions) * 100)
     : 0;
 
+  // Get display name with fallbacks
+  const displayName = member?.displayName || member?.user?.username || user?.username || 'User';
+  const avatarURL = member?.user?.displayAvatarURL?.({ dynamic: true }) || member?.displayAvatarURL?.({ dynamic: true }) || undefined;
+
   const embed = new EmbedBuilder()
     .setColor(rank.color || MOBILE.colors.PRIMARY)
     .setAuthor({
-      name: member?.displayName || user?.username || 'User',
-      iconURL: member?.user?.displayAvatarURL?.({ dynamic: true }) || undefined
+      name: `${displayName}'s Profile`,
+      iconURL: avatarURL
     })
-    .setThumbnail(member?.user?.displayAvatarURL?.({ dynamic: true, size: 128 }) || undefined)
+    .setThumbnail(avatarURL)
     .setDescription(`
 ${rank.emoji} **${rank.name}**
 
