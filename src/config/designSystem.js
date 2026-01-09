@@ -191,11 +191,10 @@ export function createQuizQuestionEmbed(question, questionNum, totalQuestions, t
     .setTitle(`🎯 Question ${questionNum}/${totalQuestions}`)
     .setDescription(`┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n**${questionText}**\n┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`)
     .addFields(
-      {
-        name: '🎯 Options',
-        value: `🔵 ${cleanOptions[0]}\n\n🟢 ${cleanOptions[1]}\n\n🟡 ${cleanOptions[2]}\n\n🟣 ${cleanOptions[3]}`,
-        inline: false
-      },
+      { name: '🔵 Option A', value: cleanOptions[0], inline: false },
+      { name: '🟢 Option B', value: cleanOptions[1], inline: false },
+      { name: '🟡 Option C', value: cleanOptions[2], inline: false },
+      { name: '🟣 Option D', value: cleanOptions[3], inline: false },
       { name: '⚡ Topic', value: topic, inline: true },
       { name: `${diffData.dot} Difficulty`, value: diffData.label, inline: true },
       { name: '📊 Progress', value: `\`${progressBar}\``, inline: false }
