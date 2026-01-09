@@ -96,7 +96,7 @@ export async function getOrCreateUser(discordId, username) {
       totalQuestions: 0,
       topicsStudied: [],
       completedLessons: [],
-      xpForNextLevel: () => 100,
+      xpForNextLevel: function() { return Math.floor(100 * Math.pow(1.5, (this.level || 1) - 1)); },
       addXp: async () => ({ leveledUp: false, newLevel: 1 }),
       updateStreak: async () => 0,
       save: async () => {}

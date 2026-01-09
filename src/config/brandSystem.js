@@ -375,16 +375,19 @@ export function createProgressBar(current, max, length = 10, style = 'default') 
  * Create XP progress bar with level info
  */
 export function createXPBar(user, length = 12) {
-  const xpNeeded = xpForLevel(user.level + 1);
+  // xpForLevel(level) = XP needed to go from current level to next
+  const xpNeeded = xpForLevel(user.level);
   const xpIntoLevel = user.xp;
   const bar = createProgressBar(xpIntoLevel, xpNeeded, length);
-  const percentage = Math.round((xpIntoLevel / xpNeeded) * 100);
+  const percentage = Math.round((xpIntoLevel / (xpNeeded || 1)) * 100);
   
-  return `${bar} ${percentage}%\n\`${xpIntoLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP\``;
+  return `${bar} ${percentage}%\n✨ ${xpIntoLevel.toLocaleString()} / ${xpNeeded.toLocaleString()} XP`;
 }
 
 /**
- * Calculate XP needed for a level
+ * Calculate XP needed to level up from a given level
+ * xpForLevel(1) = 100 XP to reach level 2
+ * xpForLevel(6) = 759 XP to reach level 7
  */
 export function xpForLevel(level) {
   return Math.floor(100 * Math.pow(1.5, level - 1));

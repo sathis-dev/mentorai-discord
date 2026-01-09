@@ -200,7 +200,8 @@ export async function execute(interaction) {
     // ═══ Calculate stats with safe defaults ═══
     const level = user?.level || 1;
     const xp = user?.xp || 0;
-    const xpNeeded = xpForLevel(level + 1);
+    // xpForLevel(level) = XP needed to level up FROM current level TO next level
+    const xpNeeded = xpForLevel(level);
     const streak = user?.streak || 0;
     const quizzes = user?.quizzesTaken || 0;
     const totalQ = user?.totalQuestions || 0;

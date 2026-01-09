@@ -385,7 +385,8 @@ export function createLessonEmbed(lesson, xpEarned = 0) {
 export function createProgressEmbed(user, avatarURL) {
   const level = user.level || 1;
   const xp = user.xp || 0;
-  const xpNeeded = typeof user.xpForNextLevel === 'function' ? user.xpForNextLevel() : 100;
+  // Use correct exponential XP formula: 100 * 1.5^(level-1)
+  const xpNeeded = typeof user.xpForNextLevel === 'function' ? user.xpForNextLevel() : Math.floor(100 * Math.pow(1.5, (user.level || 1) - 1));
   const streak = user.streak || 0;
   const accuracy = user.totalQuestions > 0 
     ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 

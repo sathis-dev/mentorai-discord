@@ -103,25 +103,25 @@ export function formatXP(current, required) {
 }
 
 export function getRankEmoji(level) {
-  if (level >= 100) return '👑';
-  if (level >= 75) return '🏆';
-  if (level >= 50) return '💎';
-  if (level >= 35) return '🔥';
-  if (level >= 25) return '⚡';
-  if (level >= 15) return '📘';
-  if (level >= 5) return '🌿';
-  return '🌱';
+  // Synced with brandSystem.js RANKS
+  if (level >= 50) return '👑';  // Legend
+  if (level >= 40) return '💎';  // Master
+  if (level >= 30) return '🔮';  // Expert
+  if (level >= 20) return '🥇';  // Advanced
+  if (level >= 12) return '🥈';  // Intermediate
+  if (level >= 5) return '🥉';   // Beginner
+  return '🌱';                   // Novice
 }
 
 export function getRankName(level) {
-  if (level >= 100) return 'LEGEND';
-  if (level >= 75) return 'GRANDMASTER';
-  if (level >= 50) return 'MASTER';
-  if (level >= 35) return 'EXPERT';
-  if (level >= 25) return 'ADVANCED';
-  if (level >= 15) return 'INTERMEDIATE';
-  if (level >= 5) return 'APPRENTICE';
-  return 'BEGINNER';
+  // Synced with brandSystem.js RANKS
+  if (level >= 50) return 'LEGENDARY MENTOR';
+  if (level >= 40) return 'MASTER CODER';
+  if (level >= 30) return 'EXPERT DEV';
+  if (level >= 20) return 'SKILLED CODER';
+  if (level >= 12) return 'RISING STAR';
+  if (level >= 5) return 'KEEN LEARNER';
+  return 'NEW EXPLORER';
 }
 
 export function getStreakEmoji(streak) {
