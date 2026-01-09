@@ -36,19 +36,14 @@ export async function execute(interaction) {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     await user.updateStreak();
 
-    // Animated loading sequence
-    await animateLoading(interaction, {
-      title: `${EMOJIS.learn} Generating Your Lesson`,
-      color: topicColor,
-      duration: 4000,
-      style: 'brain',
-      stages: [
-        { text: 'Connecting to AI...', status: `${EMOJIS.lightning} Initializing` },
-        { text: `Analyzing topic: **${topic}**`, status: `${EMOJIS.brain} Processing` },
-        { text: `Crafting ${difficulty} lesson...`, status: `${EMOJIS.code} Creating` },
-        { text: 'Adding examples & exercises...', status: `${EMOJIS.sparkle} Finalizing` }
-      ]
-    });
+    // Simple loading message (no animation to avoid multiple edits)
+    const loadingEmbed = new EmbedBuilder()
+      .setTitle('📖 Generating Your Lesson')
+      .setColor(topicColor)
+      .setDescription(`Analyzing topic: **${topic}**\nCrafting ${difficulty} lesson...`)
+      .setFooter({ text: '🎓 MentorAI • Please wait...' });
+    
+    await interaction.editReply({ embeds: [loadingEmbed] });
 
     // Generate lesson with AI
     const result = await getLesson(topic, difficulty, user);

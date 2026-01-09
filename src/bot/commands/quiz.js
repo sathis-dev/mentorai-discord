@@ -47,19 +47,14 @@ export async function execute(interaction) {
     const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
     if (user.updateStreak) await user.updateStreak();
 
-    // Animated loading sequence
-    await animateLoading(interaction, {
-      title: '🎯 Generating Your Quiz',
-      color: COLORS.QUIZ_PINK,
-      duration: 4000,
-      style: 'brain',
-      stages: [
-        { text: 'Connecting to AI...', status: '🔌 Initializing' },
-        { text: 'Analyzing topic: **' + topic + '**', status: '🧠 Processing' },
-        { text: 'Generating ' + numQuestions + ' questions...', status: '✍️ Creating' },
-        { text: 'Finalizing quiz...', status: '✨ Almost Ready' }
-      ]
-    });
+    // Simple loading message (no animation to avoid multiple edits)
+    const loadingEmbed = new EmbedBuilder()
+      .setTitle('🎯 Generating Your Quiz')
+      .setColor(COLORS.QUIZ_PINK)
+      .setDescription(`Analyzing topic: **${topic}**\nCreating ${numQuestions} questions...`)
+      .setFooter({ text: '🎓 MentorAI • Please wait...' });
+    
+    await interaction.editReply({ embeds: [loadingEmbed] });
 
     // Generate quiz
     const session = await createQuizSession(interaction.user.id, topic, numQuestions, difficulty);
@@ -99,15 +94,15 @@ export async function execute(interaction) {
     const diffEmoji = getDifficultyEmoji(difficulty);
     
     const readyEmbed = new EmbedBuilder()
-      .setTitle(`${EMOJIS.check} Quiz Ready!`)
+      .setTitle(`✅ Quiz Ready!`)
       .setColor(COLORS.SUCCESS)
-      .setDescription(`\`\`\`\n${EMOJIS.quiz} Get ready to test your knowledge!\n\`\`\``)
+      .setDescription(`\`\`\`\n🎯 Get ready to test your knowledge!\n\`\`\``)
       .addFields(
         { name: `${topicEmoji} Topic`, value: topic, inline: true },
-        { name: `${EMOJIS.code} Questions`, value: String(numQuestions), inline: true },
+        { name: '📝 Questions', value: String(numQuestions), inline: true },
         { name: `${diffEmoji} Difficulty`, value: difficulty.charAt(0).toUpperCase() + difficulty.slice(1), inline: true }
       )
-      .setFooter({ text: `${EMOJIS.brain} Starting in 2 seconds...` });
+      .setFooter({ text: '🎓 Starting in 2 seconds...' });
 
     await interaction.editReply({ embeds: [readyEmbed] });
     await new Promise(r => setTimeout(r, 2000));
