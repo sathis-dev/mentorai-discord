@@ -3,15 +3,27 @@ import mongoose from 'mongoose';
 const dailyChallengeSchema = new mongoose.Schema({
   date: { type: Date, required: true, unique: true },
   title: String,
-  difficulty: { type: String, enum: ['easy', 'medium', 'hard'] },
+  difficulty: { type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' },
   description: String,
+  exampleInput: String,
+  exampleOutput: String,
   examples: [{
     input: String,
     output: String,
     explanation: String
   }],
-  constraints: [String],
+  constraints: String,
   hints: [String],
+  participants: [{
+    discordId: String,
+    username: String,
+    completed: { type: Boolean, default: false },
+    code: String,
+    language: String,
+    startedAt: Date,
+    completedAt: Date,
+    timeTaken: Number
+  }],
   starterCode: {
     python: String,
     javascript: String,
