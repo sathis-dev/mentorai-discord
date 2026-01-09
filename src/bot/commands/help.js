@@ -143,8 +143,8 @@ export async function handleHelpInteraction(interaction) {
     if (interaction.isButton()) {
       const customId = interaction.customId;
 
-      // Back to main hub
-      if (customId === 'help_back_main') {
+      // Back to main hub (handle both help_main and help_back_main)
+      if (customId === 'help_main' || customId === 'help_back_main') {
         return showMainHub(interaction, user);
       }
 
