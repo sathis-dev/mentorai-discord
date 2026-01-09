@@ -8,8 +8,8 @@ export const BOT_OWNER_IDS = process.env.BOT_OWNER_IDS
     '1116096965755813968', // sathis.dev - Primary Owner
   ];
 
-// Beta mode - Set to false to disable access key requirement
-export const BETA_MODE = process.env.BETA_MODE !== 'false';
+// Beta mode - DISABLED for public release
+export const BETA_MODE = false;
 
 /**
  * Check if a user has access to the bot
