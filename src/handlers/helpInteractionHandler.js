@@ -202,7 +202,7 @@ function buildMainHubComponents(user, discordUser) {
     accuracy: accuracy.toString(),
     lessons: (user.completedLessons?.length || 0).toString(),
     achievements: (user.achievements?.length || 0).toString(),
-    prestige: (user.prestige || 0).toString(),
+    prestige: (user.prestige?.level || 0).toString(),
     joined: encodeURIComponent(joinedDate)
   });
   const websiteURL = `https://mentorai.up.railway.app/?${websiteParams.toString()}`;

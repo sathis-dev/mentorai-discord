@@ -243,8 +243,22 @@ userSchema.methods.xpForNextLevel = function() {
 
 // Add XP and handle level ups
 // Note: Does NOT auto-save - caller must save to avoid double-saves
+// FIXED: Now atomically tracks prestige.totalXpEarned
 userSchema.methods.addXp = function(amount) {
   this.xp += amount;
+  
+  // Initialize prestige object if needed
+  if (!this.prestige) {
+    this.prestige = {
+      level: 0,
+      totalXpEarned: 0,
+      bonusMultiplier: 1.0,
+      prestigeHistory: []
+    };
+  }
+  
+  // Track lifetime XP earned (critical for prestige system)
+  this.prestige.totalXpEarned = (this.prestige.totalXpEarned || 0) + amount;
   
   let leveledUp = false;
   let levelsGained = 0;
@@ -256,19 +270,24 @@ userSchema.methods.addXp = function(amount) {
   }
   
   // Don't save here - let caller batch saves
-  return { leveledUp, newLevel: this.level, levelsGained };
+  return { leveledUp, newLevel: this.level, levelsGained, xpAdded: amount };
 };
 
-// Update streak - Fixed logic for first-time users and edge cases
+// Update streak - Uses UTC midnight boundaries for consistency
+// FIXED: Unified streak system with /daily command
 userSchema.methods.updateStreak = async function() {
   const now = new Date();
   const lastActive = this.lastActive ? new Date(this.lastActive) : null;
+  
+  // Get today's midnight UTC
+  const todayMidnight = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const yesterdayMidnight = new Date(todayMidnight.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgoMidnight = new Date(todayMidnight.getTime() - 48 * 60 * 60 * 1000);
   
   // First time user or never had activity
   if (!lastActive || this.streak === 0) {
     this.streak = 1;
     this.lastActive = now;
-    // Track longest streak
     if (this.streak > (this.longestStreak || 0)) {
       this.longestStreak = this.streak;
     }
@@ -276,22 +295,23 @@ userSchema.methods.updateStreak = async function() {
     return this.streak;
   }
   
-  const diffHours = (now - lastActive) / (1000 * 60 * 60);
-  
-  // Already active today (less than 24h) - no change needed
-  if (diffHours < 24) {
-    // Just update lastActive, don't increment streak
+  // Already active today (after midnight UTC) - no change needed
+  if (lastActive >= todayMidnight) {
     this.lastActive = now;
     await this.save();
     return this.streak;
   }
   
-  // Active within 24-48 hours - increment streak!
-  if (diffHours >= 24 && diffHours < 48) {
+  // Active yesterday (between yesterday midnight and today midnight) - increment streak!
+  if (lastActive >= yesterdayMidnight) {
     this.streak += 1;
-  } 
-  // More than 48 hours - streak broken, reset to 1
-  else if (diffHours >= 48) {
+  }
+  // Active 2 days ago - streak broken but grace period
+  else if (lastActive >= twoDaysAgoMidnight) {
+    this.streak = 1;
+  }
+  // More than 2 days ago - streak fully reset
+  else {
     this.streak = 1;
   }
   
@@ -300,6 +320,8 @@ userSchema.methods.updateStreak = async function() {
     this.longestStreak = this.streak;
   }
   
+  // Sync with dailyBonusStreak for unified system
+  this.dailyBonusStreak = this.streak;
   this.lastActive = now;
   await this.save();
   return this.streak;

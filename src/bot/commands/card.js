@@ -45,7 +45,8 @@ export async function execute(interaction) {
     : 0;
   const achievements = user.achievements?.length || 0;
   const lessons = user.completedLessons?.length || 0;
-  const prestige = user.prestige || 0;
+  const prestige = user.prestige?.level || 0;
+  const totalXpEarned = user.prestige?.totalXpEarned || 0;
   
   // Get rank info
   const rank = getRank(level);
@@ -222,7 +223,8 @@ function getRarity(level, xp, achievements) {
 }
 
 function calculateXPForLevel(level) {
-  return Math.floor(100 * Math.pow(level, 1.5));
+  // Standardized formula: xpForLevel(level) = Math.floor(100 * Math.pow(1.5, level - 1))
+  return Math.floor(100 * Math.pow(1.5, level - 1));
 }
 
 function buildWebsiteURL(discordUser, user) {
@@ -239,7 +241,7 @@ function buildWebsiteURL(discordUser, user) {
       : '0',
     lessons: (user.completedLessons?.length || 0).toString(),
     achievements: (user.achievements?.length || 0).toString(),
-    prestige: (user.prestige || 0).toString()
+    prestige: (user.prestige?.level || 0).toString()
   });
   return `https://mentorai.up.railway.app/?${params.toString()}`;
 }

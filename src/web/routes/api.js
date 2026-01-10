@@ -1354,8 +1354,12 @@ router.get('/public/profile/:discordId', async (req, res) => {
         achievementsCount: user.achievements?.length || 0,
         achievements: user.achievements || [],
         
-        // Prestige
-        prestige: user.prestige || 0,
+        // Prestige (object with level, totalXpEarned, bonusMultiplier)
+        prestige: {
+          level: user.prestige?.level || 0,
+          totalXpEarned: user.prestige?.totalXpEarned || 0,
+          bonusMultiplier: user.prestige?.bonusMultiplier || 1.0
+        },
         
         // Meta
         joinedAt: user.createdAt,

@@ -256,6 +256,8 @@ export async function updateUser(discordId, updates) {
 
 /**
  * Add XP to user and handle level ups
+ * @deprecated Use addXpAtomic() instead for concurrency-safe XP updates.
+ * This function uses .save() which can cause race conditions under load.
  */
 export async function addXpToUser(discordId, amount, reason = 'Unknown') {
   try {
