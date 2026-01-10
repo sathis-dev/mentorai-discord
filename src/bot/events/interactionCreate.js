@@ -1915,33 +1915,24 @@ async function handleChallengeButton(interaction, action, params) {
   // Use the new challenge interaction handler
   try {
     const { handleChallengeInteraction } = await import('../../handlers/challengeInteractionHandler.js');
-    await handleChallengeInteraction(interaction);
+    const handled = await handleChallengeInteraction(interaction);
+    
+    // If handler returned false or didn't handle, the challenge likely expired
+    if (!handled && !interaction.replied && !interaction.deferred) {
+      await interaction.reply({ 
+        content: '❌ This challenge has expired or the bot was restarted. Please create a new challenge with `/challenge`', 
+        ephemeral: true 
+      });
+    }
   } catch (error) {
     logger.error('Challenge button error:', error);
     
-    // Fallback to simple handling
-    const opponentId = params[1];
-
-    if (action === 'accept') {
-      if (interaction.user.id !== opponentId) {
-        await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
-        return;
-      }
-      const embed = new EmbedBuilder()
-        .setTitle('⚔️ Challenge Accepted!')
-        .setColor(COLORS.SUCCESS)
-        .setDescription('Both players use `/quiz` to compete!');
-      await interaction.update({ embeds: [embed], components: [] });
-    } else if (action === 'decline') {
-      if (interaction.user.id !== opponentId) {
-        await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
-        return;
-      }
-      const embed = new EmbedBuilder()
-        .setTitle('❌ Challenge Declined')
-        .setColor(COLORS.ERROR)
-        .setDescription('Maybe next time!');
-      await interaction.update({ embeds: [embed], components: [] });
+    // Fallback - challenge was likely lost due to bot restart
+    if (!interaction.replied && !interaction.deferred) {
+      await interaction.reply({ 
+        content: '❌ This challenge has expired (bot was restarted). Please create a new challenge with `/challenge`', 
+        ephemeral: true 
+      });
     }
   }
 }
