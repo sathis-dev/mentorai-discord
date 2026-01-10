@@ -853,10 +853,10 @@ function buildSemanticResultsComponents(searchResult) {
   const { results } = searchResult;
   const topResults = results.slice(0, 3);
 
-  // Action buttons for top results
+  // Action buttons for top results - ensure unique custom_ids with index
   const actionButtons = topResults.map((r, i) => 
     new ButtonBuilder()
-      .setCustomId(r.actionId || `search_action_lesson_${r.subject || 'general'}`)
+      .setCustomId(`search_action_${i}_${r.actionType || 'lesson'}_${(r.subject || 'general').slice(0, 10)}`)
       .setLabel(r.actionLabel || 'Start Lesson')
       .setEmoji(r.actionEmoji || '📚')
       .setStyle(i === 0 ? ButtonStyle.Success : ButtonStyle.Primary)
