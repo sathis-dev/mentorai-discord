@@ -280,21 +280,23 @@ export async function addXpToUser(discordId, amount, reason = 'Unknown') {
 }
 
 /**
- * Check and award achievements
+ * Check and award achievements - ATOMIC VERSION
+ * Uses $inc for XP bonuses to prevent race conditions
  */
 export async function checkAchievements(user) {
   if (!user || !user.achievements) return [];
 
   const newAchievements = [];
   const earned = [...(user.achievements || [])];
+  let totalXpBonus = 0;
 
   // Helper to add achievement
   const tryAdd = (key) => {
     const ach = ACHIEVEMENTS[key];
     if (ach && !earned.includes(ach.name)) {
       earned.push(ach.name);
-      newAchievements.push(ach.name);
-      user.xp = (user.xp || 0) + (ach.xpBonus || 0);
+      newAchievements.push({ name: ach.name, xp: ach.xpBonus || 0 });
+      totalXpBonus += (ach.xpBonus || 0);
     }
   };
 
@@ -324,22 +326,43 @@ export async function checkAchievements(user) {
   if (topicsCount >= 10) tryAdd('TOPICS_10');
 
   if (newAchievements.length > 0) {
-    user.achievements = earned;
-    await user.save();
+    // Atomic update: add achievements and XP bonus in one operation
+    await User.findOneAndUpdate(
+      { discordId: String(user.discordId) },
+      {
+        $set: { achievements: earned },
+        $inc: { 
+          xp: totalXpBonus,
+          'prestige.totalXpEarned': totalXpBonus
+        }
+      }
+    );
     broadcastUserUpdate(user.toObject(), 'achievement');
   }
 
-  return newAchievements;
+  return newAchievements.map(a => a.name);
 }
 
 /**
  * Get leaderboard from MongoDB
+ * FIXED: XP leaderboard now sorts by prestige.totalXpEarned (lifetime)
  */
 export async function getLeaderboard(limit = 10, sortBy = 'xp') {
   try {
-    const sortField = sortBy === 'level' ? { level: -1, xp: -1 } : 
-                      sortBy === 'streak' ? { streak: -1 } : 
-                      { xp: -1 };
+    let sortField;
+    switch (sortBy) {
+      case 'level':
+        sortField = { level: -1, xp: -1 };
+        break;
+      case 'streak':
+        sortField = { streak: -1 };
+        break;
+      case 'xp':
+      default:
+        // Sort by lifetime XP for accurate rankings
+        sortField = { 'prestige.totalXpEarned': -1, level: -1, xp: -1 };
+        break;
+    }
     
     return await User.find()
       .sort(sortField)
@@ -435,22 +458,54 @@ export async function claimDailyBonus(user) {
   
   const totalXp = baseXp + streakBonus + milestoneBonus;
 
-  // Update user
-  user.lastDailyBonus = now;
-  user.dailyBonusStreak = newStreak;
-  user.lastActive = now;
-  
-  // Also update the general streak for compatibility
-  user.streak = newStreak;
+  // Apply prestige and streak multipliers
+  const { finalXp, multiplier } = calculateFinalXp(totalXp, user);
 
-  // Add XP (synchronous now)
-  const levelResult = user.addXp(totalXp);
+  // ATOMIC UPDATE: Update all fields in one operation
+  const updatedUser = await User.findOneAndUpdate(
+    { discordId: String(user.discordId) },
+    {
+      $set: {
+        lastDailyBonus: now,
+        dailyBonusStreak: newStreak,
+        streak: newStreak,  // Unified streak
+        lastActive: now
+      },
+      $inc: {
+        xp: finalXp,
+        'prestige.totalXpEarned': finalXp
+      }
+    },
+    { new: true }
+  );
 
-  // Check achievements
-  const achievements = await checkAchievements(user);
+  if (!updatedUser) {
+    return { success: false, message: 'User not found' };
+  }
 
-  await user.save(); // Single save at the end
-  broadcastUserUpdate(user.toObject(), 'daily_bonus');
+  // Check for level-ups
+  let leveledUp = false;
+  let newLevel = updatedUser.level;
+  let currentXp = updatedUser.xp;
+  const xpForLevel = (lvl) => Math.floor(100 * Math.pow(1.5, lvl - 1));
+
+  while (currentXp >= xpForLevel(newLevel)) {
+    currentXp -= xpForLevel(newLevel);
+    newLevel++;
+    leveledUp = true;
+  }
+
+  if (leveledUp) {
+    await User.findOneAndUpdate(
+      { discordId: String(user.discordId) },
+      { $set: { level: newLevel, xp: currentXp } }
+    );
+  }
+
+  // Check achievements (now atomic)
+  const achievements = await checkAchievements(updatedUser);
+
+  broadcastUserUpdate(updatedUser.toObject(), 'daily_bonus');
 
   return {
     success: true,
@@ -493,52 +548,96 @@ export async function getUserStats(user) {
 }
 
 /**
- * Record quiz completion
+ * Record quiz completion - ATOMIC VERSION
+ * Uses $inc for stats and XP to prevent race conditions
  */
 export async function recordQuizCompletion(user, correct, total, topic) {
   if (!user) return null;
 
-  user.quizzesTaken = (user.quizzesTaken || 0) + 1;
-  user.correctAnswers = (user.correctAnswers || 0) + correct;
-  user.totalQuestions = (user.totalQuestions || 0) + total;
-  
-  // Add topic if not studied before
-  if (topic && !user.topicsStudied?.includes(topic)) {
-    if (!user.topicsStudied) user.topicsStudied = [];
-    user.topicsStudied.push(topic);
-  }
-
-  // Calculate XP
-  let xpEarned = XP_REWARDS.QUIZ_COMPLETE + (correct * XP_REWARDS.QUIZ_CORRECT);
+  // Calculate base XP
+  let baseXp = XP_REWARDS.QUIZ_COMPLETE + (correct * XP_REWARDS.QUIZ_CORRECT);
   if (correct === total) {
-    xpEarned += XP_REWARDS.QUIZ_PERFECT;
+    baseXp += XP_REWARDS.QUIZ_PERFECT;
   }
 
-  // First quiz bonus
-  if (user.quizzesTaken === 1) {
-    xpEarned += XP_REWARDS.FIRST_QUIZ;
-    if (!user.achievements?.includes(ACHIEVEMENTS.FIRST_QUIZ.name)) {
-      user.achievements = user.achievements || [];
-      user.achievements.push(ACHIEVEMENTS.FIRST_QUIZ.name);
-    }
+  // First quiz bonus (check before incrementing)
+  const isFirstQuiz = (user.quizzesTaken || 0) === 0;
+  if (isFirstQuiz) {
+    baseXp += XP_REWARDS.FIRST_QUIZ;
   }
 
-  const levelResult = user.addXp(xpEarned); // Sync now
-  const achievements = await checkAchievements(user);
+  // Apply multipliers
+  const { finalXp, multiplier } = calculateFinalXp(baseXp, user);
+
+  // Build atomic update
+  const updateOps = {
+    $inc: {
+      quizzesTaken: 1,
+      correctAnswers: correct,
+      totalQuestions: total,
+      xp: finalXp,
+      'prestige.totalXpEarned': finalXp
+    },
+    $set: { lastActive: new Date() }
+  };
+
+  // Add topic if not already studied
+  if (topic && !user.topicsStudied?.includes(topic)) {
+    updateOps.$addToSet = { topicsStudied: topic };
+  }
+
+  // Add first quiz achievement if applicable
+  if (isFirstQuiz && !user.achievements?.includes(ACHIEVEMENTS.FIRST_QUIZ.name)) {
+    updateOps.$addToSet = updateOps.$addToSet || {};
+    updateOps.$addToSet.achievements = ACHIEVEMENTS.FIRST_QUIZ.name;
+  }
+
+  // ATOMIC UPDATE
+  const updatedUser = await User.findOneAndUpdate(
+    { discordId: String(user.discordId) },
+    updateOps,
+    { new: true }
+  );
+
+  if (!updatedUser) return null;
+
+  // Check for level-ups
+  let leveledUp = false;
+  let newLevel = updatedUser.level;
+  let currentXp = updatedUser.xp;
+  const xpForLevel = (lvl) => Math.floor(100 * Math.pow(1.5, lvl - 1));
+
+  while (currentXp >= xpForLevel(newLevel)) {
+    currentXp -= xpForLevel(newLevel);
+    newLevel++;
+    leveledUp = true;
+  }
+
+  if (leveledUp) {
+    await User.findOneAndUpdate(
+      { discordId: String(user.discordId) },
+      { $set: { level: newLevel, xp: currentXp } }
+    );
+  }
+
+  // Check achievements (now atomic)
+  const achievements = await checkAchievements(updatedUser);
   
-  await user.save(); // Single save
-  broadcastUserUpdate(user.toObject(), 'quiz_complete');
+  broadcastUserUpdate(updatedUser.toObject(), 'quiz_complete');
 
   return {
-    xpEarned,
-    leveledUp: levelResult.leveledUp,
-    newLevel: levelResult.newLevel,
+    xpEarned: finalXp,
+    baseXp,
+    multiplier,
+    leveledUp,
+    newLevel,
     achievements
   };
 }
 
 /**
- * Record lesson completion
+ * Record lesson completion - ATOMIC VERSION
+ * Uses $addToSet and $inc for atomic updates
  */
 export async function recordLessonCompletion(user, lessonId, topic) {
   if (!user) return null;
@@ -548,38 +647,77 @@ export async function recordLessonCompletion(user, lessonId, topic) {
     return { alreadyCompleted: true, xpEarned: 0 };
   }
 
-  // Add to completed lessons
-  if (!user.completedLessons) user.completedLessons = [];
-  user.completedLessons.push(lessonId);
+  // Calculate base XP
+  let baseXp = XP_REWARDS.LESSON_COMPLETE;
+  
+  // First lesson bonus (check before adding)
+  const isFirstLesson = (user.completedLessons?.length || 0) === 0;
+  if (isFirstLesson) {
+    baseXp += XP_REWARDS.FIRST_LESSON;
+  }
 
-  // Add topic if not studied
+  // Apply multipliers
+  const { finalXp, multiplier } = calculateFinalXp(baseXp, user);
+
+  // Build atomic update
+  const updateOps = {
+    $addToSet: { completedLessons: lessonId },
+    $inc: {
+      xp: finalXp,
+      'prestige.totalXpEarned': finalXp
+    },
+    $set: { lastActive: new Date() }
+  };
+
+  // Add topic if not already studied
   if (topic && !user.topicsStudied?.includes(topic)) {
-    if (!user.topicsStudied) user.topicsStudied = [];
-    user.topicsStudied.push(topic);
+    updateOps.$addToSet.topicsStudied = topic;
   }
 
-  // Calculate XP
-  let xpEarned = XP_REWARDS.LESSON_COMPLETE;
-  
-  // First lesson bonus
-  if (user.completedLessons.length === 1) {
-    xpEarned += XP_REWARDS.FIRST_LESSON;
-    if (!user.achievements?.includes(ACHIEVEMENTS.FIRST_LESSON.name)) {
-      user.achievements = user.achievements || [];
-      user.achievements.push(ACHIEVEMENTS.FIRST_LESSON.name);
-    }
+  // Add first lesson achievement if applicable
+  if (isFirstLesson && !user.achievements?.includes(ACHIEVEMENTS.FIRST_LESSON.name)) {
+    updateOps.$addToSet.achievements = ACHIEVEMENTS.FIRST_LESSON.name;
   }
 
-  const levelResult = user.addXp(xpEarned); // Sync now
-  const achievements = await checkAchievements(user);
+  // ATOMIC UPDATE
+  const updatedUser = await User.findOneAndUpdate(
+    { discordId: String(user.discordId) },
+    updateOps,
+    { new: true }
+  );
+
+  if (!updatedUser) return null;
+
+  // Check for level-ups
+  let leveledUp = false;
+  let newLevel = updatedUser.level;
+  let currentXp = updatedUser.xp;
+  const xpForLevel = (lvl) => Math.floor(100 * Math.pow(1.5, lvl - 1));
+
+  while (currentXp >= xpForLevel(newLevel)) {
+    currentXp -= xpForLevel(newLevel);
+    newLevel++;
+    leveledUp = true;
+  }
+
+  if (leveledUp) {
+    await User.findOneAndUpdate(
+      { discordId: String(user.discordId) },
+      { $set: { level: newLevel, xp: currentXp } }
+    );
+  }
+
+  // Check achievements (now atomic)
+  const achievements = await checkAchievements(updatedUser);
   
-  await user.save(); // Single save
-  broadcastUserUpdate(user.toObject(), 'lesson_complete');
+  broadcastUserUpdate(updatedUser.toObject(), 'lesson_complete');
 
   return {
-    xpEarned,
-    leveledUp: levelResult.leveledUp,
-    newLevel: levelResult.newLevel,
+    xpEarned: finalXp,
+    baseXp,
+    multiplier,
+    leveledUp,
+    newLevel,
     achievements
   };
 }

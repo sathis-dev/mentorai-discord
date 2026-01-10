@@ -327,4 +327,152 @@ userSchema.methods.updateStreak = async function() {
   return this.streak;
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATIC METHODS - Atomic Operations for Concurrency Safety
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * XP formula - Single source of truth
+ * @param {number} level - Current level
+ * @returns {number} XP needed to complete this level
+ */
+userSchema.statics.xpForLevel = function(level) {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+};
+
+/**
+ * Atomic XP addition with level-up handling
+ * Uses MongoDB $inc to prevent race conditions
+ * @param {string} discordId - User's Discord ID
+ * @param {number} amount - XP to add
+ * @param {Object} options - Additional options
+ * @returns {Promise<Object>} Result with user and level info
+ */
+userSchema.statics.addXpAtomic = async function(discordId, amount, options = {}) {
+  const { reason = 'unknown', skipMultipliers = false } = options;
+  
+  // First, atomically increment XP and totalXpEarned
+  const user = await this.findOneAndUpdate(
+    { discordId: String(discordId) },
+    {
+      $inc: {
+        xp: amount,
+        'prestige.totalXpEarned': amount
+      },
+      $set: { lastActive: new Date() }
+    },
+    { new: true }
+  );
+  
+  if (!user) return null;
+  
+  // Check for level-ups
+  let leveledUp = false;
+  let levelsGained = 0;
+  let currentXp = user.xp;
+  let currentLevel = user.level;
+  
+  while (currentXp >= this.xpForLevel(currentLevel)) {
+    currentXp -= this.xpForLevel(currentLevel);
+    currentLevel++;
+    leveledUp = true;
+    levelsGained++;
+  }
+  
+  // Apply level-up changes atomically if needed
+  if (leveledUp) {
+    await this.findOneAndUpdate(
+      { discordId: String(discordId) },
+      { $set: { level: currentLevel, xp: currentXp } }
+    );
+  }
+  
+  console.log(`💫 ${user.username} +${amount} XP (${reason}) → Level ${currentLevel}`);
+  
+  return {
+    user,
+    leveledUp,
+    newLevel: currentLevel,
+    levelsGained,
+    xpAwarded: amount,
+    currentXp
+  };
+};
+
+/**
+ * Estimate lifetime XP for migration purposes
+ * @param {Object} user - User document
+ * @returns {number} Estimated lifetime XP
+ */
+userSchema.statics.estimateLifetimeXp = function(user) {
+  let total = user.xp || 0;
+  for (let lvl = 1; lvl < (user.level || 1); lvl++) {
+    total += this.xpForLevel(lvl);
+  }
+  return total;
+};
+
+/**
+ * Migrate a single user's prestige.totalXpEarned
+ * @param {string} discordId - User's Discord ID
+ * @returns {Promise<Object>} Migration result
+ */
+userSchema.statics.migrateUserLifetimeXp = async function(discordId) {
+  const user = await this.findOne({ discordId: String(discordId) });
+  if (!user) return null;
+  
+  const currentTotal = user.prestige?.totalXpEarned || 0;
+  const estimatedTotal = this.estimateLifetimeXp(user);
+  
+  // Only update if current is less than estimated (don't lose data)
+  if (currentTotal < estimatedTotal) {
+    await this.findOneAndUpdate(
+      { discordId: String(discordId) },
+      { $set: { 'prestige.totalXpEarned': estimatedTotal } }
+    );
+    return { discordId, before: currentTotal, after: estimatedTotal, migrated: true };
+  }
+  
+  return { discordId, before: currentTotal, after: currentTotal, migrated: false };
+};
+
+/**
+ * Batch migrate all users' lifetime XP
+ * @returns {Promise<Object>} Migration statistics
+ */
+userSchema.statics.migrateAllLifetimeXp = async function() {
+  const users = await this.find({});
+  let migrated = 0;
+  let skipped = 0;
+  
+  for (const user of users) {
+    const result = await this.migrateUserLifetimeXp(user.discordId);
+    if (result?.migrated) migrated++;
+    else skipped++;
+  }
+  
+  console.log(`📊 Migration complete: ${migrated} migrated, ${skipped} skipped`);
+  return { migrated, skipped, total: users.length };
+};
+
+/**
+ * Sync streak fields (unify dailyBonusStreak and streak)
+ * @param {string} discordId - User's Discord ID
+ * @returns {Promise<number>} Unified streak value
+ */
+userSchema.statics.syncStreaks = async function(discordId) {
+  const user = await this.findOne({ discordId: String(discordId) });
+  if (!user) return 0;
+  
+  // Take the higher value as the source of truth
+  const unifiedStreak = Math.max(user.streak || 0, user.dailyBonusStreak || 0);
+  
+  await this.findOneAndUpdate(
+    { discordId: String(discordId) },
+    { $set: { streak: unifiedStreak, dailyBonusStreak: unifiedStreak } }
+  );
+  
+  return unifiedStreak;
+};
+
 export const User = mongoose.model('User', userSchema);

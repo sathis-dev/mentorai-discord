@@ -53,12 +53,11 @@ export async function execute(interaction) {
   const rarity = getRarity(level, xp, achievements);
   const tier = getTier(xp);
   
-  // Calculate XP progress
-  const xpForNext = calculateXPForLevel(level + 1);
-  const xpForCurrent = calculateXPForLevel(level);
-  const xpProgress = xp - xpForCurrent;
-  const xpNeeded = xpForNext - xpForCurrent;
-  const progressPercent = Math.min(Math.round((xpProgress / xpNeeded) * 100), 100);
+  // Calculate XP progress - FIXED: user.xp IS within-level XP
+  // xpForLevel(level) = XP needed to complete current level
+  const xpNeeded = calculateXPForLevel(level);  // XP required for THIS level
+  const xpProgress = xp;  // user.xp is already within-level progress
+  const progressPercent = Math.min(Math.round((xpProgress / Math.max(xpNeeded, 1)) * 100), 100);
   
   // Build progress bar
   const progressBar = buildProgressBar(progressPercent);
@@ -98,12 +97,12 @@ ${rank.emoji} ${rank.name} • Level ${level}
     .addFields(
       {
         name: '📊 Progress',
-        value: `${progressBar}\n\`${xp.toLocaleString()} / ${xpForNext.toLocaleString()} XP\``,
+        value: `${progressBar}\n\`${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP\``,
         inline: false
       },
       {
-        name: '⚡ Total XP',
-        value: `\`${xp.toLocaleString()}\``,
+        name: '⚡ Lifetime XP',
+        value: `\`${totalXpEarned.toLocaleString()}\``,
         inline: true
       },
       {

@@ -80,15 +80,17 @@ async function getLeaderboardData(type, scope, guildId) {
   let sortField = {};
   
   // Build sort field based on type
+  // FIXED: XP leaderboard now sorts by lifetime totalXpEarned
   switch (type) {
     case 'xp':
-      sortField = { xp: -1 };
+      // Sort by lifetime XP for accurate rankings
+      sortField = { 'prestige.totalXpEarned': -1, level: -1, xp: -1 };
       break;
     case 'streak':
-      sortField = { streak: -1 };
+      sortField = { streak: -1, 'prestige.totalXpEarned': -1 };
       break;
     case 'quizzes':
-      sortField = { quizzesCompleted: -1 };
+      sortField = { quizzesTaken: -1, 'prestige.totalXpEarned': -1 };
       break;
     case 'wins':
       sortField = { tournamentWins: -1 };
@@ -98,7 +100,7 @@ async function getLeaderboardData(type, scope, guildId) {
       sortField = { 'stats.accuracy': -1 };
       break;
     default:
-      sortField = { xp: -1 };
+      sortField = { 'prestige.totalXpEarned': -1, level: -1, xp: -1 };
   }
 
   // Build scope filter
