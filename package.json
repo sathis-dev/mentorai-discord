@@ -12,7 +12,14 @@
     "dev": "nodemon src/index.js",
     "deploy-commands": "node src/deploy-commands.js",
     "admin": "node src/web/server.js",
-    "dev:all": "npm run dev"
+    "dev:all": "npm run dev",
+    "demo": "node scripts/judgingDemo.js",
+    "emergency": "node scripts/emergencyFixes.js showStatus",
+    "health": "node scripts/emergencyFixes.js healthCheck",
+    "test": "node --test tests/**/*.test.js",
+    "test:unit": "node --test tests/unit/**/*.test.js",
+    "test:e2e": "node --test tests/e2e/**/*.test.js",
+    "test:bench": "node tests/benchmarks/performance.test.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.52.0",

@@ -1,5 +1,8 @@
 import OpenAI from 'openai';
 
+// Re-export AI Orchestrator for multi-provider support
+export { aiOrchestrator, default as orchestrator } from './orchestrator.js';
+
 // Initialize OpenAI client
 const openai = process.env.OPENAI_API_KEY 
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
