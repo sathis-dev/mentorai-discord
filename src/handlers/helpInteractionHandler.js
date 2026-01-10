@@ -780,26 +780,47 @@ ${socialProof}
   
   const topMilestone = sortedMilestones[0];
   const actionButtons = [];
+  const usedActions = new Set();
   
   if (topMilestone) {
     actionButtons.push(
       new ButtonBuilder()
-        .setCustomId(`discovery_action_${topMilestone.action}`)
+        .setCustomId(`discovery_milestone_${topMilestone.action}`)
         .setLabel(`${topMilestone.emoji} ${topMilestone.name}`)
         .setStyle(ButtonStyle.Success)
     );
+    usedActions.add(topMilestone.action);
   }
   
-  actionButtons.push(
-    new ButtonBuilder()
-      .setCustomId('discovery_action_quiz')
-      .setLabel('🎯 Quick Quiz')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('discovery_action_daily')
-      .setLabel('🔥 Daily Bonus')
-      .setStyle(ButtonStyle.Primary)
-  );
+  // Add Quick Quiz if not already the milestone
+  if (!usedActions.has('quiz')) {
+    actionButtons.push(
+      new ButtonBuilder()
+        .setCustomId('discovery_action_quiz')
+        .setLabel('🎯 Quick Quiz')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+  
+  // Add Daily Bonus if not already the milestone
+  if (!usedActions.has('daily')) {
+    actionButtons.push(
+      new ButtonBuilder()
+        .setCustomId('discovery_action_daily')
+        .setLabel('🔥 Daily Bonus')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+  
+  // Add Learn if we have space
+  if (actionButtons.length < 3 && !usedActions.has('learn')) {
+    actionButtons.push(
+      new ButtonBuilder()
+        .setCustomId('discovery_action_learn')
+        .setLabel('📚 Learn')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
   
   const actionRow = new ActionRowBuilder().addComponents(actionButtons.slice(0, 3));
   

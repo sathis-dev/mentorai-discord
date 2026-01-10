@@ -374,7 +374,9 @@ async function handleButton(interaction) {
       await handleSearchActionButton(interaction, action, params);
     } else if (category === 'discovery') {
       // Handle discovery hub action buttons (Growth Path opportunity cards)
-      await handleDiscoveryButton(interaction, action, params);
+      // Handle both discovery_action_* and discovery_milestone_* prefixes
+      const actualAction = action === 'milestone' ? params[0] : action;
+      await handleDiscoveryButton(interaction, actualAction, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
