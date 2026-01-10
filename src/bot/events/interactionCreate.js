@@ -372,6 +372,9 @@ async function handleButton(interaction) {
     } else if (category === 'search') {
       // Handle semantic search action buttons
       await handleSearchActionButton(interaction, action, params);
+    } else if (category === 'discovery') {
+      // Handle discovery hub action buttons (Growth Path opportunity cards)
+      await handleDiscoveryButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -2216,6 +2219,54 @@ async function handleSearchActionButton(interaction, action, params) {
     await interaction.reply({ content: '🔍 Filter applied! Use the search to explore more.', ephemeral: true });
   } else {
     await interaction.reply({ content: '✨ This feature is coming soon!', ephemeral: true });
+  }
+}
+
+// Handle discovery hub action buttons (Growth Path opportunity cards)
+async function handleDiscoveryButton(interaction, action, params) {
+  const commandMap = {
+    quiz: 'quiz',
+    daily: 'daily',
+    learn: 'learn',
+    flashcard: 'flashcard',
+    challenge: 'challenge'
+  };
+  
+  const commandName = commandMap[action] || action;
+  
+  await interaction.deferReply({ ephemeral: true });
+  
+  const command = interaction.client.commands.get(commandName);
+  if (command) {
+    try {
+      // Create mock options for the command
+      const mockOptions = {
+        getString: () => null,
+        getInteger: () => null,
+        getBoolean: () => null,
+        getSubcommand: () => null,
+        getUser: () => null
+      };
+      
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      
+      await command.execute(wrappedInteraction);
+    } catch (e) {
+      await interaction.editReply({ 
+        content: `🚀 Start your **${commandName}** journey with \`/${commandName}\`!` 
+      });
+    }
+  } else {
+    await interaction.editReply({ 
+      content: `🚀 Try \`/${commandName}\` to continue your growth path!` 
+    });
   }
 }
 

@@ -614,26 +614,195 @@ ${resultsText}
 // ═══════════════════════════════════════════════════════════════════
 
 export async function showNewFeatures(interaction, user) {
-  const newCommands = getNewCommands();
-
+  // ═══════════════════════════════════════════════════════════════════
+  // NEW POTENTIAL DISCOVERY HUB - Milestone Proximity + Level-Up Forecast
+  // ═══════════════════════════════════════════════════════════════════
+  
+  const { xpForLevel } = await import('../config/brandSystem.js');
+  const { User } = await import('../database/models/User.js');
+  
+  // Calculate user's current stats
+  const userLevel = user?.level || 1;
+  const userXP = user?.xp || 0;
+  const userStreak = user?.streak || 0;
+  const userPrestige = user?.prestige?.level || 0;
+  const lifetimeXP = user?.prestige?.totalXpEarned || userXP;
+  
+  // Calculate XP for next level using unified formula
+  const xpNeededForNextLevel = xpForLevel(userLevel + 1);
+  const xpProgress = userXP;
+  const xpRemaining = Math.max(0, xpNeededForNextLevel - xpProgress);
+  const progressPercent = Math.min(100, Math.floor((xpProgress / xpNeededForNextLevel) * 100));
+  
+  // Calculate current multiplier stack
+  const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
+  const prestigeMultiplier = 1 + (userPrestige * 0.1);
+  const totalMultiplier = (streakMultiplier * prestigeMultiplier).toFixed(2);
+  
+  // Calculate activities needed to level up (assuming ~50 XP per activity with multiplier)
+  const baseXPPerActivity = 50;
+  const effectiveXPPerActivity = Math.floor(baseXPPerActivity * parseFloat(totalMultiplier));
+  const activitiesNeeded = Math.ceil(xpRemaining / effectiveXPPerActivity);
+  
+  // Build progress bar
+  const progressBarLength = 12;
+  const filledBars = Math.floor((progressPercent / 100) * progressBarLength);
+  const progressBar = '█'.repeat(filledBars) + '░'.repeat(progressBarLength - filledBars);
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // MILESTONE PROXIMITY ANALYSIS - Top 3 Closest Achievements
+  // ═══════════════════════════════════════════════════════════════════
+  
+  const milestones = [
+    { 
+      name: 'Quiz Master', 
+      emoji: '🎯', 
+      current: user?.quizzesTaken || 0, 
+      target: 10, 
+      reward: 'Badge + 500 XP',
+      action: 'quiz'
+    },
+    { 
+      name: 'Streak Champion', 
+      emoji: '🔥', 
+      current: userStreak, 
+      target: 7, 
+      reward: '1.25x Multiplier',
+      action: 'daily'
+    },
+    { 
+      name: 'Knowledge Seeker', 
+      emoji: '📚', 
+      current: user?.lessonsCompleted?.length || 0, 
+      target: 5, 
+      reward: 'Badge + 300 XP',
+      action: 'learn'
+    },
+    { 
+      name: 'Flashcard Pro', 
+      emoji: '🃏', 
+      current: user?.flashcardsReviewed || 0, 
+      target: 25, 
+      reward: 'Badge + 200 XP',
+      action: 'flashcard'
+    },
+    { 
+      name: 'Code Warrior', 
+      emoji: '⚔️', 
+      current: user?.challengesWon || 0, 
+      target: 3, 
+      reward: 'Badge + 400 XP',
+      action: 'challenge'
+    }
+  ];
+  
+  // Sort by proximity to completion (closest first)
+  const sortedMilestones = milestones
+    .filter(m => m.current < m.target)
+    .map(m => ({
+      ...m,
+      remaining: m.target - m.current,
+      percent: Math.floor((m.current / m.target) * 100)
+    }))
+    .sort((a, b) => a.remaining - b.remaining)
+    .slice(0, 3);
+  
+  // Build milestone cards
+  const milestoneCards = sortedMilestones.map(m => {
+    const barLength = 8;
+    const filled = Math.floor((m.percent / 100) * barLength);
+    const bar = '█'.repeat(filled) + '░'.repeat(barLength - filled);
+    return `${m.emoji} **${m.name}**\n└─ \`${bar}\` ${m.current}/${m.target} (${m.percent}%)\n   🎁 *${m.reward}*`;
+  }).join('\n\n');
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // SOCIAL PROOF - Global Pulse (Recent Achievements)
+  // ═══════════════════════════════════════════════════════════════════
+  
+  let socialProof = '';
+  try {
+    const recentAchievers = await User.find({ 
+      'achievements.0': { $exists: true } 
+    })
+    .sort({ 'achievements.unlockedAt': -1 })
+    .limit(1)
+    .select('username level');
+    
+    if (recentAchievers.length > 0) {
+      const achiever = recentAchievers[0];
+      socialProof = `\n✨ *${achiever.username || 'A learner'} just reached Level ${achiever.level || 1}!*`;
+    }
+  } catch (e) {
+    socialProof = '\n✨ *Join hundreds of learners leveling up today!*';
+  }
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // BUILD DISCOVERY HUB EMBED
+  // ═══════════════════════════════════════════════════════════════════
+  
   const embed = new EmbedBuilder()
     .setColor(HELP_COLORS.SUCCESS)
-    .setTitle('🆕 New Features')
+    .setTitle('🚀 Your Growth Path')
     .setDescription(`
-Check out the latest additions to MentorAI!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📈 Level-Up Forecast
+**Level ${userLevel}** → **Level ${userLevel + 1}**
+\`${progressBar}\` **${progressPercent}%**
+
+⚡ **${xpRemaining.toLocaleString()} XP** needed
+🎯 **~${activitiesNeeded} activities** at your **${totalMultiplier}x** multiplier
+📊 *Formula: ⌊100 × 1.5^${userLevel}⌋ = ${xpNeededForNextLevel.toLocaleString()} XP*
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${newCommands.map(cmd => 
-  `${cmd.categoryEmoji} **\`/${cmd.name}\`**\n└─ ${cmd.description}`
-).join('\n\n')}
+### 🏆 Closest Milestones
+
+${milestoneCards || '*Complete activities to unlock milestones!*'}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-*These features were added recently. Try them out!*
+### 💫 Your Multiplier Stack
+🔥 Streak: **${streakMultiplier}x** (${userStreak} days)
+⭐ Prestige: **${prestigeMultiplier}x** (P${userPrestige})
+**Total Bonus: ${totalMultiplier}x** (+${Math.round((parseFloat(totalMultiplier) - 1) * 100)}% XP)
+${socialProof}
     `)
-    .setFooter({ text: `${newCommands.length} new features` });
+    .setFooter({ 
+      text: `MentorAI Growth Engine • XP Formula: ⌊100 × 1.5^(L-1)⌋`,
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
+    .setTimestamp();
 
+  // ═══════════════════════════════════════════════════════════════════
+  // OPPORTUNITY CARDS - Try It Now Buttons
+  // ═══════════════════════════════════════════════════════════════════
+  
+  const topMilestone = sortedMilestones[0];
+  const actionButtons = [];
+  
+  if (topMilestone) {
+    actionButtons.push(
+      new ButtonBuilder()
+        .setCustomId(`discovery_action_${topMilestone.action}`)
+        .setLabel(`${topMilestone.emoji} ${topMilestone.name}`)
+        .setStyle(ButtonStyle.Success)
+    );
+  }
+  
+  actionButtons.push(
+    new ButtonBuilder()
+      .setCustomId('discovery_action_quiz')
+      .setLabel('🎯 Quick Quiz')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('discovery_action_daily')
+      .setLabel('🔥 Daily Bonus')
+      .setStyle(ButtonStyle.Primary)
+  );
+  
+  const actionRow = new ActionRowBuilder().addComponents(actionButtons.slice(0, 3));
+  
   const navRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
@@ -643,7 +812,7 @@ ${newCommands.map(cmd =>
         .setStyle(ButtonStyle.Secondary)
     );
 
-  await interaction.update({ embeds: [embed], components: [navRow] });
+  await interaction.update({ embeds: [embed], components: [actionRow, navRow] });
 }
 
 export async function showPopularCommands(interaction, user) {
