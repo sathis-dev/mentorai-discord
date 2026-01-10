@@ -306,8 +306,8 @@ export function createQuestionEmbed(question, questionNumber, totalQuestions, ti
       `${DIVIDER_THIN}\n\n` +
       `🅰️  ${question.options[0]}\n\n` +
       `🅱️  ${question.options[1]}\n\n` +
-      `🅲  ${question.options[2]}\n\n` +
-      `🅳  ${question.options[3]}\n\n` +
+      `🇨  ${question.options[2]}\n\n` +
+      `🇩  ${question.options[3]}\n\n` +
       `${DIVIDER_THIN}`
     )
     .setFooter({
@@ -340,13 +340,13 @@ export function createAnswerButtons(battleId, disabled = false) {
         .setCustomId(`battle_answer_${battleId}_2`)
         .setLabel('C')
         .setStyle(ButtonStyle.Primary)
-        .setEmoji('🅲')
+        .setEmoji('🇨')
         .setDisabled(disabled),
       new ButtonBuilder()
         .setCustomId(`battle_answer_${battleId}_3`)
         .setLabel('D')
         .setStyle(ButtonStyle.Primary)
-        .setEmoji('🅳')
+        .setEmoji('🇩')
         .setDisabled(disabled)
     );
 }

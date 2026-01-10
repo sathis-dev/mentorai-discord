@@ -1565,10 +1565,4 @@ if (challengeManager.client) {
 
 export { handleButtonInteraction, setupLegacyChallengeEvents };
 
-export default { 
-  data, 
-  execute, 
-  autocomplete,
-  handleButtonInteraction,
-  setupLegacyChallengeEvents
-};
+export default { data, execute, autocomplete };
