@@ -956,36 +956,272 @@ export async function showFeedbackModal(interaction) {
 }
 
 /**
- * Quick AI Question Modal - Ask AI directly from help menu
+ * Sovereign AI Research Assistant Modal
+ * Upgraded from simple Q&A to grounded research interface
  */
 export async function showAIQuestionModal(interaction) {
   const modal = new ModalBuilder()
-    .setCustomId('help_ai_question_modal')
-    .setTitle('🧠 Ask MentorAI');
+    .setCustomId('help_research_modal')
+    .setTitle('🧠 MentorAI Research Assistant');
 
   const questionInput = new TextInputBuilder()
-    .setCustomId('ai_question')
-    .setLabel('Your coding question')
-    .setPlaceholder('e.g., How do I reverse a string in Python?')
+    .setCustomId('research_query')
+    .setLabel('Ask me anything about the curriculum or coding...')
+    .setPlaceholder('e.g., How do async/await work? What are closures? Explain React hooks...')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
     .setMinLength(5)
     .setMaxLength(500);
 
-  const topicInput = new TextInputBuilder()
-    .setCustomId('ai_topic')
-    .setLabel('Topic (optional)')
-    .setPlaceholder('e.g., JavaScript, Python, React...')
-    .setStyle(TextInputStyle.Short)
-    .setRequired(false)
-    .setMaxLength(30);
-
   modal.addComponents(
-    new ActionRowBuilder().addComponents(questionInput),
-    new ActionRowBuilder().addComponents(topicInput)
+    new ActionRowBuilder().addComponents(questionInput)
   );
 
   await interaction.showModal(modal);
+}
+
+/**
+ * Handle Research Modal Submission
+ * RAG-grounded reasoning with adaptive persona based on user level
+ */
+export async function handleResearchSubmit(interaction, user) {
+  const query = interaction.fields.getTextInputValue('research_query');
+  const startTime = Date.now();
+  
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    // Import dependencies
+    const { curriculumIndexer } = await import('../core/curriculumIndexer.js');
+    const { generateAIResponse } = await import('../ai/index.js');
+    const { syncEvents } = await import('../services/broadcastService.js');
+    const { AccuracySystem } = await import('../core/accuracySystem.js');
+
+    // Get RAG context from curriculum (top 3 lessons)
+    const ragResults = curriculumIndexer.search(query, 3);
+    const hasRagContext = ragResults && ragResults.length > 0;
+
+    // Build curriculum context for grounding
+    const curriculumContext = hasRagContext 
+      ? ragResults.map((r, i) => `[${r.lessonId || `REF-${i+1}`}] ${r.title}: ${r.description || r.content?.slice(0, 100) || ''}`).join('\n')
+      : '';
+
+    // Get user weak spots for personalization
+    const weakTopics = AccuracySystem.getWeakTopics(user, 60, 3);
+    const userLevel = user?.level || 1;
+
+    // Build adaptive persona based on user level
+    const personaInstructions = userLevel < 10
+      ? `The user is a BEGINNER (Level ${userLevel}). Use:
+        - Simple analogies and real-world comparisons
+        - Basic code examples with detailed comments
+        - Encouraging, supportive tone
+        - Break down complex concepts into small steps
+        - Avoid jargon without explanation`
+      : `The user is INTERMEDIATE/ADVANCED (Level ${userLevel}). Use:
+        - Technical depth and precise terminology
+        - Advanced code patterns and optimizations
+        - Performance considerations and best practices
+        - Industry-standard approaches
+        - Brief explanations, focus on practical application`;
+
+    // Build weak spots context
+    const weakSpotsContext = weakTopics.length > 0
+      ? `\nUser's weak areas (be extra helpful here): ${weakTopics.map(w => `${w.topic} (${w.accuracy}%)`).join(', ')}`
+      : '';
+
+    // Build system prompt with RAG grounding
+    const systemPrompt = `You are MentorAI, a sovereign AI research assistant for programming education.
+
+${personaInstructions}
+${weakSpotsContext}
+
+${hasRagContext ? `CURRICULUM GROUNDING (cite these references):
+${curriculumContext}
+
+When answering, ALWAYS cite relevant lessons like "[Reference: JS-Core-08]" to ground your response in the MentorAI curriculum.` : ''}
+
+Response format:
+1. Direct answer to the question
+2. Code example if applicable (with comments appropriate to user level)
+3. Key takeaway or learning tip
+4. Reference any relevant curriculum lessons
+
+Keep response concise but comprehensive (max 1500 chars).`;
+
+    // Generate AI response with failover chain
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: query }
+    ];
+
+    const aiResponse = await generateAIResponse(messages, {
+      maxTokens: 800,
+      temperature: 0.7
+    });
+
+    const responseTime = Date.now() - startTime;
+
+    // Calculate relevance score
+    const relevanceScore = hasRagContext 
+      ? Math.round(ragResults.reduce((sum, r) => sum + (r.relevanceScore || 0.5), 0) / ragResults.length * 100)
+      : 50;
+
+    // Emit to NOC dashboard
+    syncEvents.emit('research_query', {
+      query,
+      userId: user?.discordId,
+      username: user?.username,
+      userLevel,
+      relevanceScore,
+      responseTime,
+      ragResultCount: ragResults.length,
+      timestamp: new Date()
+    });
+
+    // Build response embed
+    const embed = buildResearchEmbed(interaction, query, aiResponse, ragResults, user, relevanceScore, responseTime);
+    const components = buildResearchComponents(ragResults);
+
+    await interaction.editReply({ embeds: [embed], components });
+
+  } catch (error) {
+    console.error('Research assistant error:', error);
+    
+    // Failover: Show graceful error with suggestion
+    const fallbackEmbed = new EmbedBuilder()
+      .setColor(HELP_COLORS.WARNING)
+      .setTitle('🧠 Research Assistant')
+      .setDescription(`
+I couldn't fully process your research query, but here's what I can suggest:
+
+**Your Question:** ${query.slice(0, 100)}...
+
+**Quick Tips:**
+• Try the \`/tutor\` command for in-depth explanations
+• Use \`/learn\` to study this topic interactively
+• Check \`/quiz\` to test your understanding
+
+*The AI research service will be back shortly!*
+      `)
+      .setFooter({ text: 'MentorAI Research Assistant • Try again in a moment' });
+
+    const backRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('help_ask_ai')
+        .setLabel('Try Again')
+        .setEmoji('🔄')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_back_main')
+        .setLabel('Back to Hub')
+        .setEmoji('🏠')
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.editReply({ embeds: [fallbackEmbed], components: [backRow] });
+  }
+}
+
+/**
+ * Build Research Response Embed with Tier Theme
+ */
+function buildResearchEmbed(interaction, query, response, ragResults, user, relevanceScore, responseTime) {
+  const userLevel = user?.level || 1;
+  const tierInfo = TierSystem.getTierFromXP(user?.prestige?.totalXpEarned || user?.xp || 0);
+  
+  // Tier-based colors
+  const tierColors = {
+    'Bronze': 0xCD7F32,
+    'Silver': 0xC0C0C0,
+    'Gold': 0xFFD700,
+    'Platinum': 0xE5E4E2,
+    'Diamond': 0xB9F2FF,
+    'Master': 0x9B59B6,
+    'Grandmaster': 0xFF6B6B,
+    'Legend': 0x00FF88
+  };
+  
+  const embedColor = tierColors[tierInfo?.name] || 0x5865F2;
+
+  // Build curriculum references
+  const references = ragResults.length > 0
+    ? ragResults.map(r => `\`${r.lessonId || r.subject}\``).join(' • ')
+    : 'General knowledge';
+
+  const embed = new EmbedBuilder()
+    .setColor(embedColor)
+    .setAuthor({
+      name: `🧠 Mentor Insight`,
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
+    .setTitle(`"${query.slice(0, 50)}${query.length > 50 ? '...' : ''}"`)
+    .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${response}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📚 Curriculum References
+${references}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+    .addFields(
+      { name: '📊 Relevance', value: `${relevanceScore}%`, inline: true },
+      { name: '⚡ Response', value: `${responseTime}ms`, inline: true },
+      { name: '🎓 Your Level', value: `${userLevel}`, inline: true }
+    )
+    .setFooter({ 
+      text: `Adaptive ${userLevel < 10 ? 'Beginner' : 'Advanced'} Mode • ${tierInfo?.name || 'Bronze'} Tier`,
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
+    .setTimestamp();
+
+  return embed;
+}
+
+/**
+ * Build continuity buttons for research results
+ */
+function buildResearchComponents(ragResults) {
+  const buttons = [];
+  
+  // Add dynamic lesson/quiz buttons based on RAG results
+  if (ragResults.length > 0) {
+    const topResult = ragResults[0];
+    const subject = topResult.subject || 'javascript';
+    
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`research_lesson_${subject.slice(0, 15)}`)
+        .setLabel('Start Lesson')
+        .setEmoji('📚')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`research_quiz_${subject.slice(0, 15)}`)
+        .setLabel('Take Quiz')
+        .setEmoji('🎯')
+        .setStyle(ButtonStyle.Primary)
+    );
+  }
+
+  // Add ask another and back buttons
+  buttons.push(
+    new ButtonBuilder()
+      .setCustomId('help_ask_ai')
+      .setLabel('Ask Another')
+      .setEmoji('🔄')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Hub')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return [new ActionRowBuilder().addComponents(buttons)];
 }
 
 export async function showTryCommandPrompt(interaction, commandName) {

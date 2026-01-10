@@ -2148,6 +2148,15 @@ async function handleModal(interaction) {
     return;
   }
   
+  // RESEARCH ASSISTANT: Handle RAG-grounded AI research queries
+  if (interaction.customId === 'help_research_modal') {
+    const { handleResearchSubmit } = await import('../../handlers/helpInteractionHandler.js');
+    const { getOrCreateUser } = await import('../../services/gamificationService.js');
+    const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+    await handleResearchSubmit(interaction, user);
+    return;
+  }
+  
   // Handle quick action input modals (from help quick actions)
   if (interaction.customId.startsWith('quick_input_')) {
     const commandName = interaction.customId.replace('quick_input_', '');
