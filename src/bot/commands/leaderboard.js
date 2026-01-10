@@ -126,6 +126,41 @@ async function getLeaderboardData(type, scope, guildId) {
 }
 
 // ═══════════════════════════════════════════════════════════════════
+// HELPER: GET MASTERED TOPIC (Highest accuracy topic)
+// ═══════════════════════════════════════════════════════════════════
+
+function getMasteredTopic(topicAccuracy) {
+  if (!topicAccuracy) return null;
+  
+  let bestTopic = null;
+  let bestAccuracy = 0;
+  let minQuestions = 5; // Require at least 5 questions to count
+  
+  // Handle both Map and Object formats
+  const entries = topicAccuracy instanceof Map 
+    ? Array.from(topicAccuracy.entries())
+    : Object.entries(topicAccuracy);
+  
+  for (const [topic, stats] of entries) {
+    if (stats && stats.total >= minQuestions) {
+      const accuracy = (stats.correct / stats.total) * 100;
+      if (accuracy > bestAccuracy) {
+        bestAccuracy = accuracy;
+        bestTopic = topic;
+      }
+    }
+  }
+  
+  // Only return if accuracy is good (70%+)
+  if (bestTopic && bestAccuracy >= 70) {
+    // Format topic name nicely
+    return bestTopic.charAt(0).toUpperCase() + bestTopic.slice(1).toLowerCase();
+  }
+  
+  return null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
 // CREATE LEADERBOARD EMBED - PREMIUM DESIGN
 // ═══════════════════════════════════════════════════════════════════
 
@@ -134,7 +169,13 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
   const startIndex = (page - 1) * usersPerPage;
   const pageUsers = users.slice(startIndex, startIndex + usersPerPage);
   const totalPages = Math.ceil(users.length / usersPerPage) || 1;
-  const medals = ['🥇', '🥈', '🥉'];
+  
+  // Premium medal assets for top 3
+  const medals = {
+    1: '🥇',
+    2: '🥈', 
+    3: '🥉'
+  };
 
   // Type info
   const typeInfo = {
@@ -152,7 +193,7 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
   
   pageUsers.forEach((user, index) => {
     const position = startIndex + index + 1;
-    const medal = position <= 3 ? medals[position - 1] : `\`#${position}\``;
+    const medal = medals[position] || `\`#${position}\``;
 
     // Get the value based on type
     let value;
@@ -160,6 +201,9 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
       value = user.stats?.accuracy || (user.correctAnswers && user.totalAnswers 
         ? (user.correctAnswers / user.totalAnswers) * 100 
         : 0);
+    } else if (type === 'xp') {
+      // Use lifetime XP for XP leaderboard
+      value = user.prestige?.totalXpEarned || user.xp || 0;
     } else {
       value = user[info.field] || 0;
     }
@@ -169,20 +213,37 @@ function createLeaderboardEmbed(users, type, scope, currentUser, page) {
     const arrow = isCurrentUser ? '**→**' : '   ';
     const name = isCurrentUser ? `**${username}**` : username;
     
-    rankingText += `${arrow} ${medal} ${name} • \`${info.format(value)}\`\n`;
+    // Get mastered topic for top 10 players (highest accuracy topic)
+    let topicBadge = '';
+    if (position <= 10 && user.topicAccuracy) {
+      const masteredTopic = getMasteredTopic(user.topicAccuracy);
+      if (masteredTopic) {
+        topicBadge = ` 📚 *${masteredTopic}*`;
+      }
+    }
+    
+    rankingText += `${arrow} ${medal} ${name} • \`${info.format(value)}\`${topicBadge}\n`;
   });
 
   if (!rankingText) {
     rankingText = '*No players found yet. Be the first!*';
   }
 
-  // Find current user's position
+  // Find current user's position and calculate percentile
   const userPosition = users.findIndex(u => u.discordId === currentUser.discordId) + 1;
+  const totalPlayers = users.length;
+  const percentile = userPosition > 0 ? ((1 - (userPosition / totalPlayers)) * 100).toFixed(1) : 0;
+  const percentileText = userPosition > 0 && totalPlayers > 10 
+    ? `Top **${percentile}%** of ${formatNumber(totalPlayers)} scholars` 
+    : '';
+  
   let userValue;
   if (type === 'accuracy') {
     userValue = currentUser.stats?.accuracy || (currentUser.correctAnswers && currentUser.totalAnswers 
       ? (currentUser.correctAnswers / currentUser.totalAnswers) * 100 
       : 0);
+  } else if (type === 'xp') {
+    userValue = currentUser.prestige?.totalXpEarned || currentUser.xp || 0;
   } else {
     userValue = currentUser[info.field] || 0;
   }
@@ -202,10 +263,11 @@ ${rankingText}
 
 **📍 Your Position**
 > 🏅 **#${userPosition > 0 ? userPosition : '—'}** • ${currentUser.username} • \`${info.format(userValue)}\`
+${percentileText ? `> 🌟 ${percentileText}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📊 Page **${page}/${totalPages}** • **${users.length}** total players
+📊 Page **${page}/${totalPages}** • **${formatNumber(users.length)}** Global Scholars
     `)
     .setFooter({ text: '⚡ Updated live • Keep learning to climb!' })
     .setTimestamp();

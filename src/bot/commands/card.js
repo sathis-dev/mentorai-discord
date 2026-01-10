@@ -51,6 +51,11 @@ export async function execute(interaction) {
   const rarity = getRarity(level, lifetimeXP, achievements);
   
   // ═══════════════════════════════════════════════════════════════════
+  // 🌟 GLOBAL PERCENTILE RANKING
+  // ═══════════════════════════════════════════════════════════════════
+  const globalRanking = await getGlobalPercentile(lifetimeXP);
+  
+  // ═══════════════════════════════════════════════════════════════════
   // 📈 PRECISION PROGRESS BAR (xp / xpForLevel formula)
   // ═══════════════════════════════════════════════════════════════════
   const xpNeeded = xpForLevel(level);
@@ -131,7 +136,7 @@ ${progressBar}
       }
     )
     .setFooter({
-      text: theme.footerText,
+      text: `${theme.footerText}${globalRanking.percentileText ? ` • ${globalRanking.percentileText}` : ''}`,
       iconURL: interaction.client.user.displayAvatarURL()
     })
     .setTimestamp();
@@ -159,6 +164,47 @@ ${progressBar}
     );
 
   await interaction.reply({ embeds: [embed], components: [row] });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🌟 GLOBAL PERCENTILE CALCULATION
+// ═══════════════════════════════════════════════════════════════════
+
+async function getGlobalPercentile(lifetimeXP) {
+  try {
+    // Count total users and users with less XP
+    const [totalUsers, usersBelow] = await Promise.all([
+      User.countDocuments({}),
+      User.countDocuments({ 'prestige.totalXpEarned': { $lt: lifetimeXP } })
+    ]);
+    
+    if (totalUsers <= 1) {
+      return { percentile: 100, percentileText: null };
+    }
+    
+    // Calculate percentile (what % of users you're above)
+    const percentile = ((usersBelow / totalUsers) * 100).toFixed(1);
+    const topPercent = (100 - parseFloat(percentile)).toFixed(1);
+    
+    // Only show percentile text if meaningful (more than 10 users)
+    let percentileText = null;
+    if (totalUsers >= 10) {
+      if (topPercent <= 1) {
+        percentileText = `🏆 Top 1% of Global Scholars`;
+      } else if (topPercent <= 5) {
+        percentileText = `🌟 Top ${topPercent}% of Global Scholars`;
+      } else if (topPercent <= 10) {
+        percentileText = `⭐ Top ${topPercent}% of Global Scholars`;
+      } else if (topPercent <= 25) {
+        percentileText = `Top ${topPercent}%`;
+      }
+    }
+    
+    return { percentile: parseFloat(percentile), topPercent: parseFloat(topPercent), percentileText, totalUsers };
+  } catch (error) {
+    console.error('Error calculating global percentile:', error);
+    return { percentile: 0, percentileText: null };
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════

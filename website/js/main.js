@@ -798,6 +798,14 @@ function handleXpUpdate(data) {
   showXpToast(data);
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// FORMULA UNITY: xpForLevel - MUST MATCH brandSystem.js EXACTLY
+// xpForLevel(level) = Math.floor(100 * Math.pow(1.5, level - 1))
+// ═══════════════════════════════════════════════════════════════════
+function xpForLevel(level) {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+}
+
 function updateProMaxCard(data) {
   // Update card elements if they exist on the page
   const xpEl = document.getElementById('card-xp');
@@ -805,18 +813,24 @@ function updateProMaxCard(data) {
   const streakEl = document.getElementById('card-streak');
   const lifetimeXpEl = document.getElementById('card-lifetime-xp');
   const progressBar = document.getElementById('card-progress');
+  const progressText = document.getElementById('card-progress-text');
   
   if (xpEl) xpEl.textContent = data.xp.toLocaleString();
   if (levelEl) levelEl.textContent = data.level;
   if (streakEl) streakEl.textContent = data.streak;
   if (lifetimeXpEl) lifetimeXpEl.textContent = formatNumber(data.lifetimeXP);
   
-  // Update progress bar with xpForLevel formula
+  // Update progress bar with unified xpForLevel formula
+  const xpNeeded = xpForLevel(data.level);
+  const percent = Math.min(Math.round((data.xp / Math.max(xpNeeded, 1)) * 100), 100);
+  
   if (progressBar) {
-    const xpNeeded = Math.floor(100 * Math.pow(1.5, data.level - 1));
-    const percent = Math.min(Math.round((data.xp / xpNeeded) * 100), 100);
     progressBar.style.width = percent + '%';
     progressBar.setAttribute('data-percent', percent);
+  }
+  
+  if (progressText) {
+    progressText.textContent = `${data.xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP`;
   }
   
   // Flash animation to show update
