@@ -2139,6 +2139,15 @@ async function handleModal(interaction) {
     return;
   }
   
+  // SEMANTIC SEARCH: Handle RAG-powered curriculum discovery
+  if (interaction.customId === 'help_semantic_search_modal') {
+    const { handleSemanticSearchSubmit } = await import('../../handlers/helpInteractionHandler.js');
+    const { getOrCreateUser } = await import('../../services/gamificationService.js');
+    const user = await getOrCreateUser(interaction.user.id, interaction.user.username);
+    await handleSemanticSearchSubmit(interaction, user);
+    return;
+  }
+  
   // Handle quick action input modals (from help quick actions)
   if (interaction.customId.startsWith('quick_input_')) {
     const commandName = interaction.customId.replace('quick_input_', '');

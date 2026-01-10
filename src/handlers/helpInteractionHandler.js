@@ -30,6 +30,8 @@ import {
 } from '../utils/helpUtils.js';
 import { RecommendationEngine } from '../core/recommendationEngine.js';
 import { helpStateManager } from './HelpStateManager.js';
+import { searchIntelligence } from '../services/searchIntelligence.js';
+import { TierSystem } from '../core/tierSystem.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN HUB VIEW
@@ -739,22 +741,197 @@ ${allCommandsText}
 
 export async function showSearchModal(interaction) {
   const modal = new ModalBuilder()
-    .setCustomId('help_search_modal')
-    .setTitle('🔍 Search Commands');
+    .setCustomId('help_semantic_search_modal')
+    .setTitle('🧠 MentorAI Semantic Search');
 
   const searchInput = new TextInputBuilder()
-    .setCustomId('search_query')
-    .setLabel('What are you looking for?')
-    .setPlaceholder('e.g., quiz, flashcard, tournament...')
-    .setStyle(TextInputStyle.Short)
+    .setCustomId('semantic_query')
+    .setLabel('Enter a concept, topic, or question')
+    .setPlaceholder('e.g., how to handle errors in JavaScript, async programming, loops...')
+    .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
-    .setMaxLength(50);
+    .setMinLength(3)
+    .setMaxLength(200);
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(searchInput)
   );
 
   await interaction.showModal(modal);
+}
+
+/**
+ * Handle Semantic Search Modal Submission
+ * RAG-Powered curriculum discovery with tier-themed results
+ */
+export async function handleSemanticSearchSubmit(interaction, user) {
+  const query = interaction.fields.getTextInputValue('semantic_query');
+  
+  await interaction.deferReply({ ephemeral: true });
+
+  // Perform semantic search
+  const searchResult = await searchIntelligence.semanticSearch(query, user);
+  
+  if (!searchResult.success || searchResult.results.length === 0) {
+    return showNoResultsEmbed(interaction, query, user);
+  }
+
+  // Build tier-themed results embed
+  const embed = buildSemanticResultsEmbed(interaction, query, searchResult, user);
+  const components = buildSemanticResultsComponents(searchResult);
+
+  await interaction.editReply({ embeds: [embed], components });
+}
+
+/**
+ * Build Semantic Search Results Embed with Tier Theme
+ */
+function buildSemanticResultsEmbed(interaction, query, searchResult, user) {
+  const { results, mentorTip, relevanceScore, searchTime, userTier } = searchResult;
+  
+  // Get tier-based theme colors
+  const tierColors = {
+    'Bronze': 0xCD7F32,
+    'Silver': 0xC0C0C0,
+    'Gold': 0xFFD700,
+    'Platinum': 0xE5E4E2,
+    'Diamond': 0xB9F2FF,
+    'Master': 0x9B59B6,
+    'Grandmaster': 0xFF6B6B,
+    'Legend': 0x00FF88
+  };
+  
+  const tierName = userTier?.name || 'Bronze';
+  const embedColor = tierColors[tierName] || 0x5865F2;
+
+  // Build results list
+  const resultsText = results.slice(0, 5).map((r, i) => {
+    const priorityBadge = r.isWeakSpot ? '🎯' : `${i + 1}.`;
+    const xpBadge = `+${r.xpReward} XP`;
+    return `${priorityBadge} **${r.title}**\n└─ ${r.description?.slice(0, 60) || r.subject}... • \`${xpBadge}\`${r.priorityReason ? `\n   ${r.priorityReason}` : ''}`;
+  }).join('\n\n');
+
+  const embed = new EmbedBuilder()
+    .setColor(embedColor)
+    .setAuthor({
+      name: `🧠 Semantic Search Results`,
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
+    .setTitle(`"${query}"`)
+    .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📚 Curriculum Matches (${results.length} found)
+
+${resultsText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🤖 AI Mentor Insight
+${mentorTip}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+    .addFields(
+      { name: '📊 Relevance', value: `${relevanceScore}%`, inline: true },
+      { name: '⚡ Search Time', value: `${searchTime}ms`, inline: true },
+      { name: '🏆 Your Tier', value: tierName, inline: true }
+    )
+    .setFooter({ 
+      text: `MentorAI Semantic Search • XP rewards use formula: ⌊100 × 1.5^(L-1)⌋`,
+      iconURL: interaction.client.user.displayAvatarURL()
+    })
+    .setTimestamp();
+
+  return embed;
+}
+
+/**
+ * Build action buttons for semantic search results
+ */
+function buildSemanticResultsComponents(searchResult) {
+  const { results } = searchResult;
+  const topResults = results.slice(0, 3);
+
+  // Action buttons for top results
+  const actionButtons = topResults.map((r, i) => 
+    new ButtonBuilder()
+      .setCustomId(r.actionId || `search_action_lesson_${r.subject || 'general'}`)
+      .setLabel(r.actionLabel || 'Start Lesson')
+      .setEmoji(r.actionEmoji || '📚')
+      .setStyle(i === 0 ? ButtonStyle.Success : ButtonStyle.Primary)
+  );
+
+  // Add back button
+  actionButtons.push(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Hub')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  const actionRow = new ActionRowBuilder().addComponents(actionButtons);
+
+  // Quick filter row
+  const filterRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('search_filter_lessons')
+      .setLabel('Lessons Only')
+      .setEmoji('📖')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('search_filter_quizzes')
+      .setLabel('Quizzes Only')
+      .setEmoji('🎯')
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId('help_search')
+      .setLabel('New Search')
+      .setEmoji('🔍')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  return [actionRow, filterRow];
+}
+
+/**
+ * Show no results embed with suggestions
+ */
+async function showNoResultsEmbed(interaction, query, user) {
+  const embed = new EmbedBuilder()
+    .setColor(HELP_COLORS.WARNING)
+    .setTitle('🔍 No Curriculum Matches Found')
+    .setDescription(`
+No results found for **"${query}"**
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 💡 Try These Popular Topics
+\`javascript\` • \`python\` • \`loops\` • \`functions\` • \`async\`
+\`arrays\` • \`objects\` • \`react\` • \`node\` • \`api\`
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🎯 Or Explore Commands
+Use the category menu in \`/help\` to browse all features!
+    `)
+    .setFooter({ text: 'MentorAI Semantic Search • Try a different search term' });
+
+  const backRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_search')
+      .setLabel('Try Again')
+      .setEmoji('🔍')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Hub')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+
+  await interaction.editReply({ embeds: [embed], components: [backRow] });
 }
 
 export async function showFeedbackModal(interaction) {
