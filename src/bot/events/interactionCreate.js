@@ -366,6 +366,12 @@ async function handleButton(interaction) {
     } else if (category === 'certificate') {
       // Handle certificate buttons
       await handleDynamicButton(interaction, 'certificate', action, params);
+    } else if (category === 'research') {
+      // Handle research assistant buttons (Start Lesson, Take Quiz from AI research)
+      await handleResearchButton(interaction, action, params);
+    } else if (category === 'search') {
+      // Handle semantic search action buttons
+      await handleSearchActionButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -2129,6 +2135,87 @@ async function handleReviewButton(interaction, action, params) {
       .setDescription('This feature is coming soon! For now, you can:\n\n• Use `/explain` to get explanations for any code concept\n• Use `/learn` to study the topics related to the issues found');
     await interaction.reply({ embeds: [embed], ephemeral: true });
     return;
+  }
+}
+
+async function handleResearchButton(interaction, action, params) {
+  const topic = params.join('_') || 'javascript';
+  
+  if (action === 'lesson') {
+    // Start a lesson on the topic
+    await interaction.deferReply({ ephemeral: true });
+    const learnCommand = interaction.client.commands.get('learn');
+    if (learnCommand) {
+      // Create mock interaction options
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: () => null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await learnCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ content: `📚 Start learning **${topic}** with \`/learn topic:${topic}\`!` });
+      }
+    } else {
+      await interaction.editReply({ content: `📚 Start learning **${topic}** with \`/learn topic:${topic}\`!` });
+    }
+  } else if (action === 'quiz') {
+    // Start a quiz on the topic
+    await interaction.deferReply({ ephemeral: true });
+    const quizCommand = interaction.client.commands.get('quiz');
+    if (quizCommand) {
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await quizCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ content: `🎯 Test your knowledge with \`/quiz topic:${topic}\`!` });
+      }
+    } else {
+      await interaction.editReply({ content: `🎯 Test your knowledge with \`/quiz topic:${topic}\`!` });
+    }
+  } else {
+    await interaction.reply({ content: '✨ This feature is coming soon!', ephemeral: true });
+  }
+}
+
+async function handleSearchActionButton(interaction, action, params) {
+  const topic = params.slice(1).join('_') || 'javascript';
+  
+  // action format: search_action_0_lesson_javascript -> action=0, params=[lesson, javascript]
+  const actionType = params[0] || 'lesson';
+  
+  if (actionType === 'lesson' || action === 'lesson') {
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply({ content: `📚 Start learning **${topic}** with \`/learn topic:${topic}\`!` });
+  } else if (actionType === 'quiz' || action === 'quiz') {
+    await interaction.deferReply({ ephemeral: true });
+    await interaction.editReply({ content: `🎯 Test your knowledge with \`/quiz topic:${topic}\`!` });
+  } else if (action === 'filter') {
+    // Handle filter buttons
+    await interaction.reply({ content: '🔍 Filter applied! Use the search to explore more.', ephemeral: true });
+  } else {
+    await interaction.reply({ content: '✨ This feature is coming soon!', ephemeral: true });
   }
 }
 
