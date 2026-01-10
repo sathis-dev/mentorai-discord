@@ -1,4 +1,5 @@
 import { generateAIResponse } from './index.js';
+import { curriculumIndexer } from '../core/curriculumIndexer.js';
 
 /**
  * Build personalized system prompt based on user data
@@ -94,12 +95,23 @@ export async function generateTutorResponse({ question, history, topic, goals, w
 
   const personalizedPrompt = buildPersonalizedPrompt(userContext);
   
+  // ═══════════════════════════════════════════════════════════════════
+  // 🧠 RAG: Get curriculum context for grounded responses
+  // ═══════════════════════════════════════════════════════════════════
+  const ragContext = curriculumIndexer.getRAGContext(question);
+  const curriculumReference = ragContext.hasRelevantContent 
+    ? `\n\nCURRICULUM GROUNDING (Reference these lessons in your response):
+${ragContext.context.map(c => `- [${c.lessonId}] ${c.title}: ${c.description}`).join('\n')}
+
+IMPORTANT: When explaining concepts, prefix with "According to the MentorAI Curriculum..." and cite lesson IDs like [${ragContext.context[0]?.lessonId || 'js-1'}].`
+    : '';
+  
   const systemMessage = `${personalizedPrompt}
 
 CURRENT SESSION:
 - Topic Focus: ${topic || 'General programming'}
 - Learning Goals: ${goals?.join(', ') || 'Not set'}
-- Areas to Improve: ${weaknesses?.join(', ') || 'None identified yet'}`;
+- Areas to Improve: ${weaknesses?.join(', ') || 'None identified yet'}${curriculumReference}`;
 
   const messages = [
     { role: 'system', content: systemMessage },
@@ -119,6 +131,8 @@ CURRENT SESSION:
     return {
       content,
       detectedWeakness,
+      curriculumCitations: ragContext.citations,
+      lessonsReferenced: ragContext.context.map(c => c.lessonId)
     };
 
   } catch (error) {

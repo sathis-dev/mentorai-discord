@@ -125,6 +125,70 @@ app.get('/admin/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+// ====== JUDGE COMMAND CENTER (NOC) ======
+app.get('/admin/noc', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'public', 'noc.html'));
+});
+
+// NOC API endpoint for live metrics
+app.get('/api/noc/metrics', async (req, res) => {
+  try {
+    const { getAdminStats, getNocMetrics } = await import('./routes/api.js');
+    const stats = await getAdminStats();
+    const nocMetrics = getNocMetrics ? await getNocMetrics() : {};
+    res.json({ 
+      success: true, 
+      data: { ...stats, ...nocMetrics },
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ====== CERTIFICATE VERIFICATION ======
+app.get('/verify', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(__dirname, 'public', 'verify.html'));
+});
+
+app.get('/api/verify/:credentialId', async (req, res) => {
+  try {
+    const { Certificate } = await import('../database/models/Certificate.js');
+    const { credentialId } = req.params;
+    
+    // Search by both credentialId and certificateId for backwards compatibility
+    const cert = await Certificate.findOne({
+      $or: [
+        { credentialId: credentialId },
+        { certificateId: credentialId }
+      ]
+    });
+    
+    if (!cert) {
+      return res.json({ success: false, error: 'Certificate not found', valid: false });
+    }
+    
+    res.json({
+      success: true,
+      valid: true,
+      certificate: {
+        credentialId: cert.credentialId || cert.certificateId,
+        username: cert.username || cert.discordUsername,
+        courseName: cert.courseName || cert.skill,
+        score: cert.score,
+        level: cert.level,
+        lifetimeXP: cert.lifetimeXP || cert.stats?.totalXP || 0,
+        issuedAt: cert.issuedAt,
+        verified: cert.verified !== false
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Socket.IO events
 io.on('connection', (socket) => {
   console.log('📡 Admin connected via Socket.IO');

@@ -9,17 +9,26 @@ const certificateSchema = new mongoose.Schema({
     default: () => generateCertificateId()
   },
   
+  // Cryptographic Credential ID (new format: MENTOR-XXXXXXXX)
+  credentialId: { type: String, unique: true, sparse: true },
+  hash: { type: String }, // SHA256 hash for verification
+  
   // User info
   discordId: { type: String, required: true },
-  discordUsername: { type: String, required: true },
+  discordUsername: { type: String },
+  username: { type: String }, // Alias for discordUsername
   
   // Certificate details
-  skill: { type: String, required: true }, // e.g., "JavaScript Fundamentals"
+  skill: { type: String }, // e.g., "JavaScript Fundamentals"
+  courseName: { type: String }, // Alternative to skill
+  score: { type: Number }, // Score percentage
   level: { 
     type: String, 
-    enum: ['beginner', 'intermediate', 'advanced', 'expert'],
-    required: true 
+    enum: ['beginner', 'intermediate', 'advanced', 'expert', null],
+    default: null
   },
+  lifetimeXP: { type: Number, default: 0 },
+  verified: { type: Boolean, default: true },
   
   // Achievement stats at time of issue
   stats: {

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Certificate - MentorAI</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    .logo {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    h1 {
+      color: #5865F2;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .verify-card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 30px;
+      max-width: 500px;
+      width: 100%;
+    }
+    .input-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #888;
+      font-size: 0.9rem;
+    }
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      border: 2px solid #333;
+      border-radius: 8px;
+      background: #1a1a2e;
+      color: #fff;
+      font-size: 1rem;
+      transition: border-color 0.3s;
+    }
+    input:focus {
+      outline: none;
+      border-color: #5865F2;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #5865F2, #7289DA);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .result {
+      margin-top: 30px;
+      display: none;
+    }
+    .result.show { display: block; }
+    .result-card {
+      background: rgba(0,255,136,0.1);
+      border: 2px solid #00ff88;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .result-card.invalid {
+      background: rgba(255,100,100,0.1);
+      border-color: #ff6b6b;
+    }
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .result-icon {
+      font-size: 2.5rem;
+    }
+    .result-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+    }
+    .result-subtitle {
+      font-size: 0.9rem;
+      color: #888;
+    }
+    .cert-details {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+    .cert-field {
+      background: rgba(0,0,0,0.2);
+      padding: 12px;
+      border-radius: 8px;
+    }
+    .cert-field.full { grid-column: span 2; }
+    .cert-label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .cert-value {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #00ff88;
+    }
+    .cert-value.invalid { color: #ff6b6b; }
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge.verified {
+      background: rgba(0,255,136,0.2);
+      color: #00ff88;
+    }
+    .badge.invalid {
+      background: rgba(255,100,100,0.2);
+      color: #ff6b6b;
+    }
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      color: #666;
+      font-size: 0.85rem;
+    }
+    .footer a {
+      color: #5865F2;
+      text-decoration: none;
+    }
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+    .loading.show { display: block; }
+    .spinner {
+      border: 3px solid #333;
+      border-top: 3px solid #5865F2;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="logo">🎓</div>
+  <h1>MentorAI Certificate Verification</h1>
+  
+  <div class="verify-card">
+    <div class="input-group">
+      <label for="credentialId">Enter Credential ID</label>
+      <input type="text" id="credentialId" placeholder="MENTOR-XXXXXXXXXXXXXXXX" autofocus>
+    </div>
+    <button id="verifyBtn" onclick="verifyCertificate()">🔐 Verify Certificate</button>
+    
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <p>Verifying credential...</p>
+    </div>
+    
+    <div class="result" id="result">
+      <div class="result-card" id="resultCard">
+        <div class="result-header">
+          <span class="result-icon" id="resultIcon">✅</span>
+          <div>
+            <div class="result-title" id="resultTitle">Certificate Verified!</div>
+            <div class="result-subtitle" id="resultSubtitle">This credential is authentic</div>
+          </div>
+        </div>
+        
+        <div class="cert-details" id="certDetails">
+          <div class="cert-field">
+            <div class="cert-label">Recipient</div>
+            <div class="cert-value" id="certUsername">--</div>
+          </div>
+          <div class="cert-field">
+            <div class="cert-label">Status</div>
+            <div class="cert-value"><span class="badge verified" id="certStatus">✓ VERIFIED</span></div>
+          </div>
+          <div class="cert-field full">
+            <div class="cert-label">Course / Skill</div>
+            <div class="cert-value" id="certCourse">--</div>
+          </div>
+          <div class="cert-field">
+            <div class="cert-label">Score</div>
+            <div class="cert-value" id="certScore">--</div>
+          </div>
+          <div class="cert-field">
+            <div class="cert-label">Lifetime XP</div>
+            <div class="cert-value" id="certXP">--</div>
+          </div>
+          <div class="cert-field full">
+            <div class="cert-label">Issued On</div>
+            <div class="cert-value" id="certDate">--</div>
+          </div>
+          <div class="cert-field full">
+            <div class="cert-label">Credential ID</div>
+            <div class="cert-value" id="certId" style="font-size: 0.9rem; word-break: break-all;">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <p>🔒 Cryptographically secured by MentorAI</p>
+    <p><a href="/">← Back to MentorAI</a></p>
+  </div>
+
+  <script>
+    // Check URL params for credential ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const idFromUrl = urlParams.get('id');
+    if (idFromUrl) {
+      document.getElementById('credentialId').value = idFromUrl;
+      verifyCertificate();
+    }
+
+    async function verifyCertificate() {
+      const credentialId = document.getElementById('credentialId').value.trim();
+      if (!credentialId) {
+        alert('Please enter a Credential ID');
+        return;
+      }
+
+      const btn = document.getElementById('verifyBtn');
+      const loading = document.getElementById('loading');
+      const result = document.getElementById('result');
+      
+      btn.disabled = true;
+      loading.classList.add('show');
+      result.classList.remove('show');
+
+      try {
+        const response = await fetch(`/api/verify/${encodeURIComponent(credentialId)}`);
+        const data = await response.json();
+        
+        loading.classList.remove('show');
+        result.classList.add('show');
+        
+        const resultCard = document.getElementById('resultCard');
+        const resultIcon = document.getElementById('resultIcon');
+        const resultTitle = document.getElementById('resultTitle');
+        const resultSubtitle = document.getElementById('resultSubtitle');
+        const certDetails = document.getElementById('certDetails');
+        
+        if (data.success && data.valid) {
+          const cert = data.certificate;
+          
+          resultCard.classList.remove('invalid');
+          resultIcon.textContent = '✅';
+          resultTitle.textContent = 'Certificate Verified!';
+          resultSubtitle.textContent = 'This credential is authentic and valid';
+          
+          document.getElementById('certUsername').textContent = cert.username || 'Unknown';
+          document.getElementById('certCourse').textContent = cert.courseName || cert.skill || 'General';
+          document.getElementById('certScore').textContent = cert.score ? `${cert.score}%` : 'N/A';
+          document.getElementById('certXP').textContent = (cert.lifetimeXP || 0).toLocaleString();
+          document.getElementById('certDate').textContent = cert.issuedAt 
+            ? new Date(cert.issuedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+            : 'Unknown';
+          document.getElementById('certId').textContent = cert.credentialId;
+          
+          const statusBadge = document.getElementById('certStatus');
+          statusBadge.className = 'badge verified';
+          statusBadge.textContent = '✓ VERIFIED';
+          
+          certDetails.style.display = 'grid';
+        } else {
+          resultCard.classList.add('invalid');
+          resultIcon.textContent = '❌';
+          resultTitle.textContent = 'Certificate Not Found';
+          resultSubtitle.textContent = data.error || 'This credential could not be verified';
+          certDetails.style.display = 'none';
+        }
+        
+      } catch (error) {
+        loading.classList.remove('show');
+        result.classList.add('show');
+        
+        document.getElementById('resultCard').classList.add('invalid');
+        document.getElementById('resultIcon').textContent = '⚠️';
+        document.getElementById('resultTitle').textContent = 'Verification Error';
+        document.getElementById('resultSubtitle').textContent = 'Could not connect to verification server';
+        document.getElementById('certDetails').style.display = 'none';
+      }
+      
+      btn.disabled = false;
+    }
+
+    // Allow Enter key to verify
+    document.getElementById('credentialId').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') verifyCertificate();
+    });
+  </script>
+</body>
+</html>

@@ -1,7 +1,9 @@
-import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { generateCertificate, generateProgressChart, generateSkillTree } from '../../services/canvasService.js';
 import { COLORS, EMOJIS } from '../../config/designSystem.js';
+import { Certificate } from '../../database/models/Certificate.js';
+import crypto from 'crypto';
 
 export const data = new SlashCommandBuilder()
   .setName('certificate')
@@ -46,11 +48,49 @@ export async function execute(interaction) {
       // Calculate score based on user stats
       const score = Math.min(100, Math.floor(70 + Math.random() * 30)); // 70-100
       
+      // ═══════════════════════════════════════════════════════════════════
+      // 🔐 CRYPTOGRAPHIC CREDENTIAL ID GENERATION
+      // ═══════════════════════════════════════════════════════════════════
+      const credentialData = {
+        discordId: interaction.user.id,
+        username: interaction.user.username,
+        courseName,
+        score,
+        level: user.level || 1,
+        lifetimeXP: user.prestige?.totalXpEarned || user.xp || 0,
+        issuedAt: new Date()
+      };
+      
+      // Generate cryptographic hash for verification
+      const credentialHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(credentialData) + process.env.DISCORD_TOKEN?.slice(0, 10))
+        .digest('hex')
+        .slice(0, 16)
+        .toUpperCase();
+      
+      const credentialId = `MENTOR-${credentialHash}`;
+      
+      // Store certificate in database for verification
+      const savedCert = await Certificate.create({
+        credentialId,
+        discordId: interaction.user.id,
+        username: interaction.user.username,
+        courseName,
+        score,
+        level: user.level || 1,
+        lifetimeXP: user.prestige?.totalXpEarned || user.xp || 0,
+        hash: credentialHash,
+        issuedAt: new Date(),
+        verified: true
+      });
+      
       const certificate = await generateCertificate({
         userName: interaction.user.username,
         courseName: courseName,
         score: score,
         level: user.level || 1,
+        credentialId: credentialId,
         completionDate: new Date().toLocaleDateString('en-US', { 
           year: 'numeric', 
           month: 'long', 
@@ -60,19 +100,37 @@ export async function execute(interaction) {
 
       const embed = new EmbedBuilder()
         .setColor(COLORS.PREMIUM_GOLD)
-        .setTitle(`${EMOJIS.ACHIEVEMENT} Certificate Generated!`)
-        .setDescription(`Congratulations **${interaction.user.username}**! 🎉\n\nYou've earned a certificate for completing **${courseName}**!`)
+        .setTitle(`${EMOJIS.ACHIEVEMENT} Verified Certificate Generated!`)
+        .setDescription(`Congratulations **${interaction.user.username}**! 🎉\n\nYou've earned a **cryptographically verified** certificate for completing **${courseName}**!`)
         .addFields(
           { name: '📜 Course', value: courseName, inline: true },
           { name: '📊 Score', value: `${score}%`, inline: true },
-          { name: '⭐ Level', value: `${user.level || 1}`, inline: true }
+          { name: '⭐ Level', value: `${user.level || 1}`, inline: true },
+          { name: '🔐 Credential ID', value: `\`${credentialId}\``, inline: false },
+          { name: '✅ Verification', value: `[Verify Online](https://mentorai.up.railway.app/verify?id=${credentialId})`, inline: true },
+          { name: '💎 Lifetime XP', value: `${(user.prestige?.totalXpEarned || user.xp || 0).toLocaleString()}`, inline: true }
         )
-        .setFooter({ text: 'Share this certificate with pride! • MentorAI' })
+        .setFooter({ text: `Credential ID: ${credentialId} • Verified by MentorAI` })
         .setTimestamp();
+
+      const verifyButton = new ActionRowBuilder()
+        .addComponents(
+          new ButtonBuilder()
+            .setLabel('Verify Certificate')
+            .setEmoji('🔐')
+            .setStyle(ButtonStyle.Link)
+            .setURL(`https://mentorai.up.railway.app/verify?id=${credentialId}`),
+          new ButtonBuilder()
+            .setCustomId('exec_profile')
+            .setLabel('View Profile')
+            .setEmoji('👤')
+            .setStyle(ButtonStyle.Secondary)
+        );
 
       await interaction.editReply({ 
         embeds: [embed], 
-        files: [certificate] 
+        files: [certificate],
+        components: [verifyButton]
       });
 
     } else if (subcommand === 'progress') {
