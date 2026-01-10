@@ -669,28 +669,17 @@ class ChallengeManager extends EventEmitter {
     try {
       const { default: aiOrchestrator } = await import('../../ai/orchestrator.js');
       
-      const prompt = `Generate ${options.questions} multiple-choice quiz questions about ${options.topic}.
-Difficulty: ${options.difficulty}
-Category: ${options.category || 'programming'}
-
-Return a JSON array where each question has:
-- question: The question text
-- options: Array of 4 possible answers
-- correctIndex: Index (0-3) of correct answer
-- explanation: Brief explanation of why the answer is correct
-- topic: The specific topic/concept being tested
-
-Format: [{"question": "...", "options": ["A", "B", "C", "D"], "correctIndex": 0, "explanation": "...", "topic": "..."}]`;
-
-      const response = await aiOrchestrator.generate(prompt, { task: 'quiz' });
+      // Use the correct method from aiOrchestrator
+      const result = await aiOrchestrator.generateQuiz(options.topic, options.questions, options.difficulty);
       
-      // Parse JSON from response
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const questions = JSON.parse(jsonMatch[0]);
-        if (Array.isArray(questions) && questions.length > 0) {
-          return questions;
-        }
+      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
+        return result.data.map(q => ({
+          question: q.question,
+          options: q.options?.map(opt => opt.replace(/^[A-D]\)\s*/, '')) || [],
+          correctIndex: q.correct ?? q.correctIndex ?? 0,
+          explanation: q.explanation || '',
+          topic: q.topic || options.topic
+        }));
       }
     } catch (error) {
       console.error('AI question generation failed:', error);
