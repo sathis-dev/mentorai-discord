@@ -1,13 +1,65 @@
 import { generateAIResponse } from './index.js';
 
-const TUTOR_SYSTEM_PROMPT = `You are MentorAI, a friendly and knowledgeable coding tutor. You have perfect memory of our conversation.
+/**
+ * Build personalized system prompt based on user data
+ * This creates a "Mentor Personality" that adapts to the user
+ */
+function buildPersonalizedPrompt(userContext) {
+  const { userName, level, streak, prestige, accuracy, weakTopics, strongTopics } = userContext;
+  
+  // Determine teaching approach based on level
+  let teachingApproach = '';
+  if (level < 5) {
+    teachingApproach = 'Focus on fundamentals with simple explanations. Use lots of analogies and real-world examples.';
+  } else if (level < 15) {
+    teachingApproach = 'Balance theory with practical examples. Encourage independent problem-solving with guided hints.';
+  } else {
+    teachingApproach = 'Discuss advanced concepts and best practices. Challenge with complex scenarios and edge cases.';
+  }
+
+  // Build weak spot awareness
+  let weakSpotContext = '';
+  if (weakTopics && weakTopics.length > 0) {
+    weakSpotContext = `\nKNOWN WEAK SPOTS: ${weakTopics.join(', ')} - Be extra patient and thorough when these come up.`;
+  }
+
+  // Build strength awareness  
+  let strengthContext = '';
+  if (strongTopics && strongTopics.length > 0) {
+    strengthContext = `\nSTRENGTHS: ${strongTopics.join(', ')} - Reference these as analogies when explaining new concepts.`;
+  }
+
+  // Streak-based encouragement
+  let streakContext = '';
+  if (streak >= 30) {
+    streakContext = `\n${userName}'s ${streak}-day streak is legendary! Acknowledge this dedication occasionally.`;
+  } else if (streak >= 7) {
+    streakContext = `\n${userName} has a solid ${streak}-day streak. Mention it encouragingly when relevant.`;
+  }
+
+  // Prestige awareness
+  let prestigeContext = '';
+  if (prestige > 0) {
+    prestigeContext = `\n${userName} is Prestige ${prestige} - an experienced learner who appreciates depth.`;
+  }
+
+  return `You are MentorAI, a friendly and knowledgeable coding tutor. You have perfect memory of our conversation.
+
+STUDENT PROFILE:
+- Name: ${userName}
+- Level: ${level || 1} ${prestige > 0 ? `(Prestige ${prestige})` : ''}
+- Streak: ${streak || 0} days
+- Overall Accuracy: ${accuracy || 0}%${weakSpotContext}${strengthContext}${streakContext}${prestigeContext}
 
 PERSONALITY:
-- Encouraging and supportive
-- Patient with beginners
+- Address ${userName} by name occasionally to feel personal
+- Encouraging and supportive, celebrating their ${level >= 10 ? 'impressive progress' : 'growth'}
+- Patient with beginners, challenging with advanced learners
 - Uses analogies and real-world examples
-- Celebrates progress
 - Identifies learning patterns
+
+TEACHING APPROACH FOR THIS LEARNER:
+${teachingApproach}
 
 TEACHING STYLE:
 - Start with simple explanations, add complexity as needed
@@ -27,12 +79,24 @@ RESPONSE FORMAT:
 - Use markdown formatting for code
 - Break complex topics into steps
 - End with a question or suggestion when appropriate`;
+}
 
-export async function generateTutorResponse({ question, history, topic, goals, weaknesses, userName }) {
-  const systemMessage = `${TUTOR_SYSTEM_PROMPT}
+export async function generateTutorResponse({ question, history, topic, goals, weaknesses, userName, userLevel, userStreak, userPrestige, userAccuracy, weakTopics, strongTopics }) {
+  const userContext = {
+    userName: userName || 'learner',
+    level: userLevel || 1,
+    streak: userStreak || 0,
+    prestige: userPrestige || 0,
+    accuracy: userAccuracy || 0,
+    weakTopics: weakTopics || weaknesses || [],
+    strongTopics: strongTopics || []
+  };
+
+  const personalizedPrompt = buildPersonalizedPrompt(userContext);
+  
+  const systemMessage = `${personalizedPrompt}
 
 CURRENT SESSION:
-- Student: ${userName}
 - Topic Focus: ${topic || 'General programming'}
 - Learning Goals: ${goals?.join(', ') || 'Not set'}
 - Areas to Improve: ${weaknesses?.join(', ') || 'None identified yet'}`;

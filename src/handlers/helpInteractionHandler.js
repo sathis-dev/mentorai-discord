@@ -11,7 +11,6 @@ import {
 import { User } from '../database/models/User.js';
 import { HELP_COLORS, HELP_CATEGORIES, QUICK_ACTIONS } from '../config/helpConfig.js';
 import {
-  getSmartSuggestion,
   getRandomTip,
   formatCommandList,
   createProgressBar,
@@ -29,6 +28,7 @@ import {
   calculateXPRequired,
   calculateAccuracy
 } from '../utils/helpUtils.js';
+import { RecommendationEngine } from '../core/recommendationEngine.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN HUB VIEW
@@ -68,8 +68,14 @@ function buildMainHubEmbed(interaction, user) {
   const streakEmoji = getStreakEmoji(streak);
   const multiplier = getStreakMultiplier(streak);
 
-  const suggestion = getSmartSuggestion(user);
+  // AI-Powered personalized suggestion from RecommendationEngine
+  const suggestion = RecommendationEngine.getSuggestion(user);
+  const mentorGreeting = RecommendationEngine.generateMentorGreeting(user);
   const tip = getRandomTip();
+  
+  // Calculate total XP multiplier for display
+  const prestigeMultiplier = user?.prestige?.bonusMultiplier || 1.0;
+  const totalMultiplier = (multiplier * prestigeMultiplier).toFixed(2);
 
   const newCommands = getNewCommands().slice(0, 3);
   const newFeaturesText = newCommands.length > 0
@@ -84,26 +90,26 @@ function buildMainHubEmbed(interaction, user) {
     })
     .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true, size: 128 }))
     .setDescription(`
-## 👋 Welcome back, ${interaction.user.displayName}!
+## 👋 ${mentorGreeting}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${rankEmoji} **${rankName}** • Level ${level}${prestige > 0 ? ` • ⭐ P${prestige}` : ''}
 ${createProgressBar(xp, xpRequired, 12)}
-✨ ${formatXP(xp, xpRequired)} XP to Level ${level + 1}
+✨ ${formatXP(xp, xpRequired)} XP to Level ${level + 1}${totalMultiplier > 1 ? ` • 💫 ${totalMultiplier}x XP Bonus` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ### 📊 Your Stats
-${streakEmoji} **${streak}** day streak ${multiplier > 1 ? `(${multiplier}x XP!)` : ''}
-📖 **${lessonsCompleted}** lessons completed
-🎯 **${quizzesTaken}** quizzes taken • **${accuracy}%** accuracy
+${streakEmoji} **${streak}** day streak ${multiplier > 1 ? `(${multiplier}x)` : ''}${prestigeMultiplier > 1 ? ` • ⭐ P${prestige} (${prestigeMultiplier}x)` : ''}
+📖 **${lessonsCompleted}** lessons • 🎯 **${quizzesTaken}** quizzes • **${accuracy}%** accuracy
 🏆 **${achievements}** achievements unlocked
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### ⚡ Suggested Next Step
-${suggestion.emoji} **${suggestion.text}** — Use \`${suggestion.command}\`
+### ⚡ AI-Powered Suggestion
+${suggestion.emoji} **${suggestion.text}**
+└─ *${suggestion.reason || 'Personalized for you'}* — \`${suggestion.command}\`
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

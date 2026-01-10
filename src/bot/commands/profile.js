@@ -212,6 +212,13 @@ export async function execute(interaction) {
     const topicsStudied = user?.topicsStudied || [];
     const joinDate = user?.createdAt || new Date();
     
+    // ═══ Calculate XP Multipliers ═══
+    const prestigeLevel = user?.prestige?.level || 0;
+    const prestigeMultiplier = user?.prestige?.bonusMultiplier || 1.0;
+    const streakMultiplier = getStreakMultiplier(streak);
+    const totalMultiplier = (prestigeMultiplier * streakMultiplier).toFixed(2);
+    const lifetimeXp = user?.prestige?.totalXpEarned || 0;
+    
     // ═══ Get rank info from brand system ═══
     const rank = getRank(level);
     const memberDuration = Math.floor((Date.now() - new Date(joinDate).getTime()) / (1000 * 60 * 60 * 24));
@@ -247,6 +254,11 @@ export async function execute(interaction) {
         {
           name: `${rank.emoji} Current Rank`,
           value: `**${rank.name}**\n${rank.badge}`,
+          inline: true
+        },
+        {
+          name: `💫 XP Multiplier`,
+          value: totalMultiplier > 1 ? `**${totalMultiplier}x**${streakMultiplier > 1 ? `\n🔥 Streak: ${streakMultiplier}x` : ''}${prestigeMultiplier > 1 ? `\n⭐ Prestige: ${prestigeMultiplier}x` : ''}` : '`1.0x` (base)',
           inline: true
         }
       );

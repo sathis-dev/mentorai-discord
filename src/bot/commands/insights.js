@@ -2,6 +2,8 @@ import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, But
 import { generateWithAI } from '../../ai/index.js';
 import { getOrCreateUser } from '../../services/gamificationService.js';
 import { COLORS, EMOJIS, createProgressBar } from '../../config/designSystem.js';
+import { RecommendationEngine } from '../../core/recommendationEngine.js';
+import { AccuracySystem } from '../../core/accuracySystem.js';
 
 export const data = new SlashCommandBuilder()
   .setName('insights')
@@ -24,9 +26,13 @@ export async function execute(interaction) {
 
     // Calculate learning stats
     const stats = calculateLearningStats(user);
+    
+    // Get AI-powered recommendations from RecommendationEngine
+    const learningReport = RecommendationEngine.generateLearningReport(user);
+    const accuracyReport = AccuracySystem.generateAccuracyReport(user);
 
     // Generate AI insights
-    const insights = await generateAIInsights(user, stats);
+    const insights = await generateAIInsights(user, stats, learningReport);
 
     // Build the main insights embed
     const mainEmbed = new EmbedBuilder()
@@ -126,7 +132,11 @@ export async function execute(interaction) {
 
     recsEmbed.setFooter({ text: '💡 Insights are personalized based on your learning history' });
 
-    // Action buttons
+    // Build skill path embed with actionable buttons
+    const skillPathEmbed = buildSkillPathEmbed(learningReport, accuracyReport);
+
+    // Action buttons - dynamically based on top suggestion
+    const topSuggestion = learningReport.topSuggestion;
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId('insights_weakspots')
@@ -135,12 +145,12 @@ export async function execute(interaction) {
         .setStyle(ButtonStyle.Primary),
       new ButtonBuilder()
         .setCustomId('insights_studyplan')
-        .setLabel('Generate Study Plan')
+        .setLabel('Study Plan')
         .setEmoji('📋')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('exec_learn')
-        .setLabel('Start Learning')
+        .setLabel('Start Lesson')
         .setEmoji('📚')
         .setStyle(ButtonStyle.Success),
       new ButtonBuilder()
@@ -149,10 +159,13 @@ export async function execute(interaction) {
         .setEmoji('❓')
         .setStyle(ButtonStyle.Secondary)
     );
+    
+    // Skill path action buttons (row 2)
+    const skillPathButtons = buildSkillPathButtons(learningReport.skillPath);
 
     await interaction.editReply({ 
-      embeds: [mainEmbed, patternEmbed, recsEmbed], 
-      components: [buttons] 
+      embeds: [mainEmbed, patternEmbed, skillPathEmbed, recsEmbed], 
+      components: [buttons, skillPathButtons].filter(Boolean)
     });
 
   } catch (error) {
@@ -469,4 +482,86 @@ async function generateStudyPlan(user) {
   ];
 
   return plan.join('\n');
+}
+
+/**
+ * Build skill path embed with visual progression
+ */
+function buildSkillPathEmbed(learningReport, accuracyReport) {
+  const embed = new EmbedBuilder()
+    .setTitle('🗺️ Your Personalized Skill Path')
+    .setColor(0x9B59B6);
+
+  const skillPath = learningReport.skillPath || [];
+  const multipliers = learningReport.multipliers || {};
+
+  // Multiplier display
+  let multiplierText = '';
+  if (multipliers.total > 1) {
+    multiplierText = `\n\n**💫 Active XP Bonus: ${multipliers.total.toFixed(2)}x**`;
+    if (multipliers.streak > 1) multiplierText += `\n└─ 🔥 Streak: ${multipliers.streak}x`;
+    if (multipliers.prestige > 1) multiplierText += `\n└─ ⭐ Prestige: ${multipliers.prestige}x`;
+  }
+
+  if (skillPath.length === 0) {
+    embed.setDescription(`Start your learning journey to unlock a personalized skill path!${multiplierText}`);
+    return embed;
+  }
+
+  // Build visual skill path
+  const pathText = skillPath.map((step, i) => {
+    const connector = i < skillPath.length - 1 ? '\n│' : '';
+    const stepIcon = step.type === 'improve' ? '📝' : step.type === 'advance' ? '🚀' : '🗺️';
+    return `**Step ${step.step}:** ${step.emoji} ${step.action}\n└─ \`${step.command}\`${connector}`;
+  }).join('\n');
+
+  embed.setDescription(`${pathText}${multiplierText}`);
+
+  // Add weak spot summary if available
+  if (accuracyReport.needsImprovement && accuracyReport.needsImprovement.length > 0) {
+    const weakText = accuracyReport.needsImprovement
+      .slice(0, 3)
+      .map(w => `• ${w.topic} (${w.accuracy}%)`)
+      .join('\n');
+    embed.addFields({ name: '🎯 Focus Areas', value: weakText, inline: true });
+  }
+
+  // Add strong areas
+  if (accuracyReport.topPerformers && accuracyReport.topPerformers.length > 0) {
+    const strongText = accuracyReport.topPerformers
+      .slice(0, 3)
+      .map(s => `• ${s.topic} (${s.accuracy}%)`)
+      .join('\n');
+    embed.addFields({ name: '💪 Strengths', value: strongText, inline: true });
+  }
+
+  return embed;
+}
+
+/**
+ * Build skill path action buttons
+ */
+function buildSkillPathButtons(skillPath) {
+  if (!skillPath || skillPath.length === 0) return null;
+
+  const buttons = [];
+  
+  // Create buttons for first 3 skill path steps
+  for (const step of skillPath.slice(0, 3)) {
+    const command = step.command.replace('/', '');
+    const parts = command.split(' ');
+    const baseCommand = parts[0];
+    const topic = parts[1] || '';
+    
+    buttons.push(
+      new ButtonBuilder()
+        .setCustomId(`skillpath_${baseCommand}_${topic}`.slice(0, 100))
+        .setLabel(`${step.emoji} ${step.topic}`)
+        .setStyle(step.type === 'improve' ? ButtonStyle.Danger : ButtonStyle.Primary)
+    );
+  }
+
+  if (buttons.length === 0) return null;
+
+  return new ActionRowBuilder().addComponents(buttons);
 }
