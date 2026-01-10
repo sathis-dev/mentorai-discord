@@ -190,6 +190,10 @@ async function handleButton(interaction) {
       // Handle arena multiplayer buttons
       const { handleArenaButton } = await import('../commands/arena.js');
       await handleArenaButton(interaction, action, params);
+    } else if (category === 'battle') {
+      // Handle battle answer buttons (from challenge system)
+      const { handleChallengeInteraction } = await import('../../handlers/challengeInteractionHandler.js');
+      await handleChallengeInteraction(interaction);
     } else if (category === 'project') {
       // Handle project-based learning buttons
       const { handleProjectButton } = await import('../commands/project.js');
@@ -1904,28 +1908,37 @@ async function handleLeaderboardButton(interaction, action, params) {
 }
 
 async function handleChallengeButton(interaction, action, params) {
-  const opponentId = params[1];
+  // Use the new challenge interaction handler
+  try {
+    const { handleChallengeInteraction } = await import('../../handlers/challengeInteractionHandler.js');
+    await handleChallengeInteraction(interaction);
+  } catch (error) {
+    logger.error('Challenge button error:', error);
+    
+    // Fallback to simple handling
+    const opponentId = params[1];
 
-  if (action === 'accept') {
-    if (interaction.user.id !== opponentId) {
-      await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
-      return;
+    if (action === 'accept') {
+      if (interaction.user.id !== opponentId) {
+        await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
+        return;
+      }
+      const embed = new EmbedBuilder()
+        .setTitle('⚔️ Challenge Accepted!')
+        .setColor(COLORS.SUCCESS)
+        .setDescription('Both players use `/quiz` to compete!');
+      await interaction.update({ embeds: [embed], components: [] });
+    } else if (action === 'decline') {
+      if (interaction.user.id !== opponentId) {
+        await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
+        return;
+      }
+      const embed = new EmbedBuilder()
+        .setTitle('❌ Challenge Declined')
+        .setColor(COLORS.ERROR)
+        .setDescription('Maybe next time!');
+      await interaction.update({ embeds: [embed], components: [] });
     }
-    const embed = new EmbedBuilder()
-      .setTitle('⚔️ Challenge Accepted!')
-      .setColor(COLORS.SUCCESS)
-      .setDescription('Both players use `/quiz` to compete!');
-    await interaction.update({ embeds: [embed], components: [] });
-  } else if (action === 'decline') {
-    if (interaction.user.id !== opponentId) {
-      await interaction.reply({ content: '❌ This challenge is not for you!', ephemeral: true });
-      return;
-    }
-    const embed = new EmbedBuilder()
-      .setTitle('❌ Challenge Declined')
-      .setColor(COLORS.ERROR)
-      .setDescription('Maybe next time!');
-    await interaction.update({ embeds: [embed], components: [] });
   }
 }
 

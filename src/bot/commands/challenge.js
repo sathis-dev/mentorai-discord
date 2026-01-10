@@ -1,7 +1,11 @@
-// src/bot/commands/challenge.js
-// ═══════════════════════════════════════════════════════════════════
-// ULTRA QUIZ SYSTEM - 1v1 PVP CHALLENGE MODE
-// ═══════════════════════════════════════════════════════════════════
+/**
+ * /challenge Command - 1v1 Quiz Battle
+ * 
+ * Challenge another user to a quiz battle with:
+ * - Real-time simultaneous questions
+ * - Speed-based scoring
+ * - XP rewards for winner
+ */
 
 import { 
   SlashCommandBuilder, 
@@ -10,25 +14,8 @@ import {
   ButtonBuilder, 
   ButtonStyle 
 } from 'discord.js';
-import { createQuizSession, getCurrentQuestion, submitAnswer } from '../../services/quizService.js';
-import { getOrCreateUser } from '../../services/gamificationService.js';
-import {
-  QUIZ_COLORS,
-  QUIZ_EMOJIS,
-  DIFFICULTY,
-  QUIZ_TOPICS,
-  ASCII_ART
-} from '../../config/quizConfig.js';
-import {
-  createHealthBar,
-  formatNumber,
-  getRankFromXP,
-  getGrade
-} from '../../utils/quizUtils.js';
-
-// Active challenges stored in memory (should be Redis in production)
-const activeChallenges = new Map();
-const activeBattles = new Map();
+import challengeManager from '../../services/multiplayer/challengeManager.js';
+import { COLORS } from '../../config/colors.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // COMMAND DEFINITION
@@ -43,21 +30,29 @@ export const data = new SlashCommandBuilder()
       .setRequired(true))
   .addStringOption(option =>
     option.setName('topic')
-      .setDescription('Quiz battle topic')
-      .setRequired(true)
-      .setAutocomplete(true))
+      .setDescription('Quiz topic')
+      .setRequired(false)
+      .addChoices(
+        { name: '🐍 Python', value: 'python' },
+        { name: '🟨 JavaScript', value: 'javascript' },
+        { name: '📊 Algorithms', value: 'algorithms' },
+        { name: '🗃️ Data Structures', value: 'data_structures' },
+        { name: '🌐 HTML/CSS', value: 'web' },
+        { name: '🎲 Random', value: 'random' }
+      ))
   .addStringOption(option =>
     option.setName('difficulty')
-      .setDescription('Battle difficulty')
+      .setDescription('Quiz difficulty')
+      .setRequired(false)
       .addChoices(
-        { name: '🟢 Easy - Casual battle', value: 'easy' },
-        { name: '🟡 Medium - Standard fight', value: 'medium' },
-        { name: '🔴 Hard - Intense duel', value: 'hard' },
-        { name: '🟣 Expert - Ultimate showdown', value: 'expert' }
+        { name: '🟢 Easy', value: 'easy' },
+        { name: '🟡 Medium', value: 'medium' },
+        { name: '🔴 Hard', value: 'hard' }
       ))
   .addIntegerOption(option =>
-    option.setName('rounds')
-      .setDescription('Number of rounds (3-10)')
+    option.setName('questions')
+      .setDescription('Number of questions (3-10)')
+      .setRequired(false)
       .setMinValue(3)
       .setMaxValue(10));
 
@@ -66,637 +61,502 @@ export const data = new SlashCommandBuilder()
 // ═══════════════════════════════════════════════════════════════════
 
 export async function execute(interaction) {
+  const challenger = interaction.user;
   const opponent = interaction.options.getUser('opponent');
-  const topic = interaction.options.getString('topic');
+  const topic = interaction.options.getString('topic') || 'random';
   const difficulty = interaction.options.getString('difficulty') || 'medium';
-  const rounds = interaction.options.getInteger('rounds') || 5;
-
-  // Validation
-  if (opponent.id === interaction.user.id) {
-    return interaction.reply({ 
-      content: `${QUIZ_EMOJIS.INCORRECT} You cannot challenge yourself!`, 
-      ephemeral: true 
+  const questions = interaction.options.getInteger('questions') || 5;
+  
+  // ─── Validations ───────────────────────────────────────────────
+  
+  // Can't challenge yourself
+  if (challenger.id === opponent.id) {
+    return interaction.reply({
+      content: '❌ You cannot challenge yourself!',
+      ephemeral: true
     });
   }
-
+  
+  // Can't challenge bots
   if (opponent.bot) {
-    return interaction.reply({ 
-      content: `${QUIZ_EMOJIS.INCORRECT} You cannot challenge a bot!`, 
-      ephemeral: true 
+    return interaction.reply({
+      content: '❌ You cannot challenge bots!',
+      ephemeral: true
     });
   }
-
-  // Check if either user is already in a battle
-  if (activeBattles.has(interaction.user.id) || activeBattles.has(opponent.id)) {
-    return interaction.reply({ 
-      content: `${QUIZ_EMOJIS.INCORRECT} One of the players is already in a battle!`, 
-      ephemeral: true 
-    });
-  }
-
-  // Get both users' stats
-  const challenger = await getOrCreateUser(interaction.user.id, interaction.user.username);
-  const opponentData = await getOrCreateUser(opponent.id, opponent.username);
   
-  const challengerRank = getRankFromXP(challenger.xp || 0);
-  const opponentRank = getRankFromXP(opponentData.xp || 0);
-  const topicData = QUIZ_TOPICS[topic.toLowerCase()] || { emoji: '📚', name: topic };
-  const diffData = DIFFICULTY[difficulty] || DIFFICULTY.medium;
-
-  // Calculate XP stakes
-  const xpStake = Math.round(50 * diffData.xpMultiplier * (rounds / 5));
-
-  // Create challenge ID
-  const challengeId = `${interaction.user.id}_${opponent.id}_${Date.now()}`;
-
-  // Store challenge data
-  activeChallenges.set(challengeId, {
-    challengerId: interaction.user.id,
-    challengerName: interaction.user.username,
-    opponentId: opponent.id,
-    opponentName: opponent.username,
-    topic,
-    difficulty,
-    rounds,
-    xpStake,
-    createdAt: Date.now()
-  });
-
-  // Create challenge embed
-  const challengeEmbed = new EmbedBuilder()
-    .setColor(QUIZ_COLORS.STREAK_FIRE)
-    .setTitle(`⚔️ CHALLENGE ISSUED!`)
-    .setDescription(`
-${challengerRank.emoji} **${interaction.user.username}** challenges ${opponentRank.emoji} **${opponent.username}**!
-    `)
-    .addFields(
-      { name: '📋 Battle Info', value: `${topicData.emoji} **Topic:** ${topicData.name || topic}\n${diffData.emoji} **Difficulty:** ${diffData.name}\n❓ **Rounds:** ${rounds}\n✨ **Stakes:** ${xpStake} XP`, inline: false },
-      { name: `${challengerRank.emoji} Challenger`, value: `**${interaction.user.username}**\nLevel ${challenger.level || 1} • ${formatNumber(challenger.xp || 0)} XP`, inline: true },
-      { name: '⚔️', value: 'VS', inline: true },
-      { name: `${opponentRank.emoji} Opponent`, value: `**${opponent.username}**\nLevel ${opponentData.level || 1} • ${formatNumber(opponentData.xp || 0)} XP`, inline: true }
-    )
-    .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-    .setFooter({ text: '⏰ Challenge expires in 60 seconds • ⚡ MentorAI' })
-    .setTimestamp();
-
-  // Challenge buttons
-  const buttons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`challenge_accept_${challengeId}`)
-      .setLabel('Accept Challenge')
-      .setEmoji('⚔️')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId(`challenge_decline_${challengeId}`)
-      .setLabel('Decline')
-      .setEmoji('🛡️')
-      .setStyle(ButtonStyle.Danger),
-    new ButtonBuilder()
-      .setCustomId('help_main')
-      .setLabel('Menu')
-      .setEmoji('🏠')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  await interaction.reply({ 
-    content: `${opponent} **You have been challenged to a battle!**`, 
-    embeds: [challengeEmbed], 
-    components: [buttons] 
-  });
-
-  // Auto-expire after 60 seconds
-  setTimeout(async () => {
-    if (activeChallenges.has(challengeId)) {
-      activeChallenges.delete(challengeId);
-      try {
-        const message = await interaction.fetchReply();
-        if (message.components.length > 0) {
-          const expiredEmbed = EmbedBuilder.from(challengeEmbed)
-            .setColor(QUIZ_COLORS.SECONDARY)
-            .setTitle(`${QUIZ_EMOJIS.TIMEOUT} Challenge Expired`)
-            .setFooter({ text: '⏰ Challenge was not accepted in time' });
-
-          await interaction.editReply({ embeds: [expiredEmbed], components: [] });
+  await interaction.deferReply();
+  
+  try {
+    // Set client reference if not set
+    if (!challengeManager.client) {
+      challengeManager.setClient(interaction.client);
+      setupChallengeEvents(interaction.client);
+    }
+    
+    // Create challenge
+    const challenge = await challengeManager.createChallenge(
+      challenger.id,
+      opponent.id,
+      { topic, difficulty, questions }
+    );
+    
+    // Store channel info
+    challenge.channelId = interaction.channelId;
+    
+    // ─── Create Challenge Embed ────────────────────────────────────
+    
+    const topicDisplay = {
+      python: '🐍 Python',
+      javascript: '🟨 JavaScript',
+      algorithms: '📊 Algorithms',
+      data_structures: '🗃️ Data Structures',
+      web: '🌐 HTML/CSS',
+      random: '🎲 Random'
+    };
+    
+    const difficultyDisplay = {
+      easy: '🟢 Easy',
+      medium: '🟡 Medium',
+      hard: '🔴 Hard'
+    };
+    
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.primary || '#5865F2')
+      .setTitle('⚔️ Quiz Challenge!')
+      .setDescription(`**${challenger.username}** has challenged **${opponent.username}** to a quiz battle!`)
+      .addFields(
+        { 
+          name: '📚 Topic', 
+          value: topicDisplay[topic] || topic, 
+          inline: true 
+        },
+        { 
+          name: '⚡ Difficulty', 
+          value: difficultyDisplay[difficulty] || difficulty, 
+          inline: true 
+        },
+        { 
+          name: '❓ Questions', 
+          value: `${questions} questions`, 
+          inline: true 
+        },
+        {
+          name: '⏱️ Time Limit',
+          value: '15 seconds per question',
+          inline: true
+        },
+        {
+          name: '🏆 Scoring',
+          value: 'Fastest correct answer wins more points!',
+          inline: true
+        },
+        {
+          name: '⏳ Expires',
+          value: '<t:' + Math.floor(challenge.expiresAt.getTime() / 1000) + ':R>',
+          inline: true
         }
-      } catch (e) {
-        // Message might be deleted
-      }
-    }
-  }, 60000);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BUTTON HANDLER
-// ═══════════════════════════════════════════════════════════════════
-
-export async function handleButton(interaction, action, params) {
-  try {
-    if (action === 'accept') {
-      await handleAcceptChallenge(interaction, params.join('_'));
-    } else if (action === 'decline') {
-      await handleDeclineChallenge(interaction, params.join('_'));
-    } else if (action === 'answer') {
-      await handleBattleAnswer(interaction, parseInt(params[0], 10), params[1]);
-    } else if (action === 'forfeit') {
-      await handleForfeit(interaction, params[0]);
-    }
-  } catch (error) {
-    console.error('Challenge button handler error:', error);
-    await interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} Something went wrong!`,
-      ephemeral: true
-    }).catch(() => {});
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// ACCEPT CHALLENGE
-// ═══════════════════════════════════════════════════════════════════
-
-async function handleAcceptChallenge(interaction, challengeId) {
-  const challenge = activeChallenges.get(challengeId);
-  
-  if (!challenge) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} This challenge has expired!`,
-      ephemeral: true
+      )
+      .setThumbnail(challenger.displayAvatarURL({ size: 128 }))
+      .setFooter({ 
+        text: `Challenge ID: ${challenge.challengeId.slice(-8)}` 
+      })
+      .setTimestamp();
+    
+    // ─── Create Buttons ────────────────────────────────────────────
+    
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`challenge_accept_${challenge.challengeId}`)
+          .setLabel('Accept Challenge')
+          .setStyle(ButtonStyle.Success)
+          .setEmoji('✅'),
+        new ButtonBuilder()
+          .setCustomId(`challenge_decline_${challenge.challengeId}`)
+          .setLabel('Decline')
+          .setStyle(ButtonStyle.Danger)
+          .setEmoji('❌')
+      );
+    
+    const message = await interaction.editReply({
+      content: `${opponent}, you have been challenged! ⚔️`,
+      embeds: [embed],
+      components: [row]
     });
-  }
-
-  // Only the opponent can accept
-  if (interaction.user.id !== challenge.opponentId) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} Only ${challenge.opponentName} can accept this challenge!`,
-      ephemeral: true
-    });
-  }
-
-  await interaction.deferUpdate();
-
-  // Remove from challenges, add to active battles
-  activeChallenges.delete(challengeId);
-
-  // Create battle state
-  const battleId = `battle_${Date.now()}`;
-  const battle = {
-    id: battleId,
-    player1: {
-      id: challenge.challengerId,
-      username: challenge.challengerName,
-      hp: 100,
-      maxHp: 100,
-      score: 0,
-      correct: 0,
-      answered: false
-    },
-    player2: {
-      id: challenge.opponentId,
-      username: challenge.opponentName,
-      hp: 100,
-      maxHp: 100,
-      score: 0,
-      correct: 0,
-      answered: false
-    },
-    topic: challenge.topic,
-    difficulty: challenge.difficulty,
-    rounds: challenge.rounds,
-    currentRound: 1,
-    xpStake: challenge.xpStake,
-    questions: [],
-    currentQuestion: null,
-    status: 'active'
-  };
-
-  // Generate questions for the battle
-  try {
-    const session = await createQuizSession(battleId, challenge.topic, challenge.rounds, challenge.difficulty);
-    if (!session || !session.questions?.length) {
-      throw new Error('Failed to generate battle questions');
-    }
-    battle.questions = session.questions;
-    battle.currentQuestion = session.questions[0];
+    
+    // Store message ID for later updates
+    challenge.messageId = message.id;
+    
   } catch (error) {
-    console.error('Battle question generation error:', error);
+    console.error('Challenge creation error:', error);
+    
+    const errorEmbed = new EmbedBuilder()
+      .setColor('#FF0000')
+      .setTitle('❌ Challenge Failed')
+      .setDescription(error.message || 'Failed to create challenge. Please try again.')
+      .setTimestamp();
+    
     await interaction.editReply({
-      content: `${QUIZ_EMOJIS.INCORRECT} Failed to start battle. Please try again!`,
-      embeds: [],
+      embeds: [errorEmbed],
       components: []
     });
-    return;
   }
-
-  // Store battle
-  activeBattles.set(challenge.challengerId, battle);
-  activeBattles.set(challenge.opponentId, battle);
-
-  // Show countdown
-  await showBattleCountdown(interaction);
-
-  // Show first question
-  await showBattleQuestion(interaction, battle);
 }
 
 // ═══════════════════════════════════════════════════════════════════
-// DECLINE CHALLENGE
+// CHALLENGE EVENT HANDLERS
 // ═══════════════════════════════════════════════════════════════════
 
-async function handleDeclineChallenge(interaction, challengeId) {
-  const challenge = activeChallenges.get(challengeId);
+function setupChallengeEvents(client) {
+  // Prevent duplicate listeners
+  if (challengeManager.eventsSetup) return;
+  challengeManager.eventsSetup = true;
   
-  if (!challenge) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} This challenge has already expired!`,
-      ephemeral: true
-    });
-  }
-
-  // Only the opponent can decline
-  if (interaction.user.id !== challenge.opponentId) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} Only ${challenge.opponentName} can decline this challenge!`,
-      ephemeral: true
-    });
-  }
-
-  activeChallenges.delete(challengeId);
-
-  const declinedEmbed = new EmbedBuilder()
-    .setColor(QUIZ_COLORS.DANGER)
-    .setTitle(`${QUIZ_EMOJIS.SHIELD} Challenge Declined`)
-    .setDescription(`
-**${challenge.opponentName}** has declined the challenge from **${challenge.challengerName}**.
-
-*Maybe next time!* 🤝
-    `)
-    .setFooter({ text: 'Challenge another player with /challenge' });
-
-  await interaction.update({ embeds: [declinedEmbed], components: [] });
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BATTLE COUNTDOWN
-// ═══════════════════════════════════════════════════════════════════
-
-async function showBattleCountdown(interaction) {
-  const frames = ['3️⃣', '2️⃣', '1️⃣', '⚔️'];
-  
-  for (let i = 0; i < frames.length; i++) {
-    const isLast = i === frames.length - 1;
-    
-    const countEmbed = new EmbedBuilder()
-      .setColor(isLast ? QUIZ_COLORS.STREAK_FIRE : QUIZ_COLORS.WARNING)
-      .setTitle(isLast ? `${QUIZ_EMOJIS.SWORD} BATTLE START!` : `${frames[i]} Get Ready...`)
-      .setDescription(`
-\`\`\`
-╔══════════════════════════════════════╗
-║          ${isLast ? '⚔️ FIGHT! ⚔️' : `  ${frames[i]} PREPARING...`}          ║
-╚══════════════════════════════════════╝
-\`\`\`
-
-${isLast ? '**Answer quickly to deal damage!**' : '*Both players get ready...*'}
-      `);
-
-    await interaction.editReply({ embeds: [countEmbed], components: [] });
-    
-    if (!isLast) {
-      await new Promise(r => setTimeout(r, 1000));
+  // ─── Challenge Accepted ──────────────────────────────────────────
+  challengeManager.on('challenge_accepted', async ({ challenge, battle }) => {
+    try {
+      const channel = await client.channels.fetch(challenge.channelId);
+      if (!channel) return;
+      
+      const embed = new EmbedBuilder()
+        .setColor('#00FF00')
+        .setTitle('✅ Challenge Accepted!')
+        .setDescription(`**${challenge.opponent.username}** accepted the challenge!\n\nBattle starting in **5 seconds**...`)
+        .addFields(
+          { name: '🎮 Battle ID', value: `\`${battle.battleId.slice(-8)}\``, inline: true },
+          { name: '👥 Players', value: `${challenge.challenger.username} vs ${challenge.opponent.username}`, inline: true }
+        )
+        .setTimestamp();
+      
+      // Update original message
+      if (challenge.messageId) {
+        try {
+          const message = await channel.messages.fetch(challenge.messageId);
+          await message.edit({
+            content: '⚔️ Battle starting!',
+            embeds: [embed],
+            components: []
+          });
+        } catch (e) {
+          await channel.send({ embeds: [embed] });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling challenge_accepted:', error);
     }
-  }
-  
-  await new Promise(r => setTimeout(r, 500));
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// BATTLE QUESTION DISPLAY
-// ═══════════════════════════════════════════════════════════════════
-
-async function showBattleQuestion(interaction, battle) {
-  const question = battle.currentQuestion;
-  const diffData = DIFFICULTY[battle.difficulty] || DIFFICULTY.medium;
-  const topicData = QUIZ_TOPICS[battle.topic?.toLowerCase()] || { emoji: '📚', name: battle.topic };
-
-  // Reset answered status
-  battle.player1.answered = false;
-  battle.player2.answered = false;
-
-  const battleEmbed = new EmbedBuilder()
-    .setColor(QUIZ_COLORS.STREAK_FIRE)
-    .setTitle(`${QUIZ_EMOJIS.SWORD} Round ${battle.currentRound}/${battle.rounds}`)
-    .setDescription(`
-${ASCII_ART.dividerThin}
-
-**${battle.player1.username}** ${getRankFromXP(0).emoji}
-${createHealthBar(battle.player1.hp, battle.player1.maxHp)}
-⭐ Score: **${battle.player1.score}** | ✅ ${battle.player1.correct}
-
-${QUIZ_EMOJIS.VS} **VS** ${QUIZ_EMOJIS.VS}
-
-**${battle.player2.username}** ${getRankFromXP(0).emoji}
-${createHealthBar(battle.player2.hp, battle.player2.maxHp)}
-⭐ Score: **${battle.player2.score}** | ✅ ${battle.player2.correct}
-
-${ASCII_ART.dividerThin}
-
-${QUIZ_EMOJIS.BRAIN} **${question.question}**
-
-${ASCII_ART.dividerThin}
-
-${QUIZ_EMOJIS.OPTION_A} ${question.options[0]}
-${QUIZ_EMOJIS.OPTION_B} ${question.options[1]}
-${QUIZ_EMOJIS.OPTION_C} ${question.options[2]}
-${QUIZ_EMOJIS.OPTION_D} ${question.options[3]}
-
-${ASCII_ART.dividerThin}
-
-${topicData.emoji} ${topicData.name} • ${diffData.emoji} ${diffData.name} • ⏱️ ${diffData.timeLimit}s
-    `)
-    .setFooter({ text: `${QUIZ_EMOJIS.LIGHTNING} Answer fast! Speed = Bonus Damage` })
-    .setTimestamp();
-
-  // Answer buttons (both players use same buttons)
-  const answerRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`challenge_answer_0_${battle.id}`)
-      .setLabel('A')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId(`challenge_answer_1_${battle.id}`)
-      .setLabel('B')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId(`challenge_answer_2_${battle.id}`)
-      .setLabel('C')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId(`challenge_answer_3_${battle.id}`)
-      .setLabel('D')
-      .setStyle(ButtonStyle.Primary)
-  );
-
-  const controlRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`challenge_forfeit_${battle.id}`)
-      .setLabel('Forfeit')
-      .setEmoji('🏳️')
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  await interaction.editReply({
-    embeds: [battleEmbed],
-    components: [answerRow, controlRow]
   });
-
-  // Auto-advance after time limit
-  const timeLimit = (diffData.timeLimit || 20) * 1000;
-  setTimeout(async () => {
-    if (battle.status === 'active' && (!battle.player1.answered || !battle.player2.answered)) {
-      await advanceRound(interaction, battle, true);
-    }
-  }, timeLimit);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// HANDLE BATTLE ANSWER
-// ═══════════════════════════════════════════════════════════════════
-
-async function handleBattleAnswer(interaction, answerIndex, battleId) {
-  // Find the battle
-  let battle = activeBattles.get(interaction.user.id);
   
-  if (!battle || battle.id !== battleId) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} No active battle found!`,
-      ephemeral: true
-    });
-  }
-
-  // Determine which player
-  const isPlayer1 = interaction.user.id === battle.player1.id;
-  const player = isPlayer1 ? battle.player1 : battle.player2;
-  const opponent = isPlayer1 ? battle.player2 : battle.player1;
-
-  // Check if already answered
-  if (player.answered) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.TIMEOUT} You already answered this round!`,
-      ephemeral: true
-    });
-  }
-
-  await interaction.deferUpdate().catch(() => {});
-
-  // Mark as answered
-  player.answered = true;
-  const question = battle.currentQuestion;
-  const isCorrect = answerIndex === question.correctIndex;
-  const diffData = DIFFICULTY[battle.difficulty] || DIFFICULTY.medium;
-
-  if (isCorrect) {
-    player.correct++;
-    player.score += diffData.pointsPerCorrect;
+  // ─── Challenge Declined ──────────────────────────────────────────
+  challengeManager.on('challenge_declined', async (challenge) => {
+    try {
+      const channel = await client.channels.fetch(challenge.channelId);
+      if (!channel) return;
+      
+      const embed = new EmbedBuilder()
+        .setColor('#FF0000')
+        .setTitle('❌ Challenge Declined')
+        .setDescription(`**${challenge.opponent.username}** declined the challenge.`)
+        .setTimestamp();
+      
+      if (challenge.messageId) {
+        try {
+          const message = await channel.messages.fetch(challenge.messageId);
+          await message.edit({
+            content: '',
+            embeds: [embed],
+            components: []
+          });
+        } catch (e) {
+          await channel.send({ embeds: [embed] });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling challenge_declined:', error);
+    }
+  });
+  
+  // ─── Challenge Expired ───────────────────────────────────────────
+  challengeManager.on('challenge_expired', async (challenge) => {
+    try {
+      const channel = await client.channels.fetch(challenge.channelId);
+      if (!channel) return;
+      
+      const embed = new EmbedBuilder()
+        .setColor('#808080')
+        .setTitle('⏰ Challenge Expired')
+        .setDescription(`The challenge from **${challenge.challenger.username}** has expired.`)
+        .setTimestamp();
+      
+      if (challenge.messageId) {
+        try {
+          const message = await channel.messages.fetch(challenge.messageId);
+          await message.edit({
+            content: '',
+            embeds: [embed],
+            components: []
+          });
+        } catch (e) {
+          // Message may have been deleted
+        }
+      }
+    } catch (error) {
+      console.error('Error handling challenge_expired:', error);
+    }
+  });
+  
+  // ─── Battle Countdown ────────────────────────────────────────────
+  challengeManager.on('battle_countdown_start', async (battle) => {
+    try {
+      // Send DM to both players
+      for (const player of battle.players) {
+        try {
+          const user = await client.users.fetch(player.discordId);
+          const opponent = battle.players.find(p => p.discordId !== player.discordId);
+          
+          const embed = new EmbedBuilder()
+            .setColor('#5865F2')
+            .setTitle('⚔️ Quiz Battle Starting!')
+            .setDescription(`You are battling **${opponent?.username || 'Unknown'}**!`)
+            .addFields(
+              { name: '📚 Topic', value: battle.settings.topic, inline: true },
+              { name: '❓ Questions', value: `${battle.settings.questions}`, inline: true },
+              { name: '⏱️ Time', value: '15s per question', inline: true }
+            )
+            .setFooter({ text: 'Get ready! Questions start in 5 seconds...' })
+            .setTimestamp();
+          
+          await user.send({ embeds: [embed] });
+        } catch (e) {
+          console.error(`Failed to DM ${player.username}:`, e.message);
+        }
+      }
+    } catch (error) {
+      console.error('Error in battle_countdown_start:', error);
+    }
+  });
+  
+  // ─── Question Started ────────────────────────────────────────────
+  challengeManager.on('question_started', async ({ battleId, question, questionNumber, totalQuestions, timeLimit }) => {
+    const battle = challengeManager.activeBattles.get(battleId);
+    if (!battle) return;
     
-    // Damage opponent
-    const damage = Math.round(20 * diffData.xpMultiplier);
-    opponent.hp = Math.max(0, opponent.hp - damage);
-  } else {
-    // Wrong answer = take damage
-    const selfDamage = 10;
-    player.hp = Math.max(0, player.hp - selfDamage);
-  }
-
-  // Show feedback
-  await interaction.followUp({
-    content: isCorrect 
-      ? `${QUIZ_EMOJIS.CORRECT} **Correct!** You dealt damage to ${opponent.username}!`
-      : `${QUIZ_EMOJIS.INCORRECT} **Wrong!** The correct answer was: ${question.options[question.correctIndex]}`,
-    ephemeral: true
-  }).catch(() => {});
-
-  // Check if both answered or someone's HP is 0
-  if ((battle.player1.answered && battle.player2.answered) || battle.player1.hp <= 0 || battle.player2.hp <= 0) {
-    await advanceRound(interaction, battle, false);
-  }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// ADVANCE ROUND / END BATTLE
-// ═══════════════════════════════════════════════════════════════════
-
-async function advanceRound(interaction, battle, timeout) {
-  // Check for knockout
-  if (battle.player1.hp <= 0 || battle.player2.hp <= 0) {
-    await endBattle(interaction, battle, 'knockout');
-    return;
-  }
-
-  // Check if all rounds complete
-  if (battle.currentRound >= battle.rounds) {
-    await endBattle(interaction, battle, 'complete');
-    return;
-  }
-
-  // Advance to next round
-  battle.currentRound++;
-  battle.currentQuestion = battle.questions[battle.currentRound - 1];
-
-  // Brief pause then show next question
-  await new Promise(r => setTimeout(r, 1500));
-  await showBattleQuestion(interaction, battle);
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// END BATTLE
-// ═══════════════════════════════════════════════════════════════════
-
-async function endBattle(interaction, battle, reason) {
-  battle.status = 'ended';
-
-  // Determine winner
-  let winner, loser;
-  if (battle.player1.hp <= 0) {
-    winner = battle.player2;
-    loser = battle.player1;
-  } else if (battle.player2.hp <= 0) {
-    winner = battle.player1;
-    loser = battle.player2;
-  } else {
-    // Compare scores
-    if (battle.player1.score > battle.player2.score) {
-      winner = battle.player1;
-      loser = battle.player2;
-    } else if (battle.player2.score > battle.player1.score) {
-      winner = battle.player2;
-      loser = battle.player1;
-    } else {
-      // Tie - compare HP
-      if (battle.player1.hp > battle.player2.hp) {
-        winner = battle.player1;
-        loser = battle.player2;
-      } else if (battle.player2.hp > battle.player1.hp) {
-        winner = battle.player2;
-        loser = battle.player1;
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        
+        const embed = new EmbedBuilder()
+          .setColor('#5865F2')
+          .setTitle(`❓ Question ${questionNumber}/${totalQuestions}`)
+          .setDescription(`**${question.question}**`)
+          .addFields(
+            { name: 'A', value: question.options[0], inline: true },
+            { name: 'B', value: question.options[1], inline: true },
+            { name: '\u200b', value: '\u200b', inline: true },
+            { name: 'C', value: question.options[2], inline: true },
+            { name: 'D', value: question.options[3], inline: true },
+            { name: '\u200b', value: '\u200b', inline: true }
+          )
+          .setFooter({ text: `⏱️ ${timeLimit / 1000} seconds | Answer quickly for bonus points!` })
+          .setTimestamp();
+        
+        const row = new ActionRowBuilder()
+          .addComponents(
+            new ButtonBuilder()
+              .setCustomId(`battle_answer_${battleId}_0`)
+              .setLabel('A')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId(`battle_answer_${battleId}_1`)
+              .setLabel('B')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId(`battle_answer_${battleId}_2`)
+              .setLabel('C')
+              .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+              .setCustomId(`battle_answer_${battleId}_3`)
+              .setLabel('D')
+              .setStyle(ButtonStyle.Primary)
+          );
+        
+        await user.send({ embeds: [embed], components: [row] });
+      } catch (e) {
+        console.error(`Failed to send question to ${player.username}:`, e.message);
       }
     }
-  }
-
-  const isTie = !winner;
-  const xpWin = battle.xpStake;
-  const xpLose = Math.round(battle.xpStake * 0.25);
-
-  // Update user XP
-  if (!isTie) {
-    try {
-      const winnerUser = await getOrCreateUser(winner.id, winner.username);
-      const loserUser = await getOrCreateUser(loser.id, loser.username);
-      
-      if (winnerUser.addXp) await winnerUser.addXp(xpWin);
-      if (loserUser.addXp) await loserUser.addXp(xpLose);
-    } catch (e) {
-      console.error('XP update error:', e);
-    }
-  }
-
-  const resultEmbed = new EmbedBuilder()
-    .setColor(isTie ? QUIZ_COLORS.WARNING : QUIZ_COLORS.SUCCESS)
-    .setTitle(
-      reason === 'knockout' ? `${QUIZ_EMOJIS.TROPHY} KNOCKOUT!` :
-      reason === 'forfeit' ? `🏳️ FORFEIT!` :
-      isTie ? `🤝 IT'S A TIE!` :
-      `${QUIZ_EMOJIS.TROPHY} VICTORY!`
-    )
-    .setDescription(`
-${ASCII_ART.header.challenge}
-
-${isTie 
-  ? `The battle ends in a draw!`
-  : `**${winner.username}** wins the battle!`
-}
-
-${ASCII_ART.dividerThin}
-
-**FINAL STATS**
-
-\`\`\`
-┌───────────────────────────────────────┐
-│           BATTLE RESULTS              │
-├───────────────────────────────────────┤
-│  ${battle.player1.username.slice(0, 12).padEnd(12)}  │  ${battle.player2.username.slice(0, 12).padEnd(12)}  │
-│  HP: ${String(battle.player1.hp).padStart(3)}/${battle.player1.maxHp}     │  HP: ${String(battle.player2.hp).padStart(3)}/${battle.player2.maxHp}     │
-│  Score: ${String(battle.player1.score).padStart(4)}    │  Score: ${String(battle.player2.score).padStart(4)}    │
-│  Correct: ${String(battle.player1.correct).padStart(2)}    │  Correct: ${String(battle.player2.correct).padStart(2)}    │
-└───────────────────────────────────────┘
-\`\`\`
-
-${ASCII_ART.dividerThin}
-
-${QUIZ_EMOJIS.XP} **REWARDS**
-
-${isTie 
-  ? `Both players earn **+${Math.round(xpWin * 0.5)} XP**`
-  : `${QUIZ_EMOJIS.TROPHY} **${winner.username}**: +${xpWin} XP\n${QUIZ_EMOJIS.MEDAL} **${loser.username}**: +${xpLose} XP (participation)`
-}
-
-${ASCII_ART.dividerThin}
-
-*Good fight!* ⚔️
-    `)
-    .setFooter({ text: 'Challenge again with /challenge!' })
-    .setTimestamp();
-
-  // Clean up
-  activeBattles.delete(battle.player1.id);
-  activeBattles.delete(battle.player2.id);
-
-  const actionRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('exec_challenge')
-      .setLabel('Rematch')
-      .setEmoji('🔄')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('exec_leaderboard')
-      .setLabel('Leaderboard')
-      .setEmoji('🏆')
-      .setStyle(ButtonStyle.Primary),
-    new ButtonBuilder()
-      .setCustomId('help_main')
-      .setLabel('Menu')
-      .setEmoji('🏠')
-      .setStyle(ButtonStyle.Secondary)
-  );
-
-  await interaction.editReply({
-    embeds: [resultEmbed],
-    components: [actionRow]
   });
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// FORFEIT
-// ═══════════════════════════════════════════════════════════════════
-
-async function handleForfeit(interaction, battleId) {
-  const battle = activeBattles.get(interaction.user.id);
   
-  if (!battle || battle.id !== battleId) {
-    return interaction.reply({
-      content: `${QUIZ_EMOJIS.INCORRECT} No active battle to forfeit!`,
-      ephemeral: true
-    });
-  }
-
-  await interaction.deferUpdate();
-
-  // Determine who forfeited
-  const isPlayer1 = interaction.user.id === battle.player1.id;
-  if (isPlayer1) {
-    battle.player1.hp = 0;
-  } else {
-    battle.player2.hp = 0;
-  }
-
-  await endBattle(interaction, battle, 'forfeit');
+  // ─── Question Results ────────────────────────────────────────────
+  challengeManager.on('question_results', async ({ battleId, question, results, leaderboard }) => {
+    const battle = challengeManager.activeBattles.get(battleId);
+    if (!battle) return;
+    
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        const playerResult = results.playerResults.find(r => r.discordId === player.discordId);
+        
+        const isCorrect = playerResult?.correct;
+        const embed = new EmbedBuilder()
+          .setColor(isCorrect ? '#00FF00' : '#FF0000')
+          .setTitle(isCorrect ? '✅ Correct!' : '❌ Incorrect')
+          .setDescription(`**Correct Answer:** ${String.fromCharCode(65 + results.correctAnswer)} - ${results.correctOption}`)
+          .addFields(
+            { 
+              name: '💡 Explanation', 
+              value: results.explanation || 'No explanation available.' 
+            },
+            { 
+              name: '⏱️ Your Time', 
+              value: playerResult?.timeTaken ? `${(playerResult.timeTaken / 1000).toFixed(1)}s` : 'Timeout', 
+              inline: true 
+            },
+            { 
+              name: '🎯 Points', 
+              value: `+${playerResult?.points || 0}`, 
+              inline: true 
+            }
+          );
+        
+        // Add leaderboard
+        if (leaderboard && leaderboard.length > 0) {
+          const leaderboardText = leaderboard
+            .map((p, i) => `${i === 0 ? '👑' : '👤'} **${p.username}**: ${p.score} pts`)
+            .join('\n');
+          
+          embed.addFields({ name: '📊 Current Standings', value: leaderboardText });
+        }
+        
+        await user.send({ embeds: [embed] });
+      } catch (e) {
+        console.error(`Failed to send results to ${player.username}:`, e.message);
+      }
+    }
+  });
+  
+  // ─── Battle Complete ─────────────────────────────────────────────
+  challengeManager.on('battle_complete', async ({ battleId, results, battle }) => {
+    // Send results to each player via DM
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        const playerResult = results.players.find(p => p.discordId === player.discordId);
+        const isWinner = results.winner === player.discordId && !results.isDraw;
+        
+        let title, color, description;
+        if (results.isDraw) {
+          title = '🤝 Draw!';
+          color = '#FFD700';
+          description = 'The battle ended in a draw! Both players performed equally.';
+        } else if (isWinner) {
+          title = '🏆 VICTORY!';
+          color = '#FFD700';
+          const opponent = battle.players.find(p => p.discordId !== player.discordId);
+          description = `Congratulations! You defeated **${opponent?.username}**!`;
+        } else {
+          title = '💔 Defeat';
+          color = '#808080';
+          const winner = battle.players.find(p => p.discordId === results.winner);
+          description = `**${winner?.username}** won this time. Better luck next round!`;
+        }
+        
+        const embed = new EmbedBuilder()
+          .setColor(color)
+          .setTitle(title)
+          .setDescription(description)
+          .addFields(
+            { name: '🎯 Your Score', value: `${playerResult?.score || 0} pts`, inline: true },
+            { name: '📊 Accuracy', value: `${playerResult?.accuracy || 0}%`, inline: true },
+            { name: '⏱️ Avg Time', value: `${playerResult?.averageTime || 0}s`, inline: true },
+            { name: '✅ Correct', value: `${playerResult?.correct || 0}/${playerResult?.total || 0}`, inline: true },
+            { name: '🔥 Best Streak', value: `${playerResult?.streak || 0}`, inline: true },
+            { name: '⭐ XP Earned', value: `+${playerResult?.xpEarned || 0} XP`, inline: true }
+          )
+          .setTimestamp();
+        
+        // Add final leaderboard
+        const leaderboardText = results.players
+          .map((p, i) => {
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
+            return `${medal} **${p.username}**: ${p.score} pts (${p.accuracy}%)`;
+          })
+          .join('\n');
+        
+        embed.addFields({ name: '🏆 Final Results', value: leaderboardText });
+        
+        await user.send({ embeds: [embed] });
+      } catch (e) {
+        console.error(`Failed to send final results to ${player.username}:`, e.message);
+      }
+    }
+    
+    // Post summary in original channel
+    try {
+      if (battle.channelId) {
+        const channel = await client.channels.fetch(battle.channelId);
+        if (channel) {
+          const winner = battle.players.find(p => p.discordId === results.winner);
+          const loser = battle.players.find(p => p.discordId !== results.winner);
+          
+          const embed = new EmbedBuilder()
+            .setColor('#FFD700')
+            .setTitle('⚔️ Battle Complete!')
+            .setDescription(
+              results.isDraw 
+                ? `The battle between **${battle.players[0].username}** and **${battle.players[1].username}** ended in a **draw**!`
+                : `🏆 **${winner?.username}** defeated **${loser?.username}**!`
+            )
+            .addFields(
+              { 
+                name: '📊 Final Scores', 
+                value: results.players
+                  .map((p, i) => `${i === 0 ? '🥇' : '🥈'} ${p.username}: ${p.score} pts (${p.accuracy}%)`)
+                  .join('\n')
+              }
+            )
+            .setTimestamp();
+          
+          await channel.send({ embeds: [embed] });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to post battle summary:', e.message);
+    }
+  });
+  
+  console.log('✅ Challenge event handlers registered');
 }
 
-export default { data, execute, handleButton };
+// ═══════════════════════════════════════════════════════════════════
+// AUTOCOMPLETE HANDLER
+// ═══════════════════════════════════════════════════════════════════
+
+export async function autocomplete(interaction) {
+  const focusedOption = interaction.options.getFocused(true);
+  
+  if (focusedOption.name === 'topic') {
+    const topics = [
+      { name: '🐍 Python', value: 'python' },
+      { name: '🟨 JavaScript', value: 'javascript' },
+      { name: '📊 Algorithms', value: 'algorithms' },
+      { name: '🗃️ Data Structures', value: 'data_structures' },
+      { name: '🌐 HTML/CSS', value: 'web' },
+      { name: '☕ Java', value: 'java' },
+      { name: '🔷 TypeScript', value: 'typescript' },
+      { name: '🐹 Go', value: 'go' },
+      { name: '🦀 Rust', value: 'rust' },
+      { name: '💾 SQL', value: 'sql' },
+      { name: '🎲 Random', value: 'random' }
+    ];
+    
+    const filtered = topics.filter(t => 
+      t.name.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
+      t.value.toLowerCase().includes(focusedOption.value.toLowerCase())
+    );
+    
+    await interaction.respond(filtered.slice(0, 25));
+  }
+}
+
+export default { data, execute, autocomplete };
