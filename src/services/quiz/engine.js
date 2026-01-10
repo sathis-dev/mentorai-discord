@@ -81,15 +81,12 @@ export class QuizEngine {
       currentQuestion: 0,
       score: 0,
       answers: [],
-      lifelines: {
-        hintUsed: false,
-        fiftyFiftyUsed: false,
-        skipUsed: false,
-        eliminatedOptions: []
-      },
+      hintUsed: false,
+      fiftyUsed: false,
+      eliminatedOptions: [],
       status: 'active',
-      timeLimit: options.timeLimit || null,
-      timePerQuestion: options.timePerQuestion || null,
+      timedMode: !!options.timeLimit || !!options.timePerQuestion,
+      timePerQuestion: options.timePerQuestion || 30,
       startedAt: new Date(),
       lastActivityAt: new Date()
     });
@@ -107,8 +104,8 @@ export class QuizEngine {
       topic: session.topic,
       difficulty: session.difficulty,
       lifelines: {
-        hint: !session.lifelines.hintUsed,
-        fiftyFifty: !session.lifelines.fiftyFiftyUsed
+        hint: !session.hintUsed,
+        fiftyFifty: !session.fiftyUsed
       }
     };
   }
@@ -138,9 +135,9 @@ export class QuizEngine {
       totalQuestions: session.questions.length,
       score: session.score,
       lifelines: {
-        hint: !session.lifelines.hintUsed,
-        fiftyFifty: !session.lifelines.fiftyFiftyUsed,
-        eliminatedOptions: session.lifelines.eliminatedOptions
+        hint: !session.hintUsed,
+        fiftyFifty: !session.fiftyUsed,
+        eliminatedOptions: session.eliminatedOptions || []
       }
     };
   }
@@ -210,7 +207,7 @@ export class QuizEngine {
 
     // Move to next question
     session.currentQuestion++;
-    session.lifelines.eliminatedOptions = []; // Reset 50/50
+    session.eliminatedOptions = []; // Reset 50/50
     session.lastActivityAt = new Date();
 
     // Check if quiz is complete
@@ -324,7 +321,7 @@ export class QuizEngine {
       throw new Error('Session not found or inactive');
     }
 
-    if (session.lifelines.fiftyFiftyUsed) {
+    if (session.fiftyUsed) {
       throw new Error('50/50 lifeline already used!');
     }
 
@@ -338,8 +335,8 @@ export class QuizEngine {
       eliminated.push(wrongOptions.splice(randomIndex, 1)[0]);
     }
 
-    session.lifelines.fiftyFiftyUsed = true;
-    session.lifelines.eliminatedOptions = eliminated;
+    session.fiftyUsed = true;
+    session.eliminatedOptions = eliminated;
     session.lastActivityAt = new Date();
 
     await session.save();
@@ -364,12 +361,12 @@ export class QuizEngine {
       throw new Error('Session not found or inactive');
     }
 
-    if (session.lifelines.hintUsed) {
+    if (session.hintUsed) {
       throw new Error('Hint lifeline already used!');
     }
 
     const question = session.questions[session.currentQuestion];
-    session.lifelines.hintUsed = true;
+    session.hintUsed = true;
     session.lastActivityAt = new Date();
 
     await session.save();
@@ -553,7 +550,7 @@ export class QuizEngine {
    * Format question for display
    */
   formatQuestion(question, index, session) {
-    const eliminated = session.lifelines?.eliminatedOptions || [];
+    const eliminated = session.eliminatedOptions || [];
     
     return {
       id: question.id,
