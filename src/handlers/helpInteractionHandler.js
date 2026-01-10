@@ -29,6 +29,7 @@ import {
   calculateAccuracy
 } from '../utils/helpUtils.js';
 import { RecommendationEngine } from '../core/recommendationEngine.js';
+import { helpStateManager } from './HelpStateManager.js';
 
 // ═══════════════════════════════════════════════════════════════════
 // MAIN HUB VIEW
@@ -251,6 +252,74 @@ export async function showCategoryView(interaction, categoryId, user) {
     return interaction.reply({ content: '❌ Category not found!', ephemeral: true });
   }
 
+  // Update state manager
+  helpStateManager.setState(interaction.user.id, { 
+    currentView: 'category', 
+    categoryId 
+  });
+
+  // Atomic state verification
+  const verifiedUser = await helpStateManager.verifyUserState(interaction.user.id) || user;
+
+  // Build category-specific enhanced content
+  let enhancedContent = '';
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // 🧠 RAG-DRIVEN LEARNING RECOMMENDATIONS (Learning Category)
+  // ═══════════════════════════════════════════════════════════════════
+  if (categoryId === 'learning') {
+    const recommendations = await helpStateManager.getLearningRecommendations(verifiedUser);
+    
+    if (recommendations.personalizedCTA) {
+      enhancedContent = `
+### 🎯 Recommended For You
+${recommendations.personalizedCTA}
+${recommendations.suggestedLessons.length > 0 ? `\n📚 **Curriculum Lessons:** ${recommendations.curriculumCitations.map(id => `\`${id}\``).join(', ')}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 🏆 COMPETITIVE INTELLIGENCE (Competition Category)
+  // ═══════════════════════════════════════════════════════════════════
+  if (categoryId === 'competition') {
+    const compStats = await helpStateManager.getCompetitionStats(verifiedUser);
+    const { multipliers, percentile } = compStats;
+
+    enhancedContent = `
+### 💫 Your Competitive Edge
+**Streak Multiplier:** \`${multipliers.streak.display}\` (${multipliers.streak.days} days)
+**Prestige Multiplier:** \`${multipliers.prestige.display}\` (P${multipliers.prestige.level})
+**Total XP Bonus:** \`${multipliers.total.display}\` (+${multipliers.total.bonusPercent}% XP)
+
+${multipliers.streak.nextTier.daysNeeded > 0 ? `⚡ *${multipliers.streak.nextTier.daysNeeded} more days to ${multipliers.streak.nextTier.tierName} (${multipliers.streak.nextTier.nextMultiplier}x)*` : '🏆 *MAX streak bonus achieved!*'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🌍 Global Ranking
+${percentile.displayText || `Lifetime XP: **${compStats.lifetimeXP.toLocaleString()}**`}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 📊 PROGRESS CATEGORY - XP Formula Transparency
+  // ═══════════════════════════════════════════════════════════════════
+  if (categoryId === 'progress') {
+    const xpProgress = helpStateManager.getXPProgress(verifiedUser);
+    
+    enhancedContent = `
+### 📈 Your Progress (Verified)
+**Level ${xpProgress.level}** • ${xpProgress.current.toLocaleString()} / ${xpProgress.needed.toLocaleString()} XP (${xpProgress.percent}%)
+*Formula: ${xpProgress.formula}*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+`;
+  }
+
   const embed = new EmbedBuilder()
     .setColor(category.color)
     .setAuthor({
@@ -261,7 +330,7 @@ export async function showCategoryView(interaction, categoryId, user) {
 ${category.description}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
+${enhancedContent}
 ### 📋 Commands
 
 ${formatCommandList(category.commands, true)}
