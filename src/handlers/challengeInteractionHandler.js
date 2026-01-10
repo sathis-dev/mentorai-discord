@@ -8,7 +8,7 @@
  */
 
 import { EmbedBuilder } from 'discord.js';
-import challengeManager from '../../services/multiplayer/challengeManager.js';
+import challengeManager from '../services/multiplayer/challengeManager.js';
 
 /**
  * Handle challenge-related button interactions
