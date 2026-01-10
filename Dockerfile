@@ -7,11 +7,14 @@ RUN apt-get update && apt-get install -y \
     wget \
     && rm -rf /var/lib/apt/lists/*
 
+# Cache bust arg
+ARG CACHEBUST=1
+
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --omit=dev && npm cache clean --force
+# Install dependencies (use npm install for better compatibility)
+RUN npm install --omit=dev && npm cache clean --force
 
 # Copy source code
 COPY . .
