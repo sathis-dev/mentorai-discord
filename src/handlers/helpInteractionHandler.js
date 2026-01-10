@@ -36,7 +36,7 @@ import {
 
 export async function showMainHub(interaction, user) {
   const embed = buildMainHubEmbed(interaction, user);
-  const components = buildMainHubComponents(user);
+  const components = buildMainHubComponents(user, interaction.user);
 
   const replyOptions = {
     embeds: [embed],
@@ -123,7 +123,7 @@ ${tip}
   return embed;
 }
 
-function buildMainHubComponents(user) {
+function buildMainHubComponents(user, discordUser) {
   const categoryOptions = getAllCategories().map(cat => ({
     label: cat.name,
     description: cat.description.slice(0, 50),
@@ -182,18 +182,43 @@ function buildMainHubComponents(user) {
       )
     );
 
+  // Build website URL with FULL user data for profile sync
+  const accuracy = user.totalQuestions > 0 
+    ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+    : 0;
+  
+  const joinedDate = user.createdAt 
+    ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    : 'Jan 2026';
+
+  const websiteParams = new URLSearchParams({
+    user: discordUser.id,
+    avatar: discordUser.avatar || '',
+    name: discordUser.username,
+    xp: (user.xp || 0).toString(),
+    level: (user.level || 1).toString(),
+    streak: (user.streak || 0).toString(),
+    quizzes: (user.quizzesTaken || 0).toString(),
+    accuracy: accuracy.toString(),
+    lessons: (user.completedLessons?.length || 0).toString(),
+    achievements: (user.achievements?.length || 0).toString(),
+    prestige: (user.prestige || 0).toString(),
+    joined: encodeURIComponent(joinedDate)
+  });
+  const websiteURL = `https://mentorai.up.railway.app/?${websiteParams.toString()}`;
+
   const linksRow = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
         .setLabel('Website')
         .setEmoji('🌐')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://mentorai.up.railway.app'),
+        .setURL(websiteURL),
       new ButtonBuilder()
-        .setLabel('Support')
+        .setLabel('Community')
         .setEmoji('💬')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.gg/kU4kACs6kZ'),
+        .setURL('https://discord.gg/eEbnkvKUqe'),
       new ButtonBuilder()
         .setCustomId('help_feedback')
         .setLabel('Feedback')
