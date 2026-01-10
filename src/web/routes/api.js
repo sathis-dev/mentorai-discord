@@ -1264,6 +1264,110 @@ router.get('/website-leaderboard', async (req, res) => {
   }
 });
 
+// ============================================================
+// REAL-TIME PUBLIC USER API (for website trading card)
+// ============================================================
+
+// XP formula matching Discord bot exactly
+function xpForLevel(level) {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+}
+
+// Format number (e.g., 1139 -> "1.1K")
+function formatXP(num) {
+  if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+  return num.toString();
+}
+
+// Get rank based on level
+function getRankFromLevel(level) {
+  if (level >= 40) return { name: 'Legend', emoji: '👑', tier: 'legendary' };
+  if (level >= 30) return { name: 'Grandmaster', emoji: '💎', tier: 'diamond' };
+  if (level >= 25) return { name: 'Master', emoji: '🏆', tier: 'platinum' };
+  if (level >= 20) return { name: 'Expert', emoji: '⭐', tier: 'gold' };
+  if (level >= 15) return { name: 'Pro Coder', emoji: '💻', tier: 'gold' };
+  if (level >= 10) return { name: 'Developer', emoji: '🔧', tier: 'silver' };
+  if (level >= 5) return { name: 'Apprentice', emoji: '📚', tier: 'silver' };
+  if (level >= 3) return { name: 'Learner', emoji: '🎓', tier: 'bronze' };
+  return { name: 'Novice', emoji: '🌱', tier: 'bronze' };
+}
+
+// Get tier badge based on XP
+function getTierFromXP(xp) {
+  if (xp >= 100000) return { name: 'Master', emoji: '👑', color: '#FF6B6B' };
+  if (xp >= 50000) return { name: 'Diamond', emoji: '💎', color: '#B9F2FF' };
+  if (xp >= 20000) return { name: 'Platinum', emoji: '🏆', color: '#E5E4E2' };
+  if (xp >= 10000) return { name: 'Gold', emoji: '🥇', color: '#FFD700' };
+  if (xp >= 5000) return { name: 'Silver', emoji: '🥈', color: '#C0C0C0' };
+  return { name: 'Bronze', emoji: '🥉', color: '#CD7F32' };
+}
+
+// GET /api/public/profile/:discordId - REAL-TIME public profile for website
+router.get('/public/profile/:discordId', async (req, res) => {
+  try {
+    const user = await User.findOne({ discordId: req.params.discordId });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+    
+    const level = user.level || 1;
+    const xp = user.xp || 0;
+    const xpNeeded = xpForLevel(level);
+    const progress = Math.min(Math.round((xp / xpNeeded) * 100), 100);
+    const rank = getRankFromLevel(level);
+    const tier = getTierFromXP(xp);
+    const leaderboardRank = await User.countDocuments({ xp: { $gt: xp } }) + 1;
+    
+    // Calculate accuracy
+    const accuracy = user.totalQuestions > 0 
+      ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+      : 0;
+    
+    res.json({
+      success: true,
+      data: {
+        // Basic info
+        discordId: user.discordId,
+        username: user.username,
+        
+        // Level & XP (matching Discord format)
+        level: level,
+        xp: xp,
+        xpNeeded: xpNeeded,
+        xpFormatted: formatXP(xp),
+        xpNeededFormatted: formatXP(xpNeeded),
+        xpDisplay: `${formatXP(xp)} / ${formatXP(xpNeeded)} XP`, // "75 / 1.1K XP"
+        progress: progress,
+        
+        // Rank & Tier
+        rank: rank,
+        tier: tier,
+        leaderboardRank: leaderboardRank,
+        
+        // Stats
+        streak: user.streak || 0,
+        quizzesTaken: user.quizzesTaken || 0,
+        accuracy: accuracy,
+        lessonsCompleted: user.completedLessons?.length || 0,
+        achievementsCount: user.achievements?.length || 0,
+        achievements: user.achievements || [],
+        
+        // Prestige
+        prestige: user.prestige || 0,
+        
+        // Meta
+        joinedAt: user.createdAt,
+        lastActive: user.lastActive
+      }
+    });
+  } catch (error) {
+    console.error('Public profile API error:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch profile' });
+  }
+});
+
 // GET /api/user/:discordId - User profile for dashboard
 router.get('/user/:discordId', async (req, res) => {
   try {
@@ -1275,12 +1379,16 @@ router.get('/user/:discordId', async (req, res) => {
     
     // Calculate rank
     const rank = await User.countDocuments({ xp: { $gt: user.xp } }) + 1;
+    const level = user.level || 1;
+    const xpNeeded = xpForLevel(level);
     
     res.json({
       success: true,
       data: {
         username: user.username,
         xp: user.xp,
+        xpNeeded: xpNeeded,
+        xpDisplay: `${formatXP(user.xp)} / ${formatXP(xpNeeded)} XP`,
         level: user.level,
         streak: user.streak,
         rank: rank,

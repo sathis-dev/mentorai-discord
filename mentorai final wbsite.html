@@ -2018,9 +2018,9 @@
                         </div>
 
                         <!-- Floating Labels -->
-                        <div class="float-label xp" id="floatXp">✨ +647 XP</div>
+                        <div class="float-label xp" id="floatXp">✨ +75 XP</div>
                         <div class="float-label streak" id="floatStreak">🔥 1 Day Streak</div>
-                        <div class="float-label level" id="floatLevel">📈 Level 6</div>
+                        <div class="float-label level" id="floatLevel">📈 Level 7</div>
 
                         <!-- The Card -->
                         <div class="trading-card">
@@ -2056,24 +2056,24 @@
                                                  alt="User Avatar" 
                                                  class="user-avatar-img"
                                                  id="discordAvatar">
-                                            <div class="level-badge" id="levelBadge">6</div>
+                                            <div class="level-badge" id="levelBadge">7</div>
                                             <div class="online-indicator"></div>
                                         </div>
                                         <div class="profile-name" id="discordUsername">sathis.dev</div>
-                                        <div class="profile-title" id="profileTitle">▪️ Learner</div>
+                                        <div class="profile-title" id="profileTitle">🎓 Keen Learner</div>
                                     </div>
 
-                                    <!-- XP Progress -->
+                                    <!-- XP Progress - Same format as Discord -->
                                     <div class="xp-section">
                                         <div class="xp-bar-wrapper">
                                             <div class="xp-bar-bg">
-                                                <div class="xp-bar-fill" id="xpBarFill" style="width: 35%;"></div>
+                                                <div class="xp-bar-fill" id="xpBarFill" style="width: 7%;"></div>
                                                 <div class="xp-bar-glow"></div>
                                             </div>
                                         </div>
                                         <div class="xp-info">
-                                            <span class="xp-current" id="xpCurrent">647 XP</span>
-                                            <span class="xp-next" id="xpNext">/ 1,852 to Level 7</span>
+                                            <span class="xp-current" id="xpCurrent">✨ 75 / 1.1K XP</span>
+                                            <span class="xp-next" id="xpNext">7%</span>
                                         </div>
                                     </div>
 
@@ -2082,7 +2082,7 @@
                                         <div class="stat-box">
                                             <div class="stat-icon">⚡</div>
                                             <div class="stat-data">
-                                                <div class="stat-value" id="statXp">647</div>
+                                                <div class="stat-value" id="statXp">75</div>
                                                 <div class="stat-label">Total XP</div>
                                             </div>
                                         </div>
@@ -2127,13 +2127,13 @@
                                     <div class="achievements-section">
                                         <div class="achievements-header">
                                             <div class="achievements-title">Recent Achievements</div>
-                                            <div class="achievements-count" id="achievementCount">4/6</div>
+                                            <div class="achievements-count" id="achievementCount">2/6</div>
                                         </div>
                                         <div class="achievements-row" id="achievementsRow">
                                             <div class="achievement-badge" title="First Steps - Complete your first lesson">📖</div>
                                             <div class="achievement-badge" title="Quiz Starter - Complete 5 quizzes">🎯</div>
-                                            <div class="achievement-badge" title="Streak Beginner - 3 day streak">🔥</div>
-                                            <div class="achievement-badge" title="Fast Learner - Reach Level 5">⚡</div>
+                                            <div class="achievement-badge locked" title="🔒 Streak Beginner - 3 day streak">❓</div>
+                                            <div class="achievement-badge locked" title="🔒 Fast Learner - Reach Level 5">❓</div>
                                             <div class="achievement-badge locked" title="🔒 Code Master - Complete 50 lessons">❓</div>
                                             <div class="achievement-badge locked" title="🔒 Streak Legend - 30 day streak">❓</div>
                                         </div>
@@ -2719,97 +2719,185 @@
     </footer>
 
     <script>
-        // ===== ADVANCED DISCORD USER SYNC =====
-        // Full user data sync from bot URL parameters
-        function syncDiscordUser() {
+        // ===== REAL-TIME DISCORD USER SYNC =====
+        // Fetches live data from API - Same as Discord bot display
+        
+        const API_BASE = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://mentorai.up.railway.app';
+        
+        async function syncDiscordUser() {
             const params = new URLSearchParams(window.location.search);
-            
-            // Get all user data from URL
             const userId = params.get('user');
             const avatarHash = params.get('avatar');
             const username = params.get('name');
-            const xp = parseInt(params.get('xp')) || 0;
-            const level = parseInt(params.get('level')) || 1;
-            const streak = parseInt(params.get('streak')) || 0;
-            const quizzes = parseInt(params.get('quizzes')) || 0;
-            const accuracy = parseInt(params.get('accuracy')) || 0;
-            const lessons = parseInt(params.get('lessons')) || 0;
-            const achievements = parseInt(params.get('achievements')) || 0;
+            
+            // If we have a userId, fetch REAL-TIME data from API
+            if (userId) {
+                try {
+                    const response = await fetch(`${API_BASE}/api/public/profile/${userId}`);
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        // Use REAL-TIME data from database
+                        updateCardWithData({
+                            userId,
+                            avatarHash,
+                            username: result.data.username,
+                            xp: result.data.xp,
+                            level: result.data.level,
+                            xpNeeded: result.data.xpNeeded,
+                            xpDisplay: result.data.xpDisplay,
+                            progress: result.data.progress,
+                            streak: result.data.streak,
+                            quizzes: result.data.quizzesTaken,
+                            accuracy: result.data.accuracy,
+                            lessons: result.data.lessonsCompleted,
+                            achievements: result.data.achievementsCount,
+                            achievementsList: result.data.achievements,
+                            prestige: result.data.prestige,
+                            rank: result.data.rank,
+                            tier: result.data.tier,
+                            joinedAt: result.data.joinedAt
+                        });
+                        return;
+                    }
+                } catch (error) {
+                    console.log('API fetch failed, using URL params:', error);
+                }
+            }
+            
+            // Fallback: Use URL parameters if API fails or no userId
+            const xp = parseInt(params.get('xp')) || 647;
+            const level = parseInt(params.get('level')) || 6;
+            const streak = parseInt(params.get('streak')) || 1;
+            const quizzes = parseInt(params.get('quizzes')) || 6;
+            const accuracy = parseInt(params.get('accuracy')) || 27;
+            const lessons = parseInt(params.get('lessons')) || 9;
+            const achievements = parseInt(params.get('achievements')) || 2;
             const prestige = parseInt(params.get('prestige')) || 0;
-            const joinDate = params.get('joined');
-
+            
+            // Calculate XP needed using same formula as Discord bot
+            const xpNeeded = Math.floor(100 * Math.pow(1.5, level - 1));
+            const progress = Math.min(Math.round((xp / xpNeeded) * 100), 100);
+            
+            updateCardWithData({
+                userId,
+                avatarHash,
+                username: username ? decodeURIComponent(username) : 'sathis.dev',
+                xp,
+                level,
+                xpNeeded,
+                xpDisplay: `${formatXP(xp)} / ${formatXP(xpNeeded)} XP`,
+                progress,
+                streak,
+                quizzes,
+                accuracy,
+                lessons,
+                achievements,
+                prestige
+            });
+        }
+        
+        // Format XP like Discord bot (75 -> "75", 1139 -> "1.1K")
+        function formatXP(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+            return num.toString();
+        }
+        
+        function updateCardWithData(data) {
+            const {
+                userId, avatarHash, username, xp, level, xpNeeded, xpDisplay, progress,
+                streak, quizzes, accuracy, lessons, achievements, prestige, rank, tier, joinedAt
+            } = data;
+            
             // Get DOM elements
             const avatarImg = document.getElementById('discordAvatar');
             const usernameEl = document.getElementById('discordUsername');
             const levelBadge = document.getElementById('levelBadge');
             const profileTitle = document.getElementById('profileTitle');
-            const rankTier = document.getElementById('rankTier');
+            const rankTierEl = document.getElementById('rankTier');
             const xpBarFill = document.getElementById('xpBarFill');
             const xpCurrent = document.getElementById('xpCurrent');
+            const xpNextEl = document.getElementById('xpNext');
             const floatXp = document.getElementById('floatXp');
             const floatStreak = document.getElementById('floatStreak');
             const floatLevel = document.getElementById('floatLevel');
 
             // Avatar
-            if (userId && avatarHash && avatarHash !== 'null' && avatarHash !== '') {
+            if (avatarImg && userId && avatarHash && avatarHash !== 'null' && avatarHash !== '') {
                 const ext = avatarHash.startsWith('a_') ? 'gif' : 'png';
                 avatarImg.src = `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.${ext}?size=256`;
-            } else if (userId) {
+            } else if (avatarImg && userId) {
                 const defaultIndex = Number((BigInt(userId) >> 22n) % 6n);
                 avatarImg.src = `https://cdn.discordapp.com/embed/avatars/${defaultIndex}.png`;
             }
 
             // Username
-            if (username) {
-                usernameEl.textContent = decodeURIComponent(username);
+            if (usernameEl && username) {
+                usernameEl.textContent = username;
             }
 
             // Level badge
             if (levelBadge) levelBadge.textContent = level;
 
-            // Profile title based on level
+            // Profile title - use API rank if available, otherwise calculate
             if (profileTitle) {
-                const titles = [
-                    { min: 1, title: '🌱 Beginner' },
-                    { min: 5, title: '📖 Learner' },
-                    { min: 10, title: '🎓 Apprentice' },
-                    { min: 20, title: '⚡ Developer' },
-                    { min: 30, title: '🔥 Pro Coder' },
-                    { min: 50, title: '💎 Expert' },
-                    { min: 75, title: '🏆 Master' },
-                    { min: 100, title: '👑 Legend' }
-                ];
-                const title = [...titles].reverse().find(t => level >= t.min) || titles[0];
-                profileTitle.textContent = title.title;
+                if (rank && rank.name) {
+                    profileTitle.textContent = `${rank.emoji} ${rank.name}`;
+                } else {
+                    const titles = [
+                        { min: 1, title: '🌱 Novice' },
+                        { min: 3, title: '▪️ Learner' },
+                        { min: 5, title: '📚 Apprentice' },
+                        { min: 10, title: '🔧 Developer' },
+                        { min: 15, title: '💻 Pro Coder' },
+                        { min: 20, title: '⭐ Expert' },
+                        { min: 25, title: '🏆 Master' },
+                        { min: 30, title: '💎 Grandmaster' },
+                        { min: 40, title: '👑 Legend' }
+                    ];
+                    const titleObj = [...titles].reverse().find(t => level >= t.min) || titles[0];
+                    profileTitle.textContent = titleObj.title;
+                }
             }
 
-            // Rank tier based on XP
-            if (rankTier) {
-                const tiers = [
-                    { min: 0, tier: '🥉 BRONZE', bg: 'linear-gradient(135deg, #cd7f32, #a0522d)' },
-                    { min: 1000, tier: '🥈 SILVER', bg: 'linear-gradient(135deg, #c0c0c0, #808080)' },
-                    { min: 5000, tier: '🥇 GOLD', bg: 'linear-gradient(135deg, #ffd700, #b8860b)' },
-                    { min: 15000, tier: '💎 DIAMOND', bg: 'linear-gradient(135deg, #b9f2ff, #00bfff)' },
-                    { min: 50000, tier: '👑 MASTER', bg: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }
-                ];
-                const tier = [...tiers].reverse().find(t => xp >= t.min) || tiers[0];
-                rankTier.textContent = tier.tier;
-                rankTier.style.background = tier.bg;
+            // Rank tier badge - use API tier if available
+            if (rankTierEl) {
+                if (tier && tier.name) {
+                    rankTierEl.textContent = `${tier.emoji} ${tier.name.toUpperCase()}`;
+                } else {
+                    const tiers = [
+                        { min: 0, name: '🥉 BRONZE', bg: 'linear-gradient(135deg, #cd7f32, #a0522d)' },
+                        { min: 5000, name: '🥈 SILVER', bg: 'linear-gradient(135deg, #c0c0c0, #808080)' },
+                        { min: 10000, name: '🥇 GOLD', bg: 'linear-gradient(135deg, #ffd700, #b8860b)' },
+                        { min: 20000, name: '🏆 PLATINUM', bg: 'linear-gradient(135deg, #e5e4e2, #9ca3af)' },
+                        { min: 50000, name: '💎 DIAMOND', bg: 'linear-gradient(135deg, #b9f2ff, #00bfff)' },
+                        { min: 100000, name: '👑 MASTER', bg: 'linear-gradient(135deg, #8b5cf6, #ec4899)' }
+                    ];
+                    const tierObj = [...tiers].reverse().find(t => xp >= t.min) || tiers[0];
+                    rankTierEl.textContent = tierObj.name;
+                    rankTierEl.style.background = tierObj.bg;
+                }
             }
 
-            // XP progress bar
-            const xpForCurrentLevel = calculateXPForLevel(level);
-            const xpForNextLevel = calculateXPForLevel(level + 1);
-            const xpInCurrentLevel = xp - xpForCurrentLevel;
-            const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-            const progress = Math.min((xpInCurrentLevel / xpNeeded) * 100, 100);
+            // XP progress bar - USE THE SAME FORMAT AS DISCORD BOT
+            // Discord shows: "75 / 1.1K XP" format
+            const actualXpNeeded = xpNeeded || Math.floor(100 * Math.pow(1.5, level - 1));
+            const actualProgress = progress || Math.min(Math.round((xp / actualXpNeeded) * 100), 100);
             
-            if (xpBarFill) xpBarFill.style.width = `${progress}%`;
-            if (xpCurrent) xpCurrent.textContent = `${xp.toLocaleString()} XP`;
+            if (xpBarFill) xpBarFill.style.width = `${actualProgress}%`;
             
-            // Update next level text
-            const xpNext = document.querySelector('.xp-next');
-            if (xpNext) xpNext.textContent = `/ ${xpForNextLevel.toLocaleString()} to Level ${level + 1}`;
+            // Display XP in Discord format: "75 / 1.1K XP" (not separate lines)
+            if (xpCurrent) {
+                xpCurrent.textContent = xpDisplay || `${formatXP(xp)} / ${formatXP(actualXpNeeded)} XP`;
+            }
+            
+            // Update next level text to show percentage
+            if (xpNextEl) {
+                xpNextEl.textContent = `${actualProgress}%`;
+            }
 
             // Stats
             const statXp = document.getElementById('statXp');
@@ -2818,16 +2906,18 @@
             const statAccuracy = document.getElementById('statAccuracy');
             const statLessons = document.getElementById('statLessons');
             const statAchievements = document.getElementById('statAchievements');
+            const achievementCount = document.getElementById('achievementCount');
 
-            if (statXp) statXp.textContent = xp.toLocaleString();
+            if (statXp) statXp.textContent = formatXP(xp);
             if (statStreak) statStreak.textContent = streak;
             if (statQuizzes) statQuizzes.textContent = quizzes;
             if (statAccuracy) statAccuracy.textContent = `${accuracy}%`;
             if (statLessons) statLessons.textContent = lessons;
             if (statAchievements) statAchievements.textContent = achievements;
+            if (achievementCount) achievementCount.textContent = `${Math.min(achievements, 6)}/6`;
 
             // Floating labels
-            if (floatXp) floatXp.innerHTML = `✨ +${xp.toLocaleString()} XP`;
+            if (floatXp) floatXp.innerHTML = `✨ +${formatXP(xp)} XP`;
             if (floatStreak) floatStreak.innerHTML = `🔥 ${streak} Day Streak`;
             if (floatLevel) floatLevel.innerHTML = `📈 Level ${level}`;
 
@@ -2852,11 +2942,6 @@
             updateAchievementBadges(achievements);
         }
 
-        function calculateXPForLevel(level) {
-            // XP formula: 100 * level^1.5
-            return Math.floor(100 * Math.pow(level, 1.5));
-        }
-
         function updateAchievementBadges(count) {
             const achievementIcons = ['📖', '🎯', '🔥', '⚡', '💡', '🏆', '⭐', '💎', '👑', '🚀'];
             const row = document.getElementById('achievementsRow');
@@ -2866,10 +2951,14 @@
             for (let i = 0; i < 6; i++) {
                 const badge = document.createElement('div');
                 badge.className = 'achievement-badge' + (i >= count ? ' locked' : '');
-                badge.textContent = i < count ? achievementIcons[i % achievementIcons.length] : '🔒';
+                badge.textContent = i < count ? achievementIcons[i % achievementIcons.length] : '❓';
                 badge.title = i < count ? 'Unlocked' : 'Locked';
                 row.appendChild(badge);
             }
+            
+            // Update count display
+            const countEl = document.getElementById('achievementCount');
+            if (countEl) countEl.textContent = `${Math.min(count, 6)}/6`;
         }
 
         // Run on page load
