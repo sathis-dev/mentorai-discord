@@ -966,7 +966,7 @@ export async function showAIQuestionModal(interaction) {
 
   const questionInput = new TextInputBuilder()
     .setCustomId('research_query')
-    .setLabel('Ask me anything about the curriculum or coding...')
+    .setLabel('Your research question')
     .setPlaceholder('e.g., How do async/await work? What are closures? Explain React hooks...')
     .setStyle(TextInputStyle.Paragraph)
     .setRequired(true)
