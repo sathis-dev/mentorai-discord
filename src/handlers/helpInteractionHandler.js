@@ -144,19 +144,19 @@ function buildMainHubComponents(user, discordUser) {
         .setEmoji('🔍')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
+        .setCustomId('help_ask_ai')
+        .setLabel('Ask AI')
+        .setEmoji('🧠')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
         .setCustomId('help_new')
-        .setLabel('New Features')
+        .setLabel('New')
         .setEmoji('🆕')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
         .setCustomId('help_popular')
         .setLabel('Popular')
         .setEmoji('🔥')
-        .setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder()
-        .setCustomId('help_all')
-        .setLabel('All Commands')
-        .setEmoji('📋')
         .setStyle(ButtonStyle.Secondary)
     );
 
@@ -698,6 +698,39 @@ export async function showFeedbackModal(interaction) {
 
   modal.addComponents(
     new ActionRowBuilder().addComponents(feedbackInput)
+  );
+
+  await interaction.showModal(modal);
+}
+
+/**
+ * Quick AI Question Modal - Ask AI directly from help menu
+ */
+export async function showAIQuestionModal(interaction) {
+  const modal = new ModalBuilder()
+    .setCustomId('help_ai_question_modal')
+    .setTitle('🧠 Ask MentorAI');
+
+  const questionInput = new TextInputBuilder()
+    .setCustomId('ai_question')
+    .setLabel('Your coding question')
+    .setPlaceholder('e.g., How do I reverse a string in Python?')
+    .setStyle(TextInputStyle.Paragraph)
+    .setRequired(true)
+    .setMinLength(5)
+    .setMaxLength(500);
+
+  const topicInput = new TextInputBuilder()
+    .setCustomId('ai_topic')
+    .setLabel('Topic (optional)')
+    .setPlaceholder('e.g., JavaScript, Python, React...')
+    .setStyle(TextInputStyle.Short)
+    .setRequired(false)
+    .setMaxLength(30);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(questionInput),
+    new ActionRowBuilder().addComponents(topicInput)
   );
 
   await interaction.showModal(modal);

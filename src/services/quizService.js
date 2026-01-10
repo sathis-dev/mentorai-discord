@@ -16,6 +16,36 @@ const rateLimitMap = new Map();
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
 const MAX_AI_CALLS_PER_MINUTE = 5;
 
+// Memory cleanup interval - prevent leaks during long Buildathon sessions
+const SESSION_TTL = 30 * 60 * 1000; // 30 minutes
+setInterval(() => {
+  const now = Date.now();
+  let cleaned = 0;
+  
+  // Clean up old memory sessions
+  for (const [key, session] of memorySessionCache.entries()) {
+    const lastActivity = session.lastActivityAt || session.createdAt || 0;
+    if (now - new Date(lastActivity).getTime() > SESSION_TTL) {
+      memorySessionCache.delete(key);
+      cleaned++;
+    }
+  }
+  
+  // Clean up old rate limit entries
+  for (const [userId, calls] of rateLimitMap.entries()) {
+    const recentCalls = calls.filter(time => now - time < RATE_LIMIT_WINDOW);
+    if (recentCalls.length === 0) {
+      rateLimitMap.delete(userId);
+    } else {
+      rateLimitMap.set(userId, recentCalls);
+    }
+  }
+  
+  if (cleaned > 0) {
+    console.log(`🧹 Cleaned ${cleaned} stale quiz sessions from memory`);
+  }
+}, 5 * 60 * 1000); // Run every 5 minutes
+
 /**
  * Check rate limit for AI quiz generation
  */

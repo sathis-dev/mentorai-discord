@@ -17,6 +17,7 @@ import {
   showAllCommands,
   showSearchModal,
   showFeedbackModal,
+  showAIQuestionModal,
   showTryCommandPrompt,
   showQuickActionPrompt
 } from '../../handlers/helpInteractionHandler.js';
@@ -151,6 +152,11 @@ export async function handleHelpInteraction(interaction) {
       // Search modal
       if (customId === 'help_search') {
         return showSearchModal(interaction);
+      }
+
+      // Ask AI modal
+      if (customId === 'help_ask_ai') {
+        return showAIQuestionModal(interaction);
       }
 
       // New features
@@ -316,6 +322,52 @@ export async function handleHelpInteraction(interaction) {
           content: '✅ **Thank you for your feedback!**\n\nYour input helps us improve MentorAI. We read every submission!',
           ephemeral: true
         });
+        return;
+      }
+
+      // Handle AI Question modal
+      if (interaction.customId === 'help_ai_question_modal') {
+        const question = interaction.fields.getTextInputValue('ai_question');
+        const topic = interaction.fields.getTextInputValue('ai_topic') || 'general programming';
+        
+        await interaction.deferReply();
+        
+        try {
+          // Import AI orchestrator dynamically
+          const { default: aiOrchestrator } = await import('../../ai/orchestrator.js');
+          const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+          
+          // Generate AI response
+          const response = await aiOrchestrator.generateExplanation(question, topic);
+          
+          const embed = new EmbedBuilder()
+            .setColor(0x5865F2)
+            .setAuthor({ name: '🧠 MentorAI Response', iconURL: interaction.client.user.displayAvatarURL() })
+            .setTitle(`📚 ${topic}`)
+            .setDescription(response.slice(0, 4000))
+            .setFooter({ text: `Asked by ${interaction.user.username} • Use /tutor for follow-up questions` })
+            .setTimestamp();
+
+          const row = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+              .setCustomId('help_back_main')
+              .setLabel('Back to Help')
+              .setEmoji('🏠')
+              .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+              .setCustomId('help_ask_ai')
+              .setLabel('Ask Another')
+              .setEmoji('🧠')
+              .setStyle(ButtonStyle.Primary)
+          );
+
+          await interaction.editReply({ embeds: [embed], components: [row] });
+        } catch (error) {
+          console.error('AI Question error:', error);
+          await interaction.editReply({
+            content: '❌ Sorry, I couldn\'t process your question. Please try `/tutor` for a full conversation!'
+          });
+        }
         return;
       }
     }

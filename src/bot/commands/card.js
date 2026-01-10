@@ -48,6 +48,15 @@ export async function execute(interaction) {
   const prestige = user.prestige?.level || 0;
   const totalXpEarned = user.prestige?.totalXpEarned || 0;
   
+  // Calculate LIVE multipliers
+  const prestigeMultiplier = user.prestige?.bonusMultiplier || 1.0;
+  let streakMultiplier = 1.0;
+  if (streak >= 30) streakMultiplier = 2.0;
+  else if (streak >= 14) streakMultiplier = 1.5;
+  else if (streak >= 7) streakMultiplier = 1.25;
+  else if (streak >= 3) streakMultiplier = 1.1;
+  const totalMultiplier = (prestigeMultiplier * streakMultiplier).toFixed(2);
+  
   // Get rank info
   const rank = getRank(level);
   const rarity = getRarity(level, xp, achievements);
@@ -107,7 +116,7 @@ ${rank.emoji} ${rank.name} • Level ${level}
       },
       {
         name: '🔥 Streak',
-        value: `\`${streak} days\``,
+        value: `\`${streak} days\`${streakMultiplier > 1 ? `\n⚡ ${streakMultiplier}x` : ''}`,
         inline: true
       },
       {
@@ -137,7 +146,12 @@ ${rank.emoji} ${rank.name} • Level ${level}
       },
       {
         name: '⭐ Prestige',
-        value: `\`${prestige}\``,
+        value: `\`P${prestige}\`${prestigeMultiplier > 1 ? `\n💎 ${prestigeMultiplier}x` : ''}`,
+        inline: true
+      },
+      {
+        name: '💫 XP Bonus',
+        value: totalMultiplier > 1 ? `\`${totalMultiplier}x\`` : '`None`',
         inline: true
       },
       {
