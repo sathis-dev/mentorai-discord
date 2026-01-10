@@ -10,6 +10,22 @@ function broadcastUserUpdate(user, action = 'update') {
   syncEvents.emit('userUpdate', { user, action, timestamp: new Date() });
 }
 
+// Broadcast XP update for real-time website sync (Pro Max card updates)
+function broadcastXpUpdate(user, xpGained, reason) {
+  syncEvents.emit('xp_update', {
+    discordId: user.discordId,
+    username: user.username,
+    xp: user.xp,
+    level: user.level,
+    lifetimeXP: user.prestige?.totalXpEarned || user.xp,
+    streak: user.streak,
+    prestige: user.prestige?.level || 0,
+    xpGained,
+    reason,
+    timestamp: new Date()
+  });
+}
+
 export const XP_REWARDS = {
   QUIZ_CORRECT: 25,
   QUIZ_COMPLETE: 50,
@@ -124,6 +140,7 @@ export async function addXpAtomic(discordId, amount, reason = 'Unknown', applyMu
     
     console.log(`💫 ${updatedUser.username} earned ${finalXp} XP (${reason})${multiplier > 1 ? ` [${multiplier.toFixed(2)}x multiplier]` : ''}`);
     broadcastUserUpdate(updatedUser.toObject(), 'xp_update');
+    broadcastXpUpdate(updatedUser.toObject(), finalXp, reason);
     
     return { 
       user: updatedUser, 

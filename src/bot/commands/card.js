@@ -1,28 +1,19 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
+import { TierSystem } from '../../core/tierSystem.js';
+import { xpForLevel } from '../../config/brandSystem.js';
 
 export const data = new SlashCommandBuilder()
   .setName('card')
-  .setDescription('🎴 View your trading card profile')
+  .setDescription('🎴 View your Pro Max trading card')
   .addUserOption(opt =>
     opt.setName('user')
       .setDescription('View another user\'s card')
       .setRequired(false)
-  )
-  .addStringOption(opt =>
-    opt.setName('style')
-      .setDescription('Card style')
-      .addChoices(
-        { name: '🌟 Holographic', value: 'holo' },
-        { name: '🔥 Fire', value: 'fire' },
-        { name: '❄️ Ice', value: 'ice' },
-        { name: '⚡ Electric', value: 'electric' },
-        { name: '🌙 Dark', value: 'dark' }
-      ));
+  );
 
 export async function execute(interaction) {
   const targetUser = interaction.options.getUser('user') || interaction.user;
-  const style = interaction.options.getString('style') || 'holo';
   
   const user = await User.findOne({ discordId: targetUser.id });
   
@@ -35,7 +26,9 @@ export async function execute(interaction) {
     });
   }
   
-  // Calculate stats
+  // ═══════════════════════════════════════════════════════════════════
+  // 📊 EXTRACT USER DATA (Atomic read - no modifications)
+  // ═══════════════════════════════════════════════════════════════════
   const level = user.level || 1;
   const xp = user.xp || 0;
   const streak = user.streak || 0;
@@ -45,78 +38,60 @@ export async function execute(interaction) {
     : 0;
   const achievements = user.achievements?.length || 0;
   const lessons = user.completedLessons?.length || 0;
-  const prestige = user.prestige?.level || 0;
-  const totalXpEarned = user.prestige?.totalXpEarned || 0;
-  
-  // Calculate LIVE multipliers
+  const prestigeLevel = user.prestige?.level || 0;
   const prestigeMultiplier = user.prestige?.bonusMultiplier || 1.0;
-  let streakMultiplier = 1.0;
-  if (streak >= 30) streakMultiplier = 2.0;
-  else if (streak >= 14) streakMultiplier = 1.5;
-  else if (streak >= 7) streakMultiplier = 1.25;
-  else if (streak >= 3) streakMultiplier = 1.1;
-  const totalMultiplier = (prestigeMultiplier * streakMultiplier).toFixed(2);
+  const lifetimeXP = user.prestige?.totalXpEarned || xp;
   
-  // Get rank info
+  // ═══════════════════════════════════════════════════════════════════
+  // 🎴 PRO MAX THEME ENGINE
+  // ═══════════════════════════════════════════════════════════════════
+  const theme = TierSystem.getProMaxTheme(user);
+  const multiplierBox = TierSystem.buildMultiplierBox(streak, prestigeLevel, prestigeMultiplier);
   const rank = getRank(level);
-  const rarity = getRarity(level, xp, achievements);
-  const tier = getTier(xp);
+  const rarity = getRarity(level, lifetimeXP, achievements);
   
-  // Calculate XP progress - FIXED: user.xp IS within-level XP
-  // xpForLevel(level) = XP needed to complete current level
-  const xpNeeded = calculateXPForLevel(level);  // XP required for THIS level
-  const xpProgress = xp;  // user.xp is already within-level progress
-  const progressPercent = Math.min(Math.round((xpProgress / Math.max(xpNeeded, 1)) * 100), 100);
+  // ═══════════════════════════════════════════════════════════════════
+  // 📈 PRECISION PROGRESS BAR (xp / xpForLevel formula)
+  // ═══════════════════════════════════════════════════════════════════
+  const xpNeeded = xpForLevel(level);
+  const progressPercent = Math.min(Math.round((xp / Math.max(xpNeeded, 1)) * 100), 100);
+  const progressBar = buildProMaxProgressBar(progressPercent, theme.tier);
   
-  // Build progress bar
-  const progressBar = buildProgressBar(progressPercent);
-  
-  // Style colors
-  const styleColors = {
-    holo: 0x667eea,
-    fire: 0xf12711,
-    ice: 0x4facfe,
-    electric: 0xf7971e,
-    dark: 0x2f3136
-  };
-  
-  // Style emojis for border effect
-  const styleEmojis = {
-    holo: '✨',
-    fire: '🔥',
-    ice: '❄️',
-    electric: '⚡',
-    dark: '🌙'
-  };
-  
+  // ═══════════════════════════════════════════════════════════════════
+  // 🌟 BUILD PRO MAX CARD EMBED
+  // ═══════════════════════════════════════════════════════════════════
   const embed = new EmbedBuilder()
-    .setColor(styleColors[style])
+    .setColor(theme.embedColor)
     .setAuthor({
-      name: `${styleEmojis[style]} Trading Card • ${style.toUpperCase()}`,
+      name: `${theme.tier.badge} ${theme.tier.name.toUpperCase()} TIER`,
       iconURL: targetUser.displayAvatarURL()
     })
-    .setTitle(`${rarity.emoji} ${targetUser.username}`)
-    .setThumbnail(targetUser.displayAvatarURL({ size: 256 }))
+    .setTitle(`${theme.aura.emoji || rarity.emoji} ${targetUser.username} ${theme.aura.emoji || ''}`.trim())
+    .setThumbnail(targetUser.displayAvatarURL({ size: 512 }))
     .setDescription(`
-${tier.emoji} **${tier.name}** ${tier.emoji}
-${rank.emoji} ${rank.name} • Level ${level}
+${theme.border}
+${rank.emoji} **${rank.name}** • Level ${level}${prestigeLevel > 0 ? ` • ⭐ P${prestigeLevel}` : ''}
+${theme.border}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━
+**╭─────── XP PROGRESS ───────╮**
+${progressBar}
+\`${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP\` to Level ${level + 1}
+**╰───────────────────────────╯**
 `)
     .addFields(
       {
-        name: '📊 Progress',
-        value: `${progressBar}\n\`${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP\``,
+        name: '💫 ACTIVE MULTIPLIERS',
+        value: multiplierBox.formatted,
         inline: false
       },
       {
         name: '⚡ Lifetime XP',
-        value: `\`${totalXpEarned.toLocaleString()}\``,
+        value: `\`${lifetimeXP.toLocaleString()}\``,
         inline: true
       },
       {
         name: '🔥 Streak',
-        value: `\`${streak} days\`${streakMultiplier > 1 ? `\n⚡ ${streakMultiplier}x` : ''}`,
+        value: `\`${streak} days\``,
         inline: true
       },
       {
@@ -146,12 +121,7 @@ ${rank.emoji} ${rank.name} • Level ${level}
       },
       {
         name: '⭐ Prestige',
-        value: `\`P${prestige}\`${prestigeMultiplier > 1 ? `\n💎 ${prestigeMultiplier}x` : ''}`,
-        inline: true
-      },
-      {
-        name: '💫 XP Bonus',
-        value: totalMultiplier > 1 ? `\`${totalMultiplier}x\`` : '`None`',
+        value: prestigeLevel > 0 ? `\`P${prestigeLevel}\` ${theme.aura.name}` : '`P0`',
         inline: true
       },
       {
@@ -161,35 +131,65 @@ ${rank.emoji} ${rank.name} • Level ${level}
       }
     )
     .setFooter({
-      text: `${styleEmojis[style]} Style: ${style.toUpperCase()} • Share with friends!`,
+      text: theme.footerText,
       iconURL: interaction.client.user.displayAvatarURL()
     })
     .setTimestamp();
 
-  // Share button
+  // ═══════════════════════════════════════════════════════════════════
+  // 🔘 ACTION BUTTONS
+  // ═══════════════════════════════════════════════════════════════════
   const row = new ActionRowBuilder()
     .addComponents(
       new ButtonBuilder()
-        .setCustomId(`card_refresh_${targetUser.id}_${style}`)
+        .setCustomId(`card_refresh_${targetUser.id}`)
         .setLabel('Refresh')
         .setEmoji('🔄')
         .setStyle(ButtonStyle.Secondary),
       new ButtonBuilder()
+        .setCustomId(`card_share_${targetUser.id}`)
+        .setLabel('Share')
+        .setEmoji('📤')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
         .setLabel('View on Website')
         .setEmoji('🌐')
         .setStyle(ButtonStyle.Link)
-        .setURL(buildWebsiteURL(targetUser, user))
+        .setURL(buildWebsiteURL(targetUser, user, theme))
     );
 
   await interaction.reply({ embeds: [embed], components: [row] });
 }
 
-function buildProgressBar(percent) {
-  const filled = Math.round(percent / 10);
-  const empty = 10 - filled;
-  return '`' + '█'.repeat(filled) + '░'.repeat(empty) + '` ' + percent + '%';
+// ═══════════════════════════════════════════════════════════════════
+// 🎨 PRO MAX VISUAL HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * Build tier-themed progress bar with gradient effect
+ */
+function buildProMaxProgressBar(percent, tier) {
+  const length = 20;
+  const filled = Math.round((percent / 100) * length);
+  const empty = length - filled;
+  
+  // Tier-based fill characters
+  let fillChar = '█';
+  let emptyChar = '░';
+  
+  if (tier.cardStyle === 'legendary') {
+    fillChar = '▓';
+  } else if (tier.cardStyle === 'elite') {
+    fillChar = '▓';
+  }
+  
+  const bar = fillChar.repeat(filled) + emptyChar.repeat(empty);
+  return `\`${bar}\` **${percent}%**`;
 }
 
+/**
+ * Get rank based on level
+ */
 function getRank(level) {
   const ranks = [
     { min: 1, name: 'Novice', emoji: '🌱' },
@@ -209,38 +209,24 @@ function getRank(level) {
   return ranks[0];
 }
 
-function getTier(xp) {
-  const tiers = [
-    { min: 0, name: 'Bronze', emoji: '🥉' },
-    { min: 1000, name: 'Silver', emoji: '🥈' },
-    { min: 5000, name: 'Gold', emoji: '🥇' },
-    { min: 15000, name: 'Platinum', emoji: '💠' },
-    { min: 50000, name: 'Diamond', emoji: '💎' },
-    { min: 100000, name: 'Master', emoji: '👑' }
-  ];
+/**
+ * Calculate rarity based on lifetime XP and achievements
+ */
+function getRarity(level, lifetimeXP, achievements) {
+  // Score based on lifetime XP (more weight) + achievements
+  const score = Math.floor(lifetimeXP / 500) + achievements * 3 + level;
   
-  for (let i = tiers.length - 1; i >= 0; i--) {
-    if (xp >= tiers[i].min) return tiers[i];
-  }
-  return tiers[0];
-}
-
-function getRarity(level, xp, achievements) {
-  const score = level + achievements * 2 + Math.floor(xp / 1000);
-  
-  if (score >= 100) return { name: 'Legendary', emoji: '🌟' };
-  if (score >= 50) return { name: 'Epic', emoji: '💜' };
-  if (score >= 25) return { name: 'Rare', emoji: '💙' };
-  if (score >= 10) return { name: 'Uncommon', emoji: '💚' };
+  if (score >= 250) return { name: 'Legendary', emoji: '🌟' };
+  if (score >= 100) return { name: 'Epic', emoji: '💜' };
+  if (score >= 50) return { name: 'Rare', emoji: '💙' };
+  if (score >= 20) return { name: 'Uncommon', emoji: '💚' };
   return { name: 'Common', emoji: '⬜' };
 }
 
-function calculateXPForLevel(level) {
-  // Standardized formula: xpForLevel(level) = Math.floor(100 * Math.pow(1.5, level - 1))
-  return Math.floor(100 * Math.pow(1.5, level - 1));
-}
-
-function buildWebsiteURL(discordUser, user) {
+/**
+ * Build website URL with full Pro Max data
+ */
+function buildWebsiteURL(discordUser, user, theme) {
   const params = new URLSearchParams({
     user: discordUser.id,
     avatar: discordUser.avatar || '',
@@ -254,7 +240,116 @@ function buildWebsiteURL(discordUser, user) {
       : '0',
     lessons: (user.completedLessons?.length || 0).toString(),
     achievements: (user.achievements?.length || 0).toString(),
-    prestige: (user.prestige?.level || 0).toString()
+    prestige: (user.prestige?.level || 0).toString(),
+    lifetimeXP: (user.prestige?.totalXpEarned || user.xp || 0).toString(),
+    tier: theme?.tier?.name || 'Bronze',
+    multiplier: (theme?.multiplierBox?.totalMultiplier || 1).toString()
   });
   return `https://mentorai.up.railway.app/?${params.toString()}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// 🔘 BUTTON INTERACTION HANDLER
+// ═══════════════════════════════════════════════════════════════════
+
+export async function handleCardButton(interaction, action, userId) {
+  if (action === 'refresh') {
+    const user = await User.findOne({ discordId: userId });
+    if (!user) {
+      return interaction.reply({ content: '❌ User data not found.', ephemeral: true });
+    }
+    
+    // Re-fetch and rebuild card
+    const targetUser = await interaction.client.users.fetch(userId);
+    
+    // Rebuild with fresh data
+    const level = user.level || 1;
+    const xp = user.xp || 0;
+    const streak = user.streak || 0;
+    const quizzes = user.quizzesTaken || 0;
+    const accuracy = user.totalQuestions > 0 
+      ? Math.round((user.correctAnswers / user.totalQuestions) * 100) 
+      : 0;
+    const achievements = user.achievements?.length || 0;
+    const lessons = user.completedLessons?.length || 0;
+    const prestigeLevel = user.prestige?.level || 0;
+    const prestigeMultiplier = user.prestige?.bonusMultiplier || 1.0;
+    const lifetimeXP = user.prestige?.totalXpEarned || xp;
+    
+    const theme = TierSystem.getProMaxTheme(user);
+    const multiplierBox = TierSystem.buildMultiplierBox(streak, prestigeLevel, prestigeMultiplier);
+    const rank = getRank(level);
+    const rarity = getRarity(level, lifetimeXP, achievements);
+    
+    const xpNeeded = xpForLevel(level);
+    const progressPercent = Math.min(Math.round((xp / Math.max(xpNeeded, 1)) * 100), 100);
+    const progressBar = buildProMaxProgressBar(progressPercent, theme.tier);
+    
+    const embed = new EmbedBuilder()
+      .setColor(theme.embedColor)
+      .setAuthor({
+        name: `${theme.tier.badge} ${theme.tier.name.toUpperCase()} TIER`,
+        iconURL: targetUser.displayAvatarURL()
+      })
+      .setTitle(`${theme.aura.emoji || rarity.emoji} ${targetUser.username} ${theme.aura.emoji || ''}`.trim())
+      .setThumbnail(targetUser.displayAvatarURL({ size: 512 }))
+      .setDescription(`
+${theme.border}
+${rank.emoji} **${rank.name}** • Level ${level}${prestigeLevel > 0 ? ` • ⭐ P${prestigeLevel}` : ''}
+${theme.border}
+
+**╭─────── XP PROGRESS ───────╮**
+${progressBar}
+\`${xp.toLocaleString()} / ${xpNeeded.toLocaleString()} XP\` to Level ${level + 1}
+**╰───────────────────────────╯**
+`)
+      .addFields(
+        { name: '💫 ACTIVE MULTIPLIERS', value: multiplierBox.formatted, inline: false },
+        { name: '⚡ Lifetime XP', value: `\`${lifetimeXP.toLocaleString()}\``, inline: true },
+        { name: '🔥 Streak', value: `\`${streak} days\``, inline: true },
+        { name: '📈 Level', value: `\`${level}\``, inline: true },
+        { name: '🎯 Quizzes', value: `\`${quizzes}\``, inline: true },
+        { name: '✅ Accuracy', value: `\`${accuracy}%\``, inline: true },
+        { name: '📚 Lessons', value: `\`${lessons}\``, inline: true },
+        { name: '🏆 Achievements', value: `\`${achievements}/40\``, inline: true },
+        { name: '⭐ Prestige', value: prestigeLevel > 0 ? `\`P${prestigeLevel}\` ${theme.aura.name}` : '`P0`', inline: true },
+        { name: '💎 Rarity', value: `\`${rarity.name}\``, inline: true }
+      )
+      .setFooter({ text: `${theme.footerText} • 🔄 Refreshed`, iconURL: interaction.client.user.displayAvatarURL() })
+      .setTimestamp();
+
+    const row = new ActionRowBuilder()
+      .addComponents(
+        new ButtonBuilder()
+          .setCustomId(`card_refresh_${userId}`)
+          .setLabel('Refresh')
+          .setEmoji('🔄')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`card_share_${userId}`)
+          .setLabel('Share')
+          .setEmoji('📤')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setLabel('View on Website')
+          .setEmoji('🌐')
+          .setStyle(ButtonStyle.Link)
+          .setURL(buildWebsiteURL(targetUser, user, theme))
+      );
+
+    await interaction.update({ embeds: [embed], components: [row] });
+  } else if (action === 'share') {
+    const user = await User.findOne({ discordId: userId });
+    const targetUser = await interaction.client.users.fetch(userId);
+    const theme = TierSystem.getProMaxTheme(user);
+    
+    const shareEmbed = new EmbedBuilder()
+      .setColor(theme.embedColor)
+      .setTitle(`${theme.tier.badge} Check out ${targetUser.username}'s Pro Max Card!`)
+      .setDescription(`**Level ${user?.level || 1}** • **${(user?.prestige?.totalXpEarned || 0).toLocaleString()} Lifetime XP** • **${user?.streak || 0} day streak** 🔥`)
+      .setThumbnail(targetUser.displayAvatarURL({ size: 128 }))
+      .setFooter({ text: theme.footerText });
+
+    await interaction.reply({ embeds: [shareEmbed] });
+  }
 }

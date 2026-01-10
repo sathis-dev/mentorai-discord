@@ -155,6 +155,14 @@ io.on('connection', (socket) => {
         io.emit('newUser', data.user);
       }
     });
+    
+    // Subscribe to XP updates for real-time Pro Max card sync
+    syncEvents.on('xp_update', (data) => {
+      console.log(`💫 Broadcasting XP update: ${data.username} +${data.xpGained} XP`);
+      io.emit('xp_update', data);
+    });
+    
+    console.log('📡 Gamification sync events connected');
   } catch (e) {
     console.error('Failed to setup sync events:', e);
   }

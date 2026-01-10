@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initStats();
   initLeaderboard();
   initSmoothScroll();
+  initSocketIO();
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -716,4 +717,194 @@ function escapeHtml(text) {
 }
 
 console.log('🎓 MentorAI Website Loaded - 100% Real Data!');
+
+// ─────────────────────────────────────────────────────────────────
+// SOCKET.IO - Real-Time Updates (Pro Max Card Sync)
+// ─────────────────────────────────────────────────────────────────
+let socket = null;
+
+function initSocketIO() {
+  // Only connect if Socket.io is available
+  if (typeof io === 'undefined') {
+    console.log('📡 Socket.io not available - using polling for updates');
+    return;
+  }
+  
+  try {
+    const socketUrl = API_BASE || window.location.origin;
+    socket = io(socketUrl, {
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5
+    });
+    
+    socket.on('connect', () => {
+      console.log('📡 Socket.io connected - Real-time updates enabled!');
+      showRealtimeStatus(true);
+    });
+    
+    socket.on('disconnect', () => {
+      console.log('📡 Socket.io disconnected');
+      showRealtimeStatus(false);
+    });
+    
+    // Listen for XP updates (Pro Max card sync)
+    socket.on('xp_update', (data) => {
+      console.log(`💫 Real-time XP update: ${data.username} +${data.xpGained} XP`);
+      handleXpUpdate(data);
+    });
+    
+    // Listen for user updates
+    socket.on('userUpdate', (data) => {
+      console.log(`🔄 User update: ${data.action} for ${data.user?.username}`);
+      if (data.action === 'xp_update') {
+        // Refresh stats on any XP update
+        updateAllStats();
+      }
+    });
+    
+    // Listen for stats updates
+    socket.on('statsUpdate', (stats) => {
+      if (stats && liveStats) {
+        liveStats = { ...liveStats, ...stats };
+        updateHeroStats(liveStats);
+        updateStatCards(liveStats);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Socket.io initialization error:', error);
+  }
+}
+
+function handleXpUpdate(data) {
+  // Check if we're viewing this user's profile card on the website
+  const urlParams = new URLSearchParams(window.location.search);
+  const viewingUserId = urlParams.get('user');
+  
+  if (viewingUserId === data.discordId) {
+    // This is the user being viewed - update their card in real-time!
+    updateProMaxCard(data);
+  }
+  
+  // Always update global stats
+  if (liveStats) {
+    liveStats.totalXP = (liveStats.totalXP || 0) + data.xpGained;
+    updateHeroStats(liveStats);
+  }
+  
+  // Show toast notification for XP gain
+  showXpToast(data);
+}
+
+function updateProMaxCard(data) {
+  // Update card elements if they exist on the page
+  const xpEl = document.getElementById('card-xp');
+  const levelEl = document.getElementById('card-level');
+  const streakEl = document.getElementById('card-streak');
+  const lifetimeXpEl = document.getElementById('card-lifetime-xp');
+  const progressBar = document.getElementById('card-progress');
+  
+  if (xpEl) xpEl.textContent = data.xp.toLocaleString();
+  if (levelEl) levelEl.textContent = data.level;
+  if (streakEl) streakEl.textContent = data.streak;
+  if (lifetimeXpEl) lifetimeXpEl.textContent = formatNumber(data.lifetimeXP);
+  
+  // Update progress bar with xpForLevel formula
+  if (progressBar) {
+    const xpNeeded = Math.floor(100 * Math.pow(1.5, data.level - 1));
+    const percent = Math.min(Math.round((data.xp / xpNeeded) * 100), 100);
+    progressBar.style.width = percent + '%';
+    progressBar.setAttribute('data-percent', percent);
+  }
+  
+  // Flash animation to show update
+  const card = document.querySelector('.pro-max-card');
+  if (card) {
+    card.classList.add('xp-flash');
+    setTimeout(() => card.classList.remove('xp-flash'), 500);
+  }
+}
+
+function showXpToast(data) {
+  // Create toast notification for XP updates
+  const existingToast = document.querySelector('.xp-toast');
+  if (existingToast) existingToast.remove();
+  
+  const toast = document.createElement('div');
+  toast.className = 'xp-toast';
+  toast.innerHTML = `
+    <span class="xp-toast-icon">💫</span>
+    <span class="xp-toast-text">${data.username} earned +${data.xpGained} XP</span>
+    <span class="xp-toast-reason">${data.reason}</span>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+  
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function showRealtimeStatus(connected) {
+  const statusEl = document.querySelector('.realtime-status');
+  if (statusEl) {
+    statusEl.innerHTML = connected 
+      ? '<span class="status-dot online"></span> Live Updates' 
+      : '<span class="status-dot offline"></span> Polling';
+  }
+}
+
+// Add CSS for XP toast and flash animations
+const socketStyles = document.createElement('style');
+socketStyles.textContent = `
+  .xp-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #5865F2, #9B59B6);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 20px rgba(88, 101, 242, 0.4);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 9999;
+    font-family: 'Inter', sans-serif;
+  }
+  .xp-toast.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  .xp-toast-icon {
+    font-size: 1.5em;
+  }
+  .xp-toast-text {
+    font-weight: 600;
+  }
+  .xp-toast-reason {
+    font-size: 0.85em;
+    opacity: 0.8;
+  }
+  .pro-max-card.xp-flash {
+    animation: xpFlash 0.5s ease;
+  }
+  @keyframes xpFlash {
+    0%, 100% { box-shadow: 0 0 0 rgba(255, 215, 0, 0); }
+    50% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+  }
+`;
+document.head.appendChild(socketStyles);
 
