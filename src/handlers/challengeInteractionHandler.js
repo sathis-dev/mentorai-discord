@@ -84,6 +84,14 @@ async function handleChallengeAccept(interaction) {
       challengeManager.setClient(interaction.client);
     }
     
+    // Setup legacy event handlers if not done
+    try {
+      const { setupLegacyChallengeEvents } = await import('../bot/commands/challenge.js');
+      setupLegacyChallengeEvents(interaction.client);
+    } catch (e) {
+      console.error('Failed to setup legacy events:', e.message);
+    }
+    
     // Accept the challenge
     const battle = await challengeManager.acceptChallenge(challengeId, interaction.user.id);
     

@@ -43,6 +43,20 @@ import {
   getDifficultyColor,
   formatDuration
 } from '../../config/brandSystem.js';
+import challengeManager from '../../services/multiplayer/challengeManager.js';
+import {
+  createChallengeAcceptedEmbed,
+  createChallengeDeclinedEmbed,
+  createChallengeExpiredEmbed,
+  createBattleStartEmbed as createLegacyBattleStartEmbed,
+  createQuestionEmbed as createLegacyQuestionEmbed,
+  createAnswerButtons as createLegacyAnswerButtons,
+  createQuestionResultEmbed,
+  createVictoryEmbed as createLegacyVictoryEmbed,
+  createDefeatEmbed as createLegacyDefeatEmbed,
+  createDrawEmbed as createLegacyDrawEmbed,
+  createBattleSummaryEmbed as createLegacySummaryEmbed
+} from '../../embeds/challengeEmbeds.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 🎨 PREMIUM COLOR PALETTE
@@ -1402,14 +1416,159 @@ export async function autocomplete(interaction) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// LEGACY EVENT HANDLERS (for old challenge_ prefix system)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function setupLegacyChallengeEvents(client) {
+  if (challengeManager.eventsSetup) return;
+  challengeManager.eventsSetup = true;
+  
+  // Challenge Accepted
+  challengeManager.on('challenge_accepted', async ({ challenge, battle }) => {
+    try {
+      const channel = await client.channels.fetch(challenge.channelId);
+      if (!channel) return;
+      
+      const embed = createChallengeAcceptedEmbed(challenge, battle);
+      if (challenge.messageId) {
+        try {
+          const message = await channel.messages.fetch(challenge.messageId);
+          await message.edit({ content: '⚔️ Battle starting!', embeds: [embed], components: [] });
+        } catch (e) {
+          await channel.send({ embeds: [embed] });
+        }
+      }
+    } catch (error) {
+      console.error('Error handling challenge_accepted:', error);
+    }
+  });
+  
+  // Challenge Declined
+  challengeManager.on('challenge_declined', async (challenge) => {
+    try {
+      const channel = await client.channels.fetch(challenge.channelId);
+      if (!channel) return;
+      
+      const embed = createChallengeDeclinedEmbed(challenge);
+      if (challenge.messageId) {
+        try {
+          const message = await channel.messages.fetch(challenge.messageId);
+          await message.edit({ content: '', embeds: [embed], components: [] });
+        } catch (e) {}
+      }
+    } catch (error) {
+      console.error('Error handling challenge_declined:', error);
+    }
+  });
+  
+  // Battle Countdown Start - Send DM to players
+  challengeManager.on('battle_countdown_start', async (battle) => {
+    try {
+      for (const player of battle.players) {
+        try {
+          const user = await client.users.fetch(player.discordId);
+          const opponent = battle.players.find(p => p.discordId !== player.discordId);
+          const embed = createLegacyBattleStartEmbed(battle, opponent?.username || 'Unknown');
+          await user.send({ embeds: [embed] });
+        } catch (e) {
+          console.error(`Failed to DM ${player.username}:`, e.message);
+        }
+      }
+    } catch (error) {
+      console.error('Error in battle_countdown_start:', error);
+    }
+  });
+  
+  // Question Started - Send question to players via DM
+  challengeManager.on('question_started', async ({ battleId, question, questionNumber, totalQuestions, timeLimit }) => {
+    const battle = challengeManager.activeBattles.get(battleId);
+    if (!battle) return;
+    
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        const embed = createLegacyQuestionEmbed(question, questionNumber, totalQuestions, timeLimit);
+        const row = createLegacyAnswerButtons(battleId);
+        await user.send({ embeds: [embed], components: [row] });
+      } catch (e) {
+        console.error(`Failed to send question to ${player.username}:`, e.message);
+      }
+    }
+  });
+  
+  // Question Results
+  challengeManager.on('question_results', async ({ battleId, question, results, leaderboard, questionNumber, totalQuestions }) => {
+    const battle = challengeManager.activeBattles.get(battleId);
+    if (!battle) return;
+    
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        const playerResult = results.playerResults.find(r => r.discordId === player.discordId);
+        const embed = createQuestionResultEmbed(playerResult, results, leaderboard, questionNumber || 1, totalQuestions || 5);
+        await user.send({ embeds: [embed] });
+      } catch (e) {
+        console.error(`Failed to send results to ${player.username}:`, e.message);
+      }
+    }
+  });
+  
+  // Battle Complete
+  challengeManager.on('battle_complete', async ({ battleId, results, battle }) => {
+    for (const player of battle.players) {
+      try {
+        const user = await client.users.fetch(player.discordId);
+        const playerResult = results.players.find(p => p.discordId === player.discordId);
+        const isWinner = results.winner === player.discordId && !results.isDraw;
+        const opponent = battle.players.find(p => p.discordId !== player.discordId);
+        const winner = battle.players.find(p => p.discordId === results.winner);
+        
+        let embed;
+        if (results.isDraw) {
+          embed = createLegacyDrawEmbed(playerResult, results, battle, opponent?.username || 'Opponent');
+        } else if (isWinner) {
+          embed = createLegacyVictoryEmbed(playerResult, results, battle, opponent?.username || 'Opponent');
+        } else {
+          embed = createLegacyDefeatEmbed(playerResult, results, battle, winner?.username || 'Winner');
+        }
+        await user.send({ embeds: [embed] });
+      } catch (e) {
+        console.error(`Failed to send final results to ${player.username}:`, e.message);
+      }
+    }
+    
+    // Post summary in original channel
+    try {
+      if (battle.channelId) {
+        const channel = await client.channels.fetch(battle.channelId);
+        if (channel) {
+          const embed = createLegacySummaryEmbed(results, battle);
+          await channel.send({ embeds: [embed] });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to post battle summary:', e.message);
+    }
+  });
+  
+  console.log('✅ Legacy challenge event handlers registered');
+}
+
+// Auto-setup legacy events when module loads (if client available via challengeManager)
+if (challengeManager.client) {
+  setupLegacyChallengeEvents(challengeManager.client);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // EXPORTS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export { handleButtonInteraction };
+export { handleButtonInteraction, setupLegacyChallengeEvents };
 
 export default { 
   data, 
   execute, 
   autocomplete,
-  handleButtonInteraction
+  handleButtonInteraction,
+  setupLegacyChallengeEvents
 };
