@@ -253,6 +253,15 @@ function buildWebsiteURL(discordUser, user, theme) {
 // ═══════════════════════════════════════════════════════════════════
 
 export async function handleCardButton(interaction, action, userId) {
+  // Validate userId before any operations
+  if (!userId || userId === 'null' || userId === 'undefined') {
+    console.error('Card button handler received invalid userId:', userId);
+    return interaction.reply({ 
+      content: '❌ Invalid user ID. Please use `/card` command again.', 
+      ephemeral: true 
+    });
+  }
+
   if (action === 'refresh') {
     const user = await User.findOne({ discordId: userId });
     if (!user) {
@@ -260,7 +269,16 @@ export async function handleCardButton(interaction, action, userId) {
     }
     
     // Re-fetch and rebuild card
-    const targetUser = await interaction.client.users.fetch(userId);
+    let targetUser;
+    try {
+      targetUser = await interaction.client.users.fetch(userId);
+    } catch (fetchError) {
+      console.error('Failed to fetch user for card refresh:', fetchError);
+      return interaction.reply({ 
+        content: '❌ Could not fetch user data. Please try again.', 
+        ephemeral: true 
+      });
+    }
     
     // Rebuild with fresh data
     const level = user.level || 1;
@@ -340,7 +358,21 @@ ${progressBar}
     await interaction.update({ embeds: [embed], components: [row] });
   } else if (action === 'share') {
     const user = await User.findOne({ discordId: userId });
-    const targetUser = await interaction.client.users.fetch(userId);
+    if (!user) {
+      return interaction.reply({ content: '❌ User data not found.', ephemeral: true });
+    }
+    
+    let targetUser;
+    try {
+      targetUser = await interaction.client.users.fetch(userId);
+    } catch (fetchError) {
+      console.error('Failed to fetch user for card share:', fetchError);
+      return interaction.reply({ 
+        content: '❌ Could not fetch user data. Please try again.', 
+        ephemeral: true 
+      });
+    }
+    
     const theme = TierSystem.getProMaxTheme(user);
     
     const shareEmbed = new EmbedBuilder()
