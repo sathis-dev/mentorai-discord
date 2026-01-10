@@ -121,9 +121,8 @@ certificateSchema.methods.toDisplayFormat = function() {
   };
 };
 
-// Index for efficient lookups (certificateId already indexed via unique: true)
+// Index for efficient lookups (certificateId and credentialId already indexed via unique: true)
 certificateSchema.index({ discordId: 1 });
-certificateSchema.index({ credentialId: 1 });
 
 export const Certificate = mongoose.model('Certificate', certificateSchema);
 

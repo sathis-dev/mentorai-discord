@@ -61,9 +61,17 @@ export async function runDataIntegrityPass() {
     }
 
     // Sync any users where totalXpEarned < current xp (data corruption)
-    const desyncedUsers = await User.find({
-      'prestige.totalXpEarned': { $lt: '$xp' }
-    }).limit(500);
+    // Use aggregation pipeline with $expr for field comparison
+    const desyncedUsers = await User.aggregate([
+      {
+        $match: {
+          $expr: {
+            $lt: [{ $ifNull: ['$prestige.totalXpEarned', 0] }, { $ifNull: ['$xp', 0] }]
+          }
+        }
+      },
+      { $limit: 500 }
+    ]);
 
     for (const user of desyncedUsers) {
       try {

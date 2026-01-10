@@ -5,6 +5,9 @@ import { ServerSettings } from '../database/models/ServerSettings.js';
 // Broadcast event emitter for real-time updates
 export const broadcastEvents = new EventEmitter();
 
+// Sync events emitter for real-time analytics (used by SearchIntelligence, NOC)
+export const syncEvents = new EventEmitter();
+
 // Broadcast types with styling
 export const BROADCAST_TYPES = {
   announcement: {
