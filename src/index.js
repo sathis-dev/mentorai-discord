@@ -5,6 +5,7 @@ import { loadCommands } from './bot/commandLoader.js';
 import { loadEvents } from './bot/eventLoader.js';
 import { setDiscordClient } from './services/broadcastService.js';
 import { startAdminPanel } from './web/server.js';
+import { sovereignOrchestrator } from './services/sovereignOrchestrator.js';
 
 const client = new Client({
   intents: [
@@ -55,6 +56,10 @@ async function start() {
     // Connect broadcast service to Discord client
     setDiscordClient(client);
     console.log('✅ Broadcast service connected');
+    
+    // Initialize Sovereign Orchestrator for autonomous engagement
+    sovereignOrchestrator.initialize(client);
+    console.log('✅ Sovereign Orchestrator activated');
     
     // Start admin panel in the same process (shares Discord client)
     await startAdminPanel();

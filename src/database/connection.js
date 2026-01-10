@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { runDataIntegrityPass } from '../utils/dataIntegrity.js';
 
 let isConnected = false;
 let migrationRan = false;
@@ -100,6 +101,9 @@ export async function connectDatabase() {
     
     // Run migration after connection (async, non-blocking)
     setTimeout(() => runLifetimeXpMigration(), 3000);
+    
+    // Run data integrity pass (async, non-blocking)
+    setTimeout(() => runDataIntegrityPass(), 5000);
     
     return mongoose.connection;
   } catch (error) {
