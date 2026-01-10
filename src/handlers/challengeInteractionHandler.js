@@ -2,8 +2,9 @@
  * Challenge Interaction Handler
  * 
  * Handles button interactions for:
- * - Challenge accept/decline
- * - Battle answer submission
+ * - Challenge accept/decline (legacy: challenge_, new: duel_)
+ * - Battle answer submission (legacy: battle_, new: duel_)
+ * - MongoDB-backed ChallengeSession for restart-resistant duels
  */
 
 import { EmbedBuilder } from 'discord.js';
@@ -17,7 +18,14 @@ import challengeManager from '../../services/multiplayer/challengeManager.js';
 export async function handleChallengeInteraction(interaction) {
   const customId = interaction.customId;
   
-  // Only handle challenge/battle buttons
+  // Handle NEW MongoDB-backed duel buttons (from refactored challenge.js)
+  if (customId.startsWith('duel_')) {
+    const { handleButtonInteraction } = await import('../bot/commands/challenge.js');
+    await handleButtonInteraction(interaction);
+    return true;
+  }
+  
+  // Only handle legacy challenge/battle buttons
   if (!customId.startsWith('challenge_') && !customId.startsWith('battle_')) {
     return false;
   }

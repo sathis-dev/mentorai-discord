@@ -194,6 +194,10 @@ async function handleButton(interaction) {
       // Handle battle answer buttons (from challenge system)
       const { handleChallengeInteraction } = await import('../../handlers/challengeInteractionHandler.js');
       await handleChallengeInteraction(interaction);
+    } else if (category === 'duel') {
+      // Handle NEW MongoDB-backed duel buttons (refactored challenge system)
+      const { handleChallengeInteraction } = await import('../../handlers/challengeInteractionHandler.js');
+      await handleChallengeInteraction(interaction);
     } else if (category === 'project') {
       // Handle project-based learning buttons
       const { handleProjectButton } = await import('../commands/project.js');

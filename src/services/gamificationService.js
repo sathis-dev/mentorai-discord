@@ -20,8 +20,126 @@ export const XP_REWARDS = {
   FIRST_QUIZ: 100,
   FIRST_LESSON: 75,
   CHALLENGE_WIN: 150,
+  CHALLENGE_PARTICIPATE: 50,
+  CHALLENGE_PERFECT: 100,
   LEVEL_UP: 50
 };
+
+/**
+ * Calculate final XP with all multipliers applied
+ * Implements fix from LOGIC_ERRORS_FIXES.md
+ * @param {number} baseXp - Base XP before multipliers
+ * @param {Object} user - User document
+ * @returns {{ finalXp: number, multiplier: number, breakdown: Object }}
+ */
+export function calculateFinalXp(baseXp, user) {
+  // Get prestige multiplier
+  const prestigeMultiplier = user?.prestige?.bonusMultiplier || 1.0;
+  
+  // Get streak multiplier
+  const streak = user?.streak || user?.dailyBonusStreak || 0;
+  let streakMultiplier = 1.0;
+  if (streak >= 30) streakMultiplier = 2.0;
+  else if (streak >= 14) streakMultiplier = 1.5;
+  else if (streak >= 7) streakMultiplier = 1.25;
+  else if (streak >= 3) streakMultiplier = 1.1;
+  
+  // Calculate total multiplier
+  const totalMultiplier = prestigeMultiplier * streakMultiplier;
+  const finalXp = Math.floor(baseXp * totalMultiplier);
+  
+  return {
+    finalXp,
+    multiplier: totalMultiplier,
+    breakdown: {
+      baseXp,
+      prestigeMultiplier,
+      streakMultiplier,
+      streak
+    }
+  };
+}
+
+/**
+ * Award XP to user with atomic MongoDB operation
+ * Prevents concurrency bugs noted in LOGIC_ERRORS_ANALYSIS.md
+ * @param {string} discordId - User's Discord ID
+ * @param {number} amount - Base XP amount
+ * @param {string} reason - Reason for XP award
+ * @param {boolean} applyMultipliers - Whether to apply streak/prestige multipliers
+ * @returns {Promise<Object>} Result with user and level info
+ */
+export async function addXpAtomic(discordId, amount, reason = 'Unknown', applyMultipliers = true) {
+  try {
+    // First get user to calculate multipliers
+    const user = await User.findOne({ discordId });
+    if (!user) return null;
+    
+    const { finalXp, multiplier, breakdown } = applyMultipliers 
+      ? calculateFinalXp(amount, user)
+      : { finalXp: amount, multiplier: 1, breakdown: { baseXp: amount } };
+    
+    // Use atomic $inc for XP and totalXpEarned
+    const updatedUser = await User.findOneAndUpdate(
+      { discordId },
+      { 
+        $inc: { 
+          xp: finalXp,
+          'prestige.totalXpEarned': finalXp
+        },
+        $set: { lastActive: new Date() }
+      },
+      { new: true }
+    );
+    
+    if (!updatedUser) return null;
+    
+    // Check for level up (may need multiple level-ups)
+    let leveledUp = false;
+    let levelsGained = 0;
+    let currentXp = updatedUser.xp;
+    let currentLevel = updatedUser.level;
+    
+    const xpForNextLevel = (lvl) => Math.floor(100 * Math.pow(1.5, lvl - 1));
+    
+    while (currentXp >= xpForNextLevel(currentLevel)) {
+      currentXp -= xpForNextLevel(currentLevel);
+      currentLevel++;
+      leveledUp = true;
+      levelsGained++;
+    }
+    
+    // If leveled up, update with atomic operation
+    if (leveledUp) {
+      await User.findOneAndUpdate(
+        { discordId },
+        { 
+          $set: { 
+            level: currentLevel,
+            xp: currentXp
+          }
+        }
+      );
+    }
+    
+    console.log(`💫 ${updatedUser.username} earned ${finalXp} XP (${reason})${multiplier > 1 ? ` [${multiplier.toFixed(2)}x multiplier]` : ''}`);
+    broadcastUserUpdate(updatedUser.toObject(), 'xp_update');
+    
+    return { 
+      user: updatedUser, 
+      leveledUp, 
+      newLevel: currentLevel, 
+      levelsGained,
+      xpAwarded: finalXp,
+      baseXp: amount,
+      multiplier,
+      breakdown
+    };
+  } catch (error) {
+    console.error('Error in addXpAtomic:', error);
+    return null;
+  }
+}
 
 export const ACHIEVEMENTS = {
   FIRST_LESSON: { name: '📖 First Steps', desc: 'Complete your first lesson', xpBonus: 50 },
