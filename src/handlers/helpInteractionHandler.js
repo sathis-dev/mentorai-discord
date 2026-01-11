@@ -924,7 +924,7 @@ export async function showPopularCommands(interaction, user) {
   let personalRecommendation = null;
   const userWeakSpots = user?.topicAccuracy ? 
     Object.entries(user.topicAccuracy)
-      .filter(([_, data]) => data.total >= 2 && (data.correct / data.total) < 0.7)
+      .filter(([_, data]) => data && data.total >= 2 && ((data.correct || 0) / (data.total || 1)) < 0.7)
       .map(([topic]) => topic.toLowerCase()) 
     : [];
   
