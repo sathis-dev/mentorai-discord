@@ -2217,7 +2217,6 @@ async function handleSearchActionButton(interaction, action, params) {
     await interaction.deferReply({ ephemeral: true });
     await interaction.editReply({ content: `🎯 Test your knowledge with \`/quiz topic:${topic}\`!` });
   } else if (action === 'filter') {
-    // Handle filter buttons
     await interaction.reply({ content: '🔍 Filter applied! Use the search to explore more.', ephemeral: true });
   } else {
     await interaction.reply({ content: '✨ This feature is coming soon!', ephemeral: true });
@@ -2226,30 +2225,36 @@ async function handleSearchActionButton(interaction, action, params) {
 
 // Handle discovery hub action buttons (Growth Path opportunity cards)
 async function handleDiscoveryButton(interaction, action, params) {
-  const commandMap = {
-    quiz: 'quiz',
-    daily: 'daily',
-    learn: 'learn',
-    flashcard: 'flashcard',
-    challenge: 'challenge'
-  };
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const { User } = await import('../../database/models/User.js');
   
-  const commandName = commandMap[action] || action;
-  
-  await interaction.deferReply({ ephemeral: true });
-  
-  const command = interaction.client.commands.get(commandName);
-  if (command) {
-    try {
-      // Create mock options for the command
+  // QUIZ MASTER SMART-HANDOFF
+  if (action === 'quiz') {
+    await interaction.deferUpdate();
+    
+    const loadingEmbed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle('🎯 Loading Assessment...')
+      .setDescription('`████████████░░░░` Preparing your personalized quiz...')
+      .setFooter({ text: 'MentorAI Diagnostic Scanner' });
+    
+    await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+    await new Promise(r => setTimeout(r, 800));
+    
+    const user = await User.findOne({ discordId: interaction.user.id });
+    const weakTopic = user?.topicAccuracy ? 
+      Object.entries(user.topicAccuracy)
+        .filter(([_, data]) => data.total >= 3)
+        .sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0]?.[0] 
+      : 'javascript';
+    
+    const quizCommand = interaction.client.commands.get('quiz');
+    if (quizCommand) {
       const mockOptions = {
-        getString: () => null,
-        getInteger: () => null,
-        getBoolean: () => null,
-        getSubcommand: () => null,
-        getUser: () => null
+        getString: (name) => name === 'topic' ? (weakTopic || 'javascript') : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getBoolean: () => null
       };
-      
       const wrappedInteraction = new Proxy(interaction, {
         get(target, prop) {
           if (prop === 'options') return mockOptions;
@@ -2258,18 +2263,159 @@ async function handleDiscoveryButton(interaction, action, params) {
           return target[prop];
         }
       });
-      
-      await command.execute(wrappedInteraction);
-    } catch (e) {
-      await interaction.editReply({ 
-        content: `🚀 Start your **${commandName}** journey with \`/${commandName}\`!` 
-      });
+      try {
+        await quizCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `🎯 Start your quiz with \`/quiz topic:${weakTopic || 'javascript'}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+          )]
+        });
+      }
     }
-  } else {
-    await interaction.editReply({ 
-      content: `🚀 Try \`/${commandName}\` to continue your growth path!` 
-    });
+    return;
   }
+  
+  // DAILY BONUS ATOMIC CLAIM
+  if (action === 'daily') {
+    await interaction.deferUpdate();
+    
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const user = await User.findOne({ discordId: interaction.user.id });
+    
+    const lastDaily = user?.lastDaily ? new Date(user.lastDaily) : null;
+    const canClaim = !lastDaily || lastDaily < todayStart;
+    
+    if (canClaim) {
+      // Atomic update
+      await User.updateOne(
+        { discordId: interaction.user.id },
+        { 
+          $inc: { xp: 50, 'prestige.totalXpEarned': 50, streak: 1 },
+          $set: { lastDaily: now }
+        }
+      );
+      
+      const newStreak = (user?.streak || 0) + 1;
+      const streakMultiplier = newStreak >= 30 ? 2.0 : newStreak >= 14 ? 1.5 : newStreak >= 7 ? 1.25 : newStreak >= 3 ? 1.1 : 1.0;
+      
+      const successEmbed = new EmbedBuilder()
+        .setColor(0x00FF88)
+        .setTitle('🎉 Daily Bonus Claimed!')
+        .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### ✨ Success Aura Activated
+
+⭐ **+50 XP** added to your journey!
+🔥 **Streak:** ${newStreak} days
+💫 **New Multiplier:** ${streakMultiplier}x
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `)
+        .setFooter({ text: 'MentorAI Growth Engine • Atomic XP Claim' })
+        .setTimestamp();
+      
+      const navRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('help_new').setLabel('View Growth Path').setEmoji('🚀').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+      );
+      
+      await interaction.editReply({ embeds: [successEmbed], components: [navRow] });
+    } else {
+      const nextReset = new Date(todayStart);
+      nextReset.setDate(nextReset.getDate() + 1);
+      const hoursLeft = Math.ceil((nextReset - now) / (1000 * 60 * 60));
+      
+      const alreadyClaimedEmbed = new EmbedBuilder()
+        .setColor(0xFFA500)
+        .setTitle('⏰ Daily Already Claimed')
+        .setDescription(`
+You've already claimed your daily bonus today!
+
+🔥 **Current Streak:** ${user?.streak || 0} days
+⏱️ **Next bonus in:** ~${hoursLeft} hours
+        `)
+        .setFooter({ text: 'MentorAI Growth Engine' });
+      
+      const navRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('help_new').setLabel('View Growth Path').setEmoji('🚀').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+      );
+      
+      await interaction.editReply({ embeds: [alreadyClaimedEmbed], components: [navRow] });
+    }
+    return;
+  }
+  
+  // LEARN RAG-PATH TRIGGER
+  if (action === 'learn') {
+    await interaction.deferUpdate();
+    
+    const loadingEmbed = new EmbedBuilder()
+      .setColor(0x5865F2)
+      .setTitle('📚 Generating Learning Path...')
+      .setDescription('`████████████░░░░` Consulting curriculum index...')
+      .setFooter({ text: 'MentorAI RAG-Path Generator' });
+    
+    await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+    await new Promise(r => setTimeout(r, 600));
+    
+    const { curriculumIndexer } = await import('../../core/curriculumIndexer.js');
+    const user = await User.findOne({ discordId: interaction.user.id });
+    
+    let targetTopic = 'javascript';
+    if (user?.topicAccuracy) {
+      const weakest = Object.entries(user.topicAccuracy)
+        .filter(([_, data]) => data.total >= 2)
+        .sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0];
+      if (weakest) targetTopic = weakest[0];
+    }
+    
+    const learnCommand = interaction.client.commands.get('learn');
+    if (learnCommand) {
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? targetTopic : null,
+        getInteger: () => null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await learnCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `📚 Start learning **${targetTopic}** with \`/learn topic:${targetTopic}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+          )]
+        });
+      }
+    }
+    return;
+  }
+  
+  // DEFAULT: Execute command
+  const commandMap = { flashcard: 'flashcard', challenge: 'challenge' };
+  const commandName = commandMap[action] || action;
+  
+  await interaction.deferUpdate();
+  await interaction.editReply({ 
+    content: `🚀 Try \`/${commandName}\` to continue your growth path!`,
+    components: [new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+    )]
+  });
 }
 
 async function handleModal(interaction) {
