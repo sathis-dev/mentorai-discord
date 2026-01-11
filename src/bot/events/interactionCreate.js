@@ -224,6 +224,11 @@ async function handleButton(interaction) {
     
     // ULTIMATE V6: Handle ALL help-related buttons with new unified handler
     if (category === 'help' || category === 'quick' || category === 'try') {
+      // ADAPTIVE ASSESSMENT: Intercept quick_quiz for diagnostic engine
+      if (interaction.customId === 'quick_quiz') {
+        await handleDiagnosticQuiz(interaction);
+        return;
+      }
       await handleHelpInteraction(interaction);
       return;
     }
@@ -380,6 +385,9 @@ async function handleButton(interaction) {
     } else if (category === 'trending') {
       // Handle trending surge buttons from Global Learning Pulse
       await handleTrendingSurgeButton(interaction, action, params);
+    } else if (category === 'diagnostic') {
+      // Handle diagnostic assessment buttons
+      await handleDiagnosticStartButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -2419,6 +2427,205 @@ You've already claimed your daily bonus today!
       new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
     )]
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// ADAPTIVE ASSESSMENT - Diagnostic Quiz Engine
+// ═══════════════════════════════════════════════════════════════════
+async function handleDiagnosticQuiz(interaction) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const { User } = await import('../../database/models/User.js');
+  const { xpForLevel } = await import('../../config/brandSystem.js');
+  
+  await interaction.deferUpdate();
+  
+  const loadingEmbed = new EmbedBuilder()
+    .setColor(0x5865F2)
+    .setTitle('🔬 Running Diagnostic Scan...')
+    .setDescription('`████████████░░░░` Analyzing your learning profile...')
+    .setFooter({ text: 'MentorAI Diagnostic Engine' });
+  
+  await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+  await new Promise(r => setTimeout(r, 800));
+  
+  const user = await User.findOne({ discordId: interaction.user.id });
+  const userLevel = user?.level || 1;
+  const userStreak = user?.streak || 0;
+  const userPrestige = user?.prestige?.level || 0;
+  
+  // Diagnostic Selector with Priority Hierarchy
+  let diagnosticResult = { type: 'expansion', topic: 'JavaScript', reason: 'Start your learning journey!', accuracy: null };
+  const allCurriculumTopics = ['JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'HTML', 'CSS', 'SQL', 'Algorithms'];
+  
+  if (user?.topicAccuracy) {
+    const topicEntries = Object.entries(user.topicAccuracy)
+      .filter(([_, data]) => data && data.total >= 2);
+    
+    // Priority 1: Critical Weakness (<60% accuracy)
+    const criticalWeakness = topicEntries
+      .map(([topic, data]) => ({ topic, accuracy: Math.round(((data.correct || 0) / (data.total || 1)) * 100) }))
+      .filter(t => t.accuracy < 60)
+      .sort((a, b) => a.accuracy - b.accuracy)[0];
+    
+    if (criticalWeakness) {
+      diagnosticResult = {
+        type: 'critical',
+        topic: criticalWeakness.topic,
+        reason: `Critical gap detected: ${criticalWeakness.accuracy}% accuracy`,
+        accuracy: criticalWeakness.accuracy
+      };
+    } else {
+      // Priority 2: Knowledge Expansion
+      const exploredTopics = topicEntries.map(([t]) => t.toLowerCase());
+      const unexplored = allCurriculumTopics.filter(t => !exploredTopics.includes(t.toLowerCase()));
+      
+      if (unexplored.length > 0) {
+        diagnosticResult = {
+          type: 'expansion',
+          topic: unexplored[0],
+          reason: `New territory: Expand into ${unexplored[0]}`,
+          accuracy: null
+        };
+      } else {
+        // Priority 3: Mastery Maintenance
+        const oldestTopic = topicEntries
+          .map(([topic, data]) => ({ topic, accuracy: Math.round(((data.correct || 0) / (data.total || 1)) * 100) }))
+          .sort((a, b) => a.accuracy - b.accuracy)[0];
+        
+        if (oldestTopic) {
+          diagnosticResult = {
+            type: 'maintenance',
+            topic: oldestTopic.topic,
+            reason: `Review: Reinforce ${oldestTopic.topic} mastery`,
+            accuracy: oldestTopic.accuracy
+          };
+        }
+      }
+    }
+  }
+  
+  // Level-Aware Difficulty Scaling
+  let difficultyTier = 'Fundamentals';
+  let difficultyDesc = 'Conceptual basics and syntax';
+  if (userLevel >= 25) {
+    difficultyTier = 'Advanced';
+    difficultyDesc = 'Architecture, edge-cases, security';
+  } else if (userLevel >= 10) {
+    difficultyTier = 'Intermediate';
+    difficultyDesc = 'Logic flow, error handling';
+  }
+  
+  // Reward Projection
+  const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
+  const prestigeMultiplier = 1 + (userPrestige * 0.1);
+  const totalMultiplier = streakMultiplier * prestigeMultiplier;
+  const baseQuizXP = 50;
+  const potentialXP = Math.floor(baseQuizXP * totalMultiplier);
+  const xpNeeded = xpForLevel(userLevel + 1);
+  const xpToNext = xpNeeded - (user?.xp || 0);
+  
+  const typeIcons = { critical: '🚨', expansion: '🌟', maintenance: '🔄' };
+  const typeColors = { critical: 0xED4245, expansion: 0x57F287, maintenance: 0x5865F2 };
+  
+  const diagnosticEmbed = new EmbedBuilder()
+    .setColor(typeColors[diagnosticResult.type])
+    .setTitle(`${typeIcons[diagnosticResult.type]} Diagnostic Complete`)
+    .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🔬 Scan Result
+**${diagnosticResult.reason}**
+
+📚 **Target:** ${diagnosticResult.topic}
+${diagnosticResult.accuracy !== null ? `📊 **Accuracy:** ${diagnosticResult.accuracy}%` : '🆕 **New territory**'}
+🎯 **Difficulty:** ${difficultyTier} - *${difficultyDesc}*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 💰 Reward Projection
+⭐ **Base:** ${baseQuizXP} XP
+🔥 **Streak:** ${streakMultiplier}x (${userStreak} days)
+✨ **Prestige:** ${prestigeMultiplier.toFixed(1)}x (P${userPrestige})
+💎 **Total:** ${potentialXP} XP (${totalMultiplier.toFixed(2)}x)
+
+📈 **${xpToNext} XP** to Level ${userLevel + 1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+    .setFooter({ text: `MentorAI Diagnostic • Level ${userLevel}`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setTimestamp();
+  
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`diagnostic_start_${diagnosticResult.topic.toLowerCase().replace(/\s+/g, '-')}`)
+      .setLabel('🎯 Begin Assessment')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('quick_quiz')
+      .setLabel('🔄 Rescan')
+      .setStyle(ButtonStyle.Primary)
+  );
+  
+  const navRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Hub')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+  
+  await interaction.editReply({ embeds: [diagnosticEmbed], components: [actionRow, navRow] });
+}
+
+// Handle diagnostic start button (Begin Assessment)
+async function handleDiagnosticStartButton(interaction, action, params) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  
+  if (action === 'start') {
+    const topic = params.join('-').replace(/-/g, ' ') || 'javascript';
+    
+    await interaction.deferUpdate();
+    
+    const loadingEmbed = new EmbedBuilder()
+      .setColor(0x57F287)
+      .setTitle('🎯 Initializing Assessment...')
+      .setDescription(`\`████████████░░░░\` Loading **${topic}** quiz...`)
+      .setFooter({ text: 'MentorAI Diagnostic Engine' });
+    
+    await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+    await new Promise(r => setTimeout(r, 500));
+    
+    const quizCommand = interaction.client.commands.get('quiz');
+    if (quizCommand) {
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await quizCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `🎯 Start your **${topic}** assessment with \`/quiz topic:${topic}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+          )]
+        });
+      }
+    }
+  } else {
+    await interaction.reply({ content: '✨ Starting diagnostic...', ephemeral: true });
+    await handleDiagnosticQuiz(interaction);
+  }
 }
 
 // Handle trending surge buttons from Global Learning Pulse
