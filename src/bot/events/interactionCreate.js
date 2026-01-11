@@ -377,6 +377,9 @@ async function handleButton(interaction) {
       // Handle both discovery_action_* and discovery_milestone_* prefixes
       const actualAction = action === 'milestone' ? params[0] : action;
       await handleDiscoveryButton(interaction, actualAction, params);
+    } else if (category === 'trending') {
+      // Handle trending surge buttons from Global Learning Pulse
+      await handleTrendingSurgeButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -2416,6 +2419,95 @@ You've already claimed your daily bonus today!
       new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
     )]
   });
+}
+
+// Handle trending surge buttons from Global Learning Pulse
+async function handleTrendingSurgeButton(interaction, action, params) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  
+  // Parse topic from params: trending_surge_quiz_javascript -> action=surge, params=[quiz, javascript]
+  const surgeType = action === 'surge' ? params[0] : action;
+  const topic = params.slice(1).join('-').replace(/-/g, ' ') || 'javascript';
+  
+  await interaction.deferUpdate();
+  
+  const loadingEmbed = new EmbedBuilder()
+    .setColor(0xFF6B35)
+    .setTitle('🔥 Joining the Surge...')
+    .setDescription(`\`████████████░░░░\` Connecting you to the **${topic}** community wave...`)
+    .setFooter({ text: 'MentorAI Global Pulse' });
+  
+  await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+  await new Promise(r => setTimeout(r, 600));
+  
+  if (surgeType === 'quiz') {
+    const quizCommand = interaction.client.commands.get('quiz');
+    if (quizCommand) {
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: (name) => name === 'questions' ? 5 : null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await quizCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `🔥 Join the **${topic}** surge with \`/quiz topic:${topic}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('help_popular').setLabel('Back to Pulse').setEmoji('🌐').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+          )]
+        });
+      }
+    }
+  } else if (surgeType === 'learn') {
+    const learnCommand = interaction.client.commands.get('learn');
+    if (learnCommand) {
+      const mockOptions = {
+        getString: (name) => name === 'topic' ? topic : null,
+        getInteger: () => null,
+        getBoolean: () => null
+      };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await learnCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `📚 Learn **${topic}** with the community using \`/learn topic:${topic}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId('help_popular').setLabel('Back to Pulse').setEmoji('🌐').setStyle(ButtonStyle.Primary),
+            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+          )]
+        });
+      }
+    }
+  } else {
+    await interaction.editReply({ 
+      content: `🔥 Explore **${topic}** with \`/quiz topic:${topic}\` or \`/learn topic:${topic}\`!`,
+      embeds: [],
+      components: [new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('help_popular').setLabel('Back to Pulse').setEmoji('🌐').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+      )]
+    });
+  }
 }
 
 async function handleModal(interaction) {
