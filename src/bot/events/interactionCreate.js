@@ -2247,8 +2247,8 @@ async function handleDiscoveryButton(interaction, action, params) {
     const user = await User.findOne({ discordId: interaction.user.id });
     const weakTopic = user?.topicAccuracy ? 
       Object.entries(user.topicAccuracy)
-        .filter(([_, data]) => data.total >= 3)
-        .sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0]?.[0] 
+        .filter(([_, data]) => data && data.total >= 3)
+        .sort((a, b) => ((a[1]?.correct || 0)/(a[1]?.total || 1)) - ((b[1]?.correct || 0)/(b[1]?.total || 1)))[0]?.[0] 
       : 'javascript';
     
     const quizCommand = interaction.client.commands.get('quiz');
@@ -2371,10 +2371,10 @@ You've already claimed your daily bonus today!
     const user = await User.findOne({ discordId: interaction.user.id });
     
     let targetTopic = 'javascript';
-    if (user?.topicAccuracy) {
+    if (user?.topicAccuracy && user.topicAccuracy !== null) {
       const weakest = Object.entries(user.topicAccuracy)
-        .filter(([_, data]) => data.total >= 2)
-        .sort((a, b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total))[0];
+        .filter(([_, data]) => data !== null && data.total >= 2)
+        .sort((a, b) => ((a[1]?.correct || 0)/(a[1]?.total || 1)) - ((b[1]?.correct || 0)/(b[1]?.total || 1)))[0];
       if (weakest) targetTopic = weakest[0];
     }
     
