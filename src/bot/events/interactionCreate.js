@@ -239,6 +239,11 @@ async function handleButton(interaction) {
         await handleDiagnosticQuiz(interaction);
         return;
       }
+      // SOVEREIGN SYLLABUS: Intercept quick_lesson for syllabus intelligence engine
+      if (interaction.customId === 'quick_lesson') {
+        await handleSovereignSyllabus(interaction);
+        return;
+      }
       await handleHelpInteraction(interaction);
       return;
     }
@@ -401,6 +406,9 @@ async function handleButton(interaction) {
     } else if (category === 'sovereign') {
       // Handle Sovereign UI quiz answer buttons
       await handleSovereignQuizButton(interaction, action, params);
+    } else if (category === 'syllabus') {
+      // Handle Sovereign Syllabus lesson buttons
+      await handleSyllabusStartButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -569,6 +577,9 @@ async function handleSelectMenu(interaction) {
     } else if (customId === 'diagnostic_override_topic') {
       // SOVEREIGN UI: Handle topic override from diagnostic engine
       await handleDiagnosticTopicOverride(interaction, value);
+    } else if (customId === 'syllabus_override_topic') {
+      // SOVEREIGN SYLLABUS: Handle topic override from syllabus engine
+      await handleSyllabusTopicOverride(interaction, value);
     } else {
       // Unknown select menu - provide fallback
       logger.warn(`Unknown select menu: ${customId}`);
@@ -2715,52 +2726,197 @@ XP = ⌊100 × 1.5^(L-1)⌋ × Multiplier
   await interaction.editReply({ embeds: [diagnosticEmbed], components: [actionRow, topicSelectRow, navRow] });
 }
 
-// Handle diagnostic topic override from select menu
-async function handleDiagnosticTopicOverride(interaction, selectedTopic) {
-  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+// ═══════════════════════════════════════════════════════════════════
+// SOVEREIGN SYLLABUS ENGINE - Predictive Curriculum Intelligence
+// ═══════════════════════════════════════════════════════════════════
+async function handleSovereignSyllabus(interaction) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = await import('discord.js');
+  const { User } = await import('../../database/models/User.js');
+  const { xpForLevel } = await import('../../config/brandSystem.js');
   
   await interaction.deferUpdate();
   
-  const topicName = selectedTopic.replace(/-/g, ' ');
-  const topicDisplay = topicName.charAt(0).toUpperCase() + topicName.slice(1);
+  const user = await User.findOne({ discordId: interaction.user.id });
+  const userLevel = user?.level || 1;
+  const userXP = user?.xp || 0;
+  const userStreak = user?.streak || 0;
+  const userPrestige = user?.prestige?.level || 0;
+  const lessonsCompleted = user?.completedLessons?.length || 0;
+  const quizzesTaken = user?.quizzesTaken || 0;
   
+  const getTierInfo = (level) => {
+    if (level >= 50) return { name: 'Legend', emoji: '👑', color: 0xFF6B35, title: 'LEGENDARY MENTOR' };
+    if (level >= 30) return { name: 'Diamond', emoji: '💎', color: 0x00D4FF, title: 'MASTER CODER' };
+    if (level >= 20) return { name: 'Platinum', emoji: '🏆', color: 0xE5E4E2, title: 'EXPERT DEV' };
+    if (level >= 10) return { name: 'Gold', emoji: '🥇', color: 0xFFD700, title: 'SKILLED CODER' };
+    if (level >= 5) return { name: 'Silver', emoji: '🥈', color: 0xC0C0C0, title: 'KEEN LEARNER' };
+    return { name: 'Bronze', emoji: '🥉', color: 0xCD7F32, title: 'NEW EXPLORER' };
+  };
+  const tier = getTierInfo(userLevel);
+  
+  const loadingEmbed = new EmbedBuilder()
+    .setColor(tier.color)
+    .setTitle(`${tier.emoji} ${tier.name} Tier • Syllabus Scan`)
+    .setDescription(`\`████████░░░░░░░░\` Analyzing learning history...\n\`████████████░░░░\` Cross-referencing curriculum...\n\`████████████████\` Generating personalized path...`)
+    .setFooter({ text: `MentorAI Syllabus Engine • ${tier.title}` });
+  
+  await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+  await new Promise(r => setTimeout(r, 800));
+  
+  const curriculumTopics = [
+    { id: 'JS-CORE-01', name: 'JavaScript', difficulty: 'Fundamentals', minLevel: 1, xpReward: 40 },
+    { id: 'PY-CORE-01', name: 'Python', difficulty: 'Fundamentals', minLevel: 1, xpReward: 40 },
+    { id: 'JS-ASYNC-04', name: 'JavaScript Async', difficulty: 'Intermediate', minLevel: 5, xpReward: 60 },
+    { id: 'REACT-01', name: 'React', difficulty: 'Intermediate', minLevel: 8, xpReward: 60 },
+    { id: 'NODE-01', name: 'Node.js', difficulty: 'Intermediate', minLevel: 10, xpReward: 60 },
+    { id: 'TS-CORE-01', name: 'TypeScript', difficulty: 'Advanced', minLevel: 15, xpReward: 80 },
+    { id: 'SQL-01', name: 'SQL', difficulty: 'Intermediate', minLevel: 5, xpReward: 50 },
+    { id: 'HTML-CSS-01', name: 'HTML & CSS', difficulty: 'Fundamentals', minLevel: 1, xpReward: 35 }
+  ];
+  
+  let recommendation = { type: 'onboarding', topic: curriculumTopics[0], xaiReasoning: 'Starting with JavaScript fundamentals.' };
+  
+  if (user?.topicAccuracy) {
+    const topicEntries = Object.entries(user.topicAccuracy);
+    const lowAccuracyTopics = topicEntries
+      .map(([topic, data]) => ({ topic, accuracy: Math.round(((data.correct || 0) / (data.total || 1)) * 100), attempts: data.total || 0 }))
+      .filter(t => t.accuracy < 50 && t.attempts >= 3)
+      .sort((a, b) => a.accuracy - b.accuracy);
+    
+    if (lowAccuracyTopics.length > 0) {
+      const weakTopic = lowAccuracyTopics[0];
+      const matchingCurriculum = curriculumTopics.find(c => c.name.toLowerCase().includes(weakTopic.topic.toLowerCase())) || curriculumTopics[0];
+      recommendation = { type: 'mastery_review', topic: matchingCurriculum, accuracy: weakTopic.accuracy, xaiReasoning: `Your **${weakTopic.topic}** accuracy is ${weakTopic.accuracy}%. A focused review will boost your mastery.` };
+    } else {
+      const exploredTopics = topicEntries.map(([t]) => t.toLowerCase());
+      const nextTopic = curriculumTopics.find(c => c.minLevel <= userLevel && !exploredTopics.some(e => c.name.toLowerCase().includes(e)));
+      if (nextTopic) recommendation = { type: 'expansion', topic: nextTopic, xaiReasoning: `Based on your Level ${userLevel} status, we recommend **${nextTopic.name}** to expand your skill tree.` };
+    }
+  }
+  
+  const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
+  const prestigeMultiplier = 1 + (userPrestige * 0.1);
+  const totalMultiplier = streakMultiplier * prestigeMultiplier;
+  const projectedXP = Math.floor(recommendation.topic.xpReward * totalMultiplier);
+  const xpToNextLevel = xpForLevel(userLevel + 1);
+  const xpRemaining = Math.max(0, xpToNextLevel - userXP);
+  const progressPercent = Math.min(100, Math.round((userXP / xpToNextLevel) * 100));
+  const progressBar = (pct) => '█'.repeat(Math.round(pct / 10)) + '░'.repeat(10 - Math.round(pct / 10));
+  
+  const typeIcons = { mastery_review: '🔄', expansion: '🌟', onboarding: '🚀' };
+  const typeLabels = { mastery_review: 'Mastery Review Recommended', expansion: 'Knowledge Expansion', onboarding: 'Learning Path Start' };
+  
+  const syllabusEmbed = new EmbedBuilder()
+    .setColor(tier.color)
+    .setTitle(`${tier.emoji} ${tier.name} Tier • Mastery Path Dashboard`)
+    .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### ${typeIcons[recommendation.type]} ${typeLabels[recommendation.type]}\n**Suggested Lesson:** ${recommendation.topic.name}\n**Difficulty:** ${recommendation.topic.difficulty}\n**Reference:** \`[${recommendation.topic.id}]\`\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 🧠 AI Reasoning (XAI)\n${recommendation.xaiReasoning}\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 📊 Level ${userLevel} → ${userLevel + 1} Progress\n\`[${progressBar(progressPercent)}]\` **${progressPercent}%** (${userXP}/${xpToNextLevel} XP)\n📈 **${xpRemaining} XP** remaining • This lesson: **+${projectedXP} XP**\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 💰 Multiplier HUD\n\`\`\`\nXP = ⌊100 × 1.5^(L-1)⌋ × Multiplier\n\n🔥 Streak:   ${streakMultiplier.toFixed(2)}x (${userStreak} days)\n✨ Prestige: ${prestigeMultiplier.toFixed(2)}x (P${userPrestige})\n━━━━━━━━━━━━━━━━━━━━━━━━━\n💎 TOTAL:    ${totalMultiplier.toFixed(2)}x → ${projectedXP} XP/lesson\n\`\`\`\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 📚 Your Learning Stats\n📖 **${lessonsCompleted}** lessons completed • 🎯 **${quizzesTaken}** quizzes taken\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+    .setFooter({ text: `MentorAI Syllabus Engine • ${tier.name} Tier • Level ${userLevel}` })
+    .setTimestamp();
+  
+  const syllabusActionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`syllabus_start_${recommendation.topic.name.toLowerCase().replace(/\s+/g, '-')}`).setLabel('🚀 Start Lesson').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('quick_lesson').setLabel('🔄 Rescan').setStyle(ButtonStyle.Primary)
+  );
+  
+  const syllabusTopicRow = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder().setCustomId('syllabus_override_topic').setPlaceholder('📚 Choose Different Topic...').addOptions(curriculumTopics.filter(t => t.minLevel <= userLevel + 5).map(topic => ({ label: topic.name, value: topic.name.toLowerCase().replace(/\s+/g, '-'), description: `${topic.difficulty} • +${Math.floor(topic.xpReward * totalMultiplier)} XP`, emoji: topic.name === recommendation.topic.name ? '🎯' : '📖', default: topic.name === recommendation.topic.name })))
+  );
+  
+  const syllabusNavRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary));
+  
+  await interaction.editReply({ embeds: [syllabusEmbed], components: [syllabusActionRow, syllabusTopicRow, syllabusNavRow] });
+}
+
+// Handle syllabus start button
+async function handleSyllabusStartButton(interaction, action, params) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+
+  if (action === 'start') {
+    const topic = params.join('-').replace(/-/g, ' ') || 'javascript';
+    const topicDisplay = topic.charAt(0).toUpperCase() + topic.slice(1);
+
+    await interaction.deferUpdate();
+
+    const loadingEmbed = new EmbedBuilder()
+      .setColor(0x57F287)
+      .setTitle('📚 Initializing Lesson...')
+      .setDescription(`\`████████████████\` Loading **${topicDisplay}** curriculum...`)
+      .setFooter({ text: 'MentorAI Syllabus Engine' });
+
+    await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+    await new Promise(r => setTimeout(r, 500));
+
+    const learnCommand = interaction.client.commands.get('learn');
+    if (learnCommand) {
+      const mockOptions = { getString: (name) => name === 'topic' ? topic : null, getInteger: () => null, getBoolean: () => null };
+      const wrappedInteraction = new Proxy(interaction, {
+        get(target, prop) {
+          if (prop === 'options') return mockOptions;
+          if (prop === 'replied') return true;
+          if (prop === 'deferred') return true;
+          return target[prop];
+        }
+      });
+      try {
+        await learnCommand.execute(wrappedInteraction);
+      } catch (e) {
+        await interaction.editReply({ 
+          content: `📚 Start your **${topicDisplay}** lesson with \`/learn topic:${topic}\`!`,
+          embeds: [],
+          components: [new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary))]
+        });
+      }
+    }
+  } else {
+    await interaction.reply({ content: '✨ Loading syllabus...', ephemeral: true });
+    await handleSovereignSyllabus(interaction);
+  }
+}
+
+// Handle syllabus topic override
+async function handleSyllabusTopicOverride(interaction, selectedTopic) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+
+  await interaction.deferUpdate();
+  const topicDisplay = selectedTopic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  const confirmEmbed = new EmbedBuilder()
+    .setColor(0x57F287)
+    .setTitle('✅ Topic Selection Confirmed')
+    .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 📚 Manual Selection\n**Lesson:** ${topicDisplay}\n\n*Click below to start your lesson.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
+    .setFooter({ text: 'MentorAI Syllabus Engine • Manual Override' })
+    .setTimestamp();
+
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`syllabus_start_${selectedTopic}`).setLabel('🚀 Start Lesson').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('quick_lesson').setLabel('🔄 Back to AI Scan').setStyle(ButtonStyle.Primary)
+  );
+  const navRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary));
+
+  await interaction.editReply({ embeds: [confirmEmbed], components: [actionRow, navRow] });
+}
+
+// Handle diagnostic topic override from select menu
+async function handleDiagnosticTopicOverride(interaction, selectedTopic) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+
+  await interaction.deferUpdate();
+  const topicDisplay = selectedTopic.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
   const confirmEmbed = new EmbedBuilder()
     .setColor(0x57F287)
     .setTitle('✅ Topic Override Confirmed')
-    .setDescription(`
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-### 📚 Manual Selection
-**Target:** ${topicDisplay}
-
-*You have overridden the AI recommendation.*
-*Click below to start your assessment.*
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    `)
+    .setDescription(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n### 📚 Manual Selection\n**Target:** ${topicDisplay}\n\n*Click below to start your assessment.*\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`)
     .setFooter({ text: 'MentorAI Sovereign Engine • Manual Override' })
     .setTimestamp();
-  
-  const overrideActionRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`diagnostic_start_${selectedTopic}`)
-      .setLabel('🚀 Initiate Assessment')
-      .setStyle(ButtonStyle.Success),
-    new ButtonBuilder()
-      .setCustomId('quick_quiz')
-      .setLabel('🔄 Back to AI Scan')
-      .setStyle(ButtonStyle.Primary)
+
+  const actionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`diagnostic_start_${selectedTopic}`).setLabel('🚀 Initiate Assessment').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('quick_quiz').setLabel('🔄 Back to AI Scan').setStyle(ButtonStyle.Primary)
   );
-  
-  const overrideNavRow = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId('help_back_main')
-      .setLabel('Back to Hub')
-      .setEmoji('🏠')
-      .setStyle(ButtonStyle.Secondary)
-  );
-  
-  await interaction.editReply({ embeds: [confirmEmbed], components: [overrideActionRow, overrideNavRow] });
+  const navRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary));
+
+  await interaction.editReply({ embeds: [confirmEmbed], components: [actionRow, navRow] });
 }
 
 // Handle diagnostic start button (Begin Assessment)
