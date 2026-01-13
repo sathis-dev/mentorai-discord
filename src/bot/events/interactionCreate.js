@@ -2668,31 +2668,33 @@ async function handleTrendingSurgeButton(interaction, action, params) {
   const potentialXP = Math.floor(baseQuizXP * totalMultiplier);
   
   // Fetch live community stats (simulated from aggregation)
-  let communityStats = { learners: 112, successRate: 80 };
+  let communityStats = { learners: 0, successRate: 0 };
   try {
-    const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const topicLower = topic.toLowerCase();
-    const activeCount = await User.countDocuments({
-      lastActive: { $gte: last24h },
-      [`topicAccuracy.${topicLower}`]: { $exists: true }
-    });
-    communityStats.learners = Math.max(activeCount, 15) + Math.floor(Math.random() * 50);
     
-    // Calculate success rate from aggregation
-    const users = await User.find({ [`topicAccuracy.${topicLower}`]: { $exists: true } }).limit(50);
-    if (users.length > 0) {
-      let totalCorrect = 0, totalAttempts = 0;
-      users.forEach(u => {
-        const data = u.topicAccuracy?.[topicLower] || u.topicAccuracy?.[topic];
-        if (data && data.total > 0) {
-          totalCorrect += data.correct || 0;
-          totalAttempts += data.total;
-        }
-      });
-      if (totalAttempts > 0) communityStats.successRate = Math.round((totalCorrect / totalAttempts) * 100);
+    // Count unique learners who have studied this topic (all time)
+    const learnersAgg = await User.aggregate([
+      { $match: { [`topicAccuracy.${topicLower}`]: { $exists: true } } },
+      { $project: { accuracy: `$topicAccuracy.${topicLower}` } },
+      { $match: { 'accuracy.total': { $gte: 1 } } },
+      { $group: {
+        _id: null,
+        count: { $sum: 1 },
+        totalCorrect: { $sum: '$accuracy.correct' },
+        totalAttempts: { $sum: '$accuracy.total' }
+      }}
+    ]);
+    
+    if (learnersAgg.length > 0) {
+      const agg = learnersAgg[0];
+      communityStats.learners = agg.count || 0;
+      communityStats.successRate = agg.totalAttempts > 0 
+        ? Math.round((agg.totalCorrect / agg.totalAttempts) * 100) 
+        : 0;
     }
   } catch (e) {
-    // Use defaults on error
+    // Real data failed - show zeros, not fake numbers
+    communityStats = { learners: 0, successRate: 0 };
   }
   
   // ═══════════════════════════════════════════════════════════════════
