@@ -11,7 +11,7 @@ import {
   TextInputStyle
 } from 'discord.js';
 import { COLORS } from '../../config/designSystem.js';
-import { getAdminStats, getBotHealth, getRecentActivity } from '../../services/adminService.js';
+import { getAdminStats, getBotHealth, getRecentActivity, getUnifiedStats, repairHistoricalUsers } from '../../services/adminService.js';
 
 // Bot Owner IDs - Only these users can access /admin
 // Add IDs via BOT_OWNER_IDS env variable (comma-separated) or directly here

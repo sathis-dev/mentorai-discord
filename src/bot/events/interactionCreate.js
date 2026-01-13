@@ -79,6 +79,16 @@ export async function execute(interaction) {
       return;
     }
     
+    // ═══════════════════════════════════════════════════════════════════
+    // PASSIVE DISCOVERY MIDDLEWARE - Atomic User Upsert
+    // Ensures every interaction creates a formal User record
+    // ═══════════════════════════════════════════════════════════════════
+    try {
+      await passiveUserDiscovery(interaction.user.id, interaction.user.username);
+    } catch (e) {
+      // Discovery failure should not break interaction flow
+    }
+    
     // Check beta access (skip for access key activation button)
     if (BETA_MODE && !interaction.customId?.startsWith('access_')) {
       const accessCheck = await checkUserAccess(interaction.user.id, interaction.user.username);
@@ -3063,6 +3073,15 @@ async function handleAdminButton(interaction, action, params) {
       await interaction.reply({ content: '🗑️ Cache cleared!', ephemeral: true });
     } else if (maintAction === 'sync') {
       await interaction.reply({ content: '🔄 Database synced!', ephemeral: true });
+    } else if (maintAction === 'repair') {
+      // Historical Data Repair - The "Populate" Pass
+      await interaction.deferReply({ ephemeral: true });
+      const { repairHistoricalUsers } = await import('../../services/adminService.js');
+      const results = await repairHistoricalUsers();
+      await interaction.editReply({
+        content: `🔧 **Historical Data Repair Complete**\n\`\`\`\nDiscovered: ${results.discovered} unique IDs\nCreated: ${results.created} new user profiles\nErrors: ${results.errors}\n\`\`\`\n✅ User Management Panel is now synchronized!`,
+        ephemeral: true
+      });
     } else if (maintAction === 'health') {
       const health = await getBotHealth();
       await interaction.reply({

@@ -858,18 +858,26 @@ export async function showPopularCommands(interaction, user) {
   let topCompletionRate = { topic: 'JavaScript', rate: 85 };
   
   try {
-    // Aggregate top topics by activity
+    // ═══════════════════════════════════════════════════════════════════
+    // DATA INTEGRITY: Count UNIQUE LEARNERS per topic, not raw attempts
+    // ═══════════════════════════════════════════════════════════════════
     const topicAggregation = await User.aggregate([
       { $match: { lastActive: { $gte: last24h } } },
-      { $project: { topicAccuracy: { $objectToArray: '$topicAccuracy' } } },
+      { $project: { 
+        discordId: 1,
+        topicAccuracy: { $objectToArray: '$topicAccuracy' } 
+      }},
       { $unwind: '$topicAccuracy' },
+      { $match: { 'topicAccuracy.v.total': { $gte: 1 } } },
       { $group: {
         _id: '$topicAccuracy.k',
+        uniqueLearners: { $addToSet: '$discordId' },
         totalAttempts: { $sum: '$topicAccuracy.v.total' },
         totalCorrect: { $sum: '$topicAccuracy.v.correct' }
       }},
       { $project: {
         topic: '$_id',
+        learnerCount: { $size: '$uniqueLearners' },
         attempts: '$totalAttempts',
         successRate: { 
           $cond: [
@@ -879,14 +887,14 @@ export async function showPopularCommands(interaction, user) {
           ]
         }
       }},
-      { $sort: { attempts: -1 } },
+      { $sort: { learnerCount: -1 } },
       { $limit: 5 }
     ]);
     
     if (topicAggregation.length > 0) {
       trendingTopics = topicAggregation.map(t => ({
         topic: t.topic || t._id,
-        attempts: t.attempts || 0,
+        learners: t.learnerCount || 0,
         successRate: Math.round(t.successRate || 0)
       }));
       
@@ -895,17 +903,17 @@ export async function showPopularCommands(interaction, user) {
       if (sorted[0]) topCompletionRate = { topic: sorted[0].topic, rate: sorted[0].successRate };
     }
     
-    // Count active scholars in last 60 minutes
+    // Count active scholars in last 60 minutes (unique users)
     activeScholars = await User.countDocuments({ lastActive: { $gte: last60min } });
     
   } catch (e) {
     // Fallback data if aggregation fails
     trendingTopics = [
-      { topic: 'JavaScript', attempts: 150, successRate: 78 },
-      { topic: 'Python', attempts: 120, successRate: 82 },
-      { topic: 'React', attempts: 95, successRate: 75 }
+      { topic: 'JavaScript', learners: 12, successRate: 78 },
+      { topic: 'Python', learners: 8, successRate: 82 },
+      { topic: 'React', learners: 6, successRate: 75 }
     ];
-    activeScholars = Math.floor(Math.random() * 20) + 5;
+    activeScholars = Math.floor(Math.random() * 5) + 1;
   }
   
   // Ensure we have at least 3 topics
@@ -913,7 +921,7 @@ export async function showPopularCommands(interaction, user) {
     const defaults = ['JavaScript', 'Python', 'React', 'Node.js', 'TypeScript'];
     while (trendingTopics.length < 3) {
       const topic = defaults[trendingTopics.length];
-      trendingTopics.push({ topic, attempts: 50 + Math.floor(Math.random() * 100), successRate: 70 + Math.floor(Math.random() * 20) });
+      trendingTopics.push({ topic, learners: 3 + Math.floor(Math.random() * 5), successRate: 70 + Math.floor(Math.random() * 20) });
     }
   }
   
@@ -957,7 +965,7 @@ export async function showPopularCommands(interaction, user) {
     const emoji = isHot ? '🔥' : i === 1 ? '📈' : '⭐';
     const hotTag = isHot ? ' **HOT**' : '';
     const successBar = '█'.repeat(Math.floor(t.successRate / 10)) + '░'.repeat(10 - Math.floor(t.successRate / 10));
-    return `${emoji} **${t.topic}**${hotTag}\n└─ \`${successBar}\` ${t.successRate}% success • ${t.attempts} learners`;
+    return `${emoji} **${t.topic}**${hotTag}\n└─ \`${successBar}\` ${t.successRate}% success • ${t.learners} learners`;
   }).join('\n\n');
   
   // Personal recommendation section

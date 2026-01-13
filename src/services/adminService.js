@@ -437,3 +437,127 @@ export async function broadcastMessage(client, title, message, type = 'info') {
   addLog('BROADCAST', 'Sent to ' + successCount + ' servers, failed: ' + failCount);
   return { success: successCount, failed: failCount };
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// HISTORICAL DATA REPAIR - The "Populate" Pass
+// Scans Quiz/Lesson sessions and creates User profiles for missing IDs
+// ═══════════════════════════════════════════════════════════════════
+export async function repairHistoricalUsers() {
+  const results = { discovered: 0, created: 0, errors: 0 };
+  
+  try {
+    // Get all unique userIds from Quiz sessions
+    const quizUserIds = await Quiz.distinct('userId');
+    const lessonUserIds = await Lesson.distinct('userId');
+    
+    // Combine and dedupe
+    const allUserIds = [...new Set([...quizUserIds, ...lessonUserIds])].filter(Boolean);
+    results.discovered = allUserIds.length;
+    
+    // Check each userId against Users collection
+    for (const discordId of allUserIds) {
+      try {
+        const existingUser = await User.findOne({ discordId });
+        
+        if (!existingUser) {
+          // Create basic profile for missing user
+          await User.create({
+            discordId,
+            username: `User_${discordId.slice(-6)}`,
+            xp: 0,
+            level: 1,
+            streak: 0,
+            quizzesTaken: 0,
+            correctAnswers: 0,
+            totalQuestions: 0,
+            achievements: [],
+            completedLessons: [],
+            topicsStudied: [],
+            topicAccuracy: {},
+            createdAt: new Date(),
+            lastActive: new Date()
+          });
+          results.created++;
+        }
+      } catch (e) {
+        results.errors++;
+      }
+    }
+    
+    addLog('MAINTENANCE', `Historical repair: ${results.discovered} discovered, ${results.created} created, ${results.errors} errors`);
+    return results;
+  } catch (error) {
+    console.error('Historical repair error:', error);
+    addLog('ERROR', 'Historical repair failed: ' + error.message);
+    return results;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// UNIFIED STATISTICS - High-precision metrics matching Global Pulse
+// ═══════════════════════════════════════════════════════════════════
+export async function getUnifiedStats() {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const last24h = new Date(now - 24 * 60 * 60 * 1000);
+  const last60min = new Date(now - 60 * 60 * 1000);
+  
+  try {
+    // Total unique users (authoritative count)
+    const totalUsers = await User.countDocuments();
+    
+    // Active today (unique users with lastActive >= todayStart)
+    const activeToday = await User.countDocuments({ lastActive: { $gte: todayStart } });
+    
+    // Active in last 60 minutes (for Global Pulse sync)
+    const activeNow = await User.countDocuments({ lastActive: { $gte: last60min } });
+    
+    // Aggregated user stats using unified formula
+    const userAgg = await User.aggregate([
+      {
+        $group: {
+          _id: null,
+          avgLevel: { $avg: '$level' },
+          topLevel: { $max: '$level' },
+          avgStreak: { $avg: '$streak' },
+          totalXp: { $sum: '$xp' }
+        }
+      }
+    ]);
+    
+    const agg = userAgg[0] || {};
+    
+    // Topic learner counts (unique users per topic)
+    const topicLearners = await User.aggregate([
+      { $project: { topicAccuracy: { $objectToArray: '$topicAccuracy' } } },
+      { $unwind: '$topicAccuracy' },
+      { $match: { 'topicAccuracy.v.total': { $gte: 1 } } },
+      { $group: { _id: '$topicAccuracy.k', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 }
+    ]);
+    
+    return {
+      totalUsers,
+      activeToday,
+      activeNow,
+      avgLevel: Math.round(agg.avgLevel || 1),
+      topLevel: agg.topLevel || 1,
+      avgStreak: Math.round(agg.avgStreak || 0),
+      totalXp: agg.totalXp || 0,
+      topicLearners: topicLearners.map(t => ({ topic: t._id, learners: t.count }))
+    };
+  } catch (error) {
+    console.error('Unified stats error:', error);
+    return {
+      totalUsers: 0,
+      activeToday: 0,
+      activeNow: 0,
+      avgLevel: 1,
+      topLevel: 1,
+      avgStreak: 0,
+      totalXp: 0,
+      topicLearners: []
+    };
+  }
+}
