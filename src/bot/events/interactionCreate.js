@@ -398,6 +398,9 @@ async function handleButton(interaction) {
     } else if (category === 'diagnostic') {
       // Handle diagnostic assessment buttons
       await handleDiagnosticStartButton(interaction, action, params);
+    } else if (category === 'sovereign') {
+      // Handle Sovereign UI quiz answer buttons
+      await handleSovereignQuizButton(interaction, action, params);
     } else {
       // Unknown button category - provide fallback
       logger.warn(`Unknown button category: ${category}_${action}`);
@@ -2763,51 +2766,450 @@ async function handleDiagnosticTopicOverride(interaction, selectedTopic) {
 // Handle diagnostic start button (Begin Assessment)
 async function handleDiagnosticStartButton(interaction, action, params) {
   const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const { User } = await import('../../database/models/User.js');
+  const { createQuizSession } = await import('../../services/quizService.js');
+  const { xpForLevel } = await import('../../config/brandSystem.js');
   
   if (action === 'start') {
     const topic = params.join('-').replace(/-/g, ' ') || 'javascript';
+    const topicDisplay = topic.charAt(0).toUpperCase() + topic.slice(1);
     
     await interaction.deferUpdate();
     
+    // ═══════════════════════════════════════════════════════════════════
+    // PHASE 1: Fetch User Stats & Lock Multipliers
+    // ═══════════════════════════════════════════════════════════════════
+    
+    const user = await User.findOne({ discordId: interaction.user.id });
+    const userLevel = user?.level || 1;
+    const userXP = user?.xp || 0;
+    const userStreak = user?.streak || 0;
+    const userPrestige = user?.prestige?.level || 0;
+    
+    // Lock multipliers at assessment start
+    const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
+    const prestigeMultiplier = 1 + (userPrestige * 0.1);
+    const totalMultiplier = streakMultiplier * prestigeMultiplier;
+    const baseXP = Math.floor(100 * Math.pow(1.5, userLevel - 1));
+    const xpPerCorrect = Math.floor(50 * totalMultiplier);
+    const xpToNextLevel = xpForLevel(userLevel + 1) - userXP;
+    
+    // Tier detection
+    const getTierInfo = (level) => {
+      if (level >= 50) return { name: 'Legend', emoji: '👑', color: 0xFF6B35, icon: '👑' };
+      if (level >= 30) return { name: 'Diamond', emoji: '💎', color: 0x00D4FF, icon: '💎' };
+      if (level >= 20) return { name: 'Platinum', emoji: '🏆', color: 0xE5E4E2, icon: '🏆' };
+      if (level >= 10) return { name: 'Gold', emoji: '🥇', color: 0xFFD700, icon: '🥇' };
+      if (level >= 5) return { name: 'Silver', emoji: '🥈', color: 0xC0C0C0, icon: '🥈' };
+      return { name: 'Bronze', emoji: '🥉', color: 0xCD7F32, icon: '🥉' };
+    };
+    const tier = getTierInfo(userLevel);
+    
+    // Difficulty based on level
+    let difficulty = 'easy';
+    let difficultyLabel = 'Fundamentals';
+    if (userLevel >= 25) { difficulty = 'hard'; difficultyLabel = 'Advanced'; }
+    else if (userLevel >= 10) { difficulty = 'medium'; difficultyLabel = 'Intermediate'; }
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // PHASE 2: Loading Transition with Multiplier Lock Confirmation
+    // ═══════════════════════════════════════════════════════════════════
+    
     const loadingEmbed = new EmbedBuilder()
-      .setColor(0x57F287)
-      .setTitle('🎯 Initializing Assessment...')
-      .setDescription(`\`████████████░░░░\` Loading **${topic}** quiz...`)
-      .setFooter({ text: 'MentorAI Diagnostic Engine' });
+      .setColor(tier.color)
+      .setTitle(`${tier.emoji} ${tier.name} Tier • Initializing Assessment`)
+      .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\`████████░░░░░░░░\` Fetching ${topicDisplay} questions...
+\`████████████░░░░\` Calibrating to ${difficultyLabel} difficulty...
+\`████████████████\` Locking multipliers...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 🔒 Multipliers Locked
+\`\`\`
+🔥 Streak:   ${streakMultiplier.toFixed(2)}x (${userStreak} days)
+✨ Prestige: ${prestigeMultiplier.toFixed(2)}x (P${userPrestige})
+━━━━━━━━━━━━━━━━━━━━━━━━━
+💎 TOTAL:    ${totalMultiplier.toFixed(2)}x → ${xpPerCorrect} XP/correct
+\`\`\`
+
+📈 **${xpToNextLevel} XP** to Level ${userLevel + 1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `)
+      .setFooter({ text: `MentorAI Assessment Engine • ${tier.name} Tier` })
+      .setTimestamp();
     
     await interaction.editReply({ embeds: [loadingEmbed], components: [] });
-    await new Promise(r => setTimeout(r, 500));
     
-    const quizCommand = interaction.client.commands.get('quiz');
-    if (quizCommand) {
-      const mockOptions = {
-        getString: (name) => name === 'topic' ? topic : null,
-        getInteger: (name) => name === 'questions' ? 5 : null,
-        getBoolean: () => null
-      };
-      const wrappedInteraction = new Proxy(interaction, {
-        get(target, prop) {
-          if (prop === 'options') return mockOptions;
-          if (prop === 'replied') return true;
-          if (prop === 'deferred') return true;
-          return target[prop];
-        }
+    // ═══════════════════════════════════════════════════════════════════
+    // PHASE 3: Create Quiz Session with RAG-Grounded Questions
+    // ═══════════════════════════════════════════════════════════════════
+    
+    const numQuestions = 5;
+    const session = await createQuizSession(interaction.user.id, topic, numQuestions, difficulty);
+    
+    if (!session || session.error) {
+      const errorEmbed = new EmbedBuilder()
+        .setColor(0xED4245)
+        .setTitle('❌ Assessment Generation Failed')
+        .setDescription(session?.message || 'Unable to generate quiz questions. Please try again.')
+        .setFooter({ text: 'MentorAI Assessment Engine' });
+      
+      await interaction.editReply({ 
+        embeds: [errorEmbed], 
+        components: [new ActionRowBuilder().addComponents(
+          new ButtonBuilder().setCustomId('quick_quiz').setLabel('🔄 Retry').setStyle(ButtonStyle.Primary),
+          new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+        )]
       });
-      try {
-        await quizCommand.execute(wrappedInteraction);
-      } catch (e) {
-        await interaction.editReply({ 
-          content: `🎯 Start your **${topic}** assessment with \`/quiz topic:${topic}\`!`,
-          embeds: [],
-          components: [new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
-          )]
-        });
-      }
+      return;
     }
+    
+    await new Promise(r => setTimeout(r, 800));
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // PHASE 4: Display First Question with Sovereign UI
+    // ═══════════════════════════════════════════════════════════════════
+    
+    const currentQ = session.questions[0];
+    const questionNum = 1;
+    const totalQuestions = session.questions.length;
+    
+    // Progress bar for questions
+    const questionProgress = (current, total) => {
+      const filled = Math.round((current / total) * 10);
+      return '█'.repeat(filled) + '░'.repeat(10 - filled);
+    };
+    
+    // Format options with emojis
+    const optionEmojis = ['🔵', '🟢', '🟡', '🟣'];
+    const optionLabels = ['A', 'B', 'C', 'D'];
+    const formattedOptions = currentQ.options.map((opt, i) => 
+      `${optionEmojis[i]} **${optionLabels[i]}.** ${opt}`
+    ).join('\n\n');
+    
+    // Code snippet detection
+    const hasCodeBlock = currentQ.question.includes('```') || currentQ.question.includes('`');
+    const questionText = hasCodeBlock ? currentQ.question : `**${currentQ.question}**`;
+    
+    const quizEmbed = new EmbedBuilder()
+      .setColor(tier.color)
+      .setTitle(`${tier.emoji} ${topicDisplay} Assessment • Question ${questionNum}/${totalQuestions}`)
+      .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 Progress
+\`[${questionProgress(questionNum - 1, totalQuestions)}]\` ${questionNum - 1}/${totalQuestions} complete
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${questionText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formattedOptions}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      `)
+      .setFooter({ text: `${tier.name} Tier • ${difficultyLabel} • ${xpPerCorrect} XP per correct answer` })
+      .setTimestamp();
+    
+    // ═══════════════════════════════════════════════════════════════════
+    // PHASE 5: Answer Buttons with Session Tracking
+    // ═══════════════════════════════════════════════════════════════════
+    
+    const answerRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`sovereign_answer_${session.sessionId || session.quizId}_0`)
+        .setLabel('A')
+        .setEmoji('🔵')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`sovereign_answer_${session.sessionId || session.quizId}_1`)
+        .setLabel('B')
+        .setEmoji('🟢')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`sovereign_answer_${session.sessionId || session.quizId}_2`)
+        .setLabel('C')
+        .setEmoji('🟡')
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`sovereign_answer_${session.sessionId || session.quizId}_3`)
+        .setLabel('D')
+        .setEmoji('🟣')
+        .setStyle(ButtonStyle.Secondary)
+    );
+    
+    const utilityRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`sovereign_hint_${session.sessionId || session.quizId}`)
+        .setLabel('💡 Hint')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId(`sovereign_5050_${session.sessionId || session.quizId}`)
+        .setLabel('50/50')
+        .setStyle(ButtonStyle.Primary),
+      new ButtonBuilder()
+        .setCustomId('help_back_main')
+        .setLabel('Exit')
+        .setEmoji('🚪')
+        .setStyle(ButtonStyle.Danger)
+    );
+    
+    await interaction.editReply({ embeds: [quizEmbed], components: [answerRow, utilityRow] });
+    
   } else {
     await interaction.reply({ content: '✨ Starting diagnostic...', ephemeral: true });
     await handleDiagnosticQuiz(interaction);
+  }
+}
+
+// Handle Sovereign UI quiz answer buttons
+async function handleSovereignQuizButton(interaction, action, params) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const { User } = await import('../../database/models/User.js');
+  const { submitAnswer, useHint, useFiftyFifty, getSession } = await import('../../services/quizService.js');
+  const { xpForLevel } = await import('../../config/brandSystem.js');
+  
+  await interaction.deferUpdate();
+  
+  // Parse session ID and answer index from params
+  // Format: sovereign_answer_sessionId_answerIndex or sovereign_hint_sessionId
+  const sessionId = params[0];
+  const answerIndex = action === 'answer' ? parseInt(params[1]) : null;
+  
+  // Fetch user and session
+  const user = await User.findOne({ discordId: interaction.user.id });
+  const session = await getSession(interaction.user.id);
+  
+  if (!session) {
+    const expiredEmbed = new EmbedBuilder()
+      .setColor(0xED4245)
+      .setTitle('⏰ Session Expired')
+      .setDescription('Your quiz session has expired. Start a new assessment!')
+      .setFooter({ text: 'MentorAI Assessment Engine' });
+    
+    await interaction.editReply({
+      embeds: [expiredEmbed],
+      components: [new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('quick_quiz').setLabel('🎯 New Assessment').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId('help_back_main').setLabel('Back to Hub').setEmoji('🏠').setStyle(ButtonStyle.Secondary)
+      )]
+    });
+    return;
+  }
+  
+  const userLevel = user?.level || 1;
+  const userStreak = user?.streak || 0;
+  const userPrestige = user?.prestige?.level || 0;
+  
+  // Multiplier calculations
+  const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
+  const prestigeMultiplier = 1 + (userPrestige * 0.1);
+  const totalMultiplier = streakMultiplier * prestigeMultiplier;
+  const xpPerCorrect = Math.floor(50 * totalMultiplier);
+  
+  // Tier detection
+  const getTierInfo = (level) => {
+    if (level >= 50) return { name: 'Legend', emoji: '👑', color: 0xFF6B35 };
+    if (level >= 30) return { name: 'Diamond', emoji: '💎', color: 0x00D4FF };
+    if (level >= 20) return { name: 'Platinum', emoji: '🏆', color: 0xE5E4E2 };
+    if (level >= 10) return { name: 'Gold', emoji: '🥇', color: 0xFFD700 };
+    if (level >= 5) return { name: 'Silver', emoji: '🥈', color: 0xC0C0C0 };
+    return { name: 'Bronze', emoji: '🥉', color: 0xCD7F32 };
+  };
+  const tier = getTierInfo(userLevel);
+  
+  // Handle hint request
+  if (action === 'hint') {
+    const hintResult = await useHint(interaction.user.id);
+    if (hintResult?.alreadyUsed) {
+      await interaction.followUp({ content: '💡 You already used your hint for this question!', ephemeral: true });
+    } else if (hintResult?.hint) {
+      await interaction.followUp({ content: hintResult.hint, ephemeral: true });
+    }
+    return;
+  }
+  
+  // Handle 50/50 lifeline
+  if (action === '5050') {
+    const fiftyResult = await useFiftyFifty(interaction.user.id);
+    if (fiftyResult?.alreadyUsed) {
+      await interaction.followUp({ content: '🎲 You already used 50/50 for this question!', ephemeral: true });
+    } else if (fiftyResult?.eliminated) {
+      const optionLabels = ['A', 'B', 'C', 'D'];
+      const eliminated = fiftyResult.eliminated.map(i => optionLabels[i]).join(' and ');
+      await interaction.followUp({ content: `🎲 **50/50 Used!** Options **${eliminated}** have been eliminated.`, ephemeral: true });
+    }
+    return;
+  }
+  
+  // Handle answer submission
+  if (action === 'answer' && answerIndex !== null) {
+    const result = await submitAnswer(interaction.user.id, answerIndex);
+    
+    if (!result) {
+      await interaction.followUp({ content: '❌ Error processing answer. Try again!', ephemeral: true });
+      return;
+    }
+    
+    const currentQ = session.questions[session.currentQuestion];
+    const optionEmojis = ['🔵', '🟢', '🟡', '🟣'];
+    const optionLabels = ['A', 'B', 'C', 'D'];
+    const isCorrect = result.correct;
+    const correctIndex = currentQ.correctIndex;
+    
+    // Build feedback embed
+    const feedbackColor = isCorrect ? 0x57F287 : 0xED4245;
+    const feedbackTitle = isCorrect ? '✅ Correct!' : '❌ Incorrect';
+    const xpGained = isCorrect ? xpPerCorrect : 0;
+    
+    // Check if quiz is complete
+    if (result.quizComplete) {
+      // Final results
+      const totalQuestions = session.questions.length;
+      const correctAnswers = result.score;
+      const accuracy = Math.round((correctAnswers / totalQuestions) * 100);
+      const totalXP = correctAnswers * xpPerCorrect;
+      
+      const progressBar = (pct) => {
+        const filled = Math.round(pct / 10);
+        return '█'.repeat(filled) + '░'.repeat(10 - filled);
+      };
+      
+      const resultEmbed = new EmbedBuilder()
+        .setColor(accuracy >= 80 ? 0x57F287 : accuracy >= 50 ? 0xFEE75C : 0xED4245)
+        .setTitle(`${tier.emoji} Assessment Complete!`)
+        .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 Final Results
+\`[${progressBar(accuracy)}]\` **${accuracy}%** Accuracy
+
+✅ **${correctAnswers}/${totalQuestions}** Questions Correct
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 💰 Rewards Earned
+✨ **+${totalXP} XP** (${xpPerCorrect} × ${correctAnswers} correct)
+${accuracy === 100 ? '🏆 **Perfect Score Bonus!**' : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${result.encouragement || 'Great effort! Keep learning to improve your mastery.'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `)
+        .setFooter({ text: `${tier.name} Tier • ${session.topic} Assessment` })
+        .setTimestamp();
+      
+      const resultRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('quick_quiz')
+          .setLabel('🎯 New Assessment')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_back_main')
+          .setLabel('Back to Hub')
+          .setEmoji('🏠')
+          .setStyle(ButtonStyle.Secondary)
+      );
+      
+      await interaction.editReply({ embeds: [resultEmbed], components: [resultRow] });
+      
+    } else {
+      // Show next question
+      const nextQ = session.questions[result.currentQuestion];
+      const questionNum = result.currentQuestion + 1;
+      const totalQuestions = session.questions.length;
+      
+      const questionProgress = (current, total) => {
+        const filled = Math.round((current / total) * 10);
+        return '█'.repeat(filled) + '░'.repeat(10 - filled);
+      };
+      
+      const formattedOptions = nextQ.options.map((opt, i) => 
+        `${optionEmojis[i]} **${optionLabels[i]}.** ${opt}`
+      ).join('\n\n');
+      
+      const hasCodeBlock = nextQ.question.includes('```') || nextQ.question.includes('`');
+      const questionText = hasCodeBlock ? nextQ.question : `**${nextQ.question}**`;
+      
+      const feedbackLine = isCorrect 
+        ? `✅ **Correct!** +${xpGained} XP`
+        : `❌ **Incorrect.** The answer was **${optionLabels[correctIndex]}**.`;
+      
+      const quizEmbed = new EmbedBuilder()
+        .setColor(tier.color)
+        .setTitle(`${tier.emoji} ${session.topic} Assessment • Question ${questionNum}/${totalQuestions}`)
+        .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${feedbackLine}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📊 Progress
+\`[${questionProgress(questionNum - 1, totalQuestions)}]\` ${questionNum - 1}/${totalQuestions} complete • Score: ${result.score}/${questionNum - 1}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${questionText}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formattedOptions}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `)
+        .setFooter({ text: `${tier.name} Tier • ${xpPerCorrect} XP per correct answer` })
+        .setTimestamp();
+      
+      const answerRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`sovereign_answer_${sessionId}_0`)
+          .setLabel('A')
+          .setEmoji('🔵')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`sovereign_answer_${sessionId}_1`)
+          .setLabel('B')
+          .setEmoji('🟢')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`sovereign_answer_${sessionId}_2`)
+          .setLabel('C')
+          .setEmoji('🟡')
+          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(`sovereign_answer_${sessionId}_3`)
+          .setLabel('D')
+          .setEmoji('🟣')
+          .setStyle(ButtonStyle.Secondary)
+      );
+      
+      const utilityRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`sovereign_hint_${sessionId}`)
+          .setLabel('💡 Hint')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(`sovereign_5050_${sessionId}`)
+          .setLabel('50/50')
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId('help_back_main')
+          .setLabel('Exit')
+          .setEmoji('🚪')
+          .setStyle(ButtonStyle.Danger)
+      );
+      
+      await interaction.editReply({ embeds: [quizEmbed], components: [answerRow, utilityRow] });
+    }
   }
 }
 
