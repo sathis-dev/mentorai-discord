@@ -563,6 +563,9 @@ async function handleSelectMenu(interaction) {
       // MOBILE: Handle mobile help category menu
       const helpModule = await import('../commands/help.js');
       await helpModule.handleMobileCategorySelect(interaction, value);
+    } else if (customId === 'diagnostic_override_topic') {
+      // SOVEREIGN UI: Handle topic override from diagnostic engine
+      await handleDiagnosticTopicOverride(interaction, value);
     } else {
       // Unknown select menu - provide fallback
       logger.warn(`Unknown select menu: ${customId}`);
@@ -2442,47 +2445,111 @@ You've already claimed your daily bonus today!
 // ═══════════════════════════════════════════════════════════════════
 // ADAPTIVE ASSESSMENT - Diagnostic Quiz Engine
 // ═══════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════
+// SOVEREIGN UI DIAGNOSTIC ENGINE - 2026 High-Fidelity Assessment
+// Explainable AI (XAI) + Tier-Based Colors + Projected Progress
+// ═══════════════════════════════════════════════════════════════════
 async function handleDiagnosticQuiz(interaction) {
-  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = await import('discord.js');
   const { User } = await import('../../database/models/User.js');
   const { xpForLevel } = await import('../../config/brandSystem.js');
   
   await interaction.deferUpdate();
   
-  const loadingEmbed = new EmbedBuilder()
-    .setColor(0x5865F2)
-    .setTitle('🔬 Running Diagnostic Scan...')
-    .setDescription('`████████████░░░░` Analyzing your learning profile...')
-    .setFooter({ text: 'MentorAI Diagnostic Engine' });
-  
-  await interaction.editReply({ embeds: [loadingEmbed], components: [] });
-  await new Promise(r => setTimeout(r, 800));
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 1: Scanning Animation with Tier-Aware Colors
+  // ═══════════════════════════════════════════════════════════════════
   
   const user = await User.findOne({ discordId: interaction.user.id });
   const userLevel = user?.level || 1;
   const userStreak = user?.streak || 0;
   const userPrestige = user?.prestige?.level || 0;
+  const userXP = user?.xp || 0;
   
-  // Diagnostic Selector with Priority Hierarchy
-  let diagnosticResult = { type: 'expansion', topic: 'JavaScript', reason: 'Start your learning journey!', accuracy: null };
+  // TIER SYSTEM: Dynamic color based on user's current tier
+  const getTierInfo = (level) => {
+    if (level >= 50) return { name: 'Legend', color: 0xFF6B35, emoji: '👑', icon: '🔱' };
+    if (level >= 30) return { name: 'Diamond', color: 0x00D4FF, emoji: '💎', icon: '✨' };
+    if (level >= 20) return { name: 'Platinum', color: 0xE5E4E2, emoji: '🏆', icon: '⚡' };
+    if (level >= 10) return { name: 'Gold', color: 0xFFD700, emoji: '🥇', icon: '🌟' };
+    if (level >= 5) return { name: 'Silver', color: 0xC0C0C0, emoji: '🥈', icon: '💫' };
+    return { name: 'Bronze', color: 0xCD7F32, emoji: '🥉', icon: '🔥' };
+  };
+  
+  const tier = getTierInfo(userLevel);
+  
+  const loadingEmbed = new EmbedBuilder()
+    .setColor(tier.color)
+    .setTitle(`${tier.icon} ${tier.name} Tier • Diagnostic Scan`)
+    .setDescription(`
+\`████████░░░░░░░░\` Analyzing learning profile...
+\`████████████░░░░\` Cross-referencing curriculum...
+\`████████████████\` Generating AI recommendation...
+    `)
+    .setFooter({ text: `MentorAI Sovereign Engine • ${tier.emoji} ${tier.name} Tier` });
+  
+  await interaction.editReply({ embeds: [loadingEmbed], components: [] });
+  await new Promise(r => setTimeout(r, 1000));
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 2: XAI REASONING ENGINE - Deep Diagnostic Analysis
+  // ═══════════════════════════════════════════════════════════════════
+  
   const allCurriculumTopics = ['JavaScript', 'Python', 'React', 'Node.js', 'TypeScript', 'HTML', 'CSS', 'SQL', 'Algorithms'];
+  let diagnosticResult = { 
+    type: 'expansion', 
+    topic: 'JavaScript', 
+    accuracy: null,
+    xaiReasoning: 'Starting your learning journey with the most popular programming language.',
+    projectedGain: 15
+  };
+  
+  // Fetch community averages for XAI comparison
+  let communityAverages = {};
+  try {
+    const communityAgg = await User.aggregate([
+      { $project: { topicAccuracy: { $objectToArray: '$topicAccuracy' } } },
+      { $unwind: '$topicAccuracy' },
+      { $group: {
+        _id: '$topicAccuracy.k',
+        avgCorrect: { $avg: '$topicAccuracy.v.correct' },
+        avgTotal: { $avg: '$topicAccuracy.v.total' }
+      }}
+    ]);
+    communityAgg.forEach(c => {
+      communityAverages[c._id.toLowerCase()] = c.avgTotal > 0 ? Math.round((c.avgCorrect / c.avgTotal) * 100) : 50;
+    });
+  } catch (e) {
+    // Default community averages
+    allCurriculumTopics.forEach(t => communityAverages[t.toLowerCase()] = 65);
+  }
   
   if (user?.topicAccuracy) {
     const topicEntries = Object.entries(user.topicAccuracy)
       .filter(([_, data]) => data && data.total >= 2);
     
-    // Priority 1: Critical Weakness (<60% accuracy)
-    const criticalWeakness = topicEntries
-      .map(([topic, data]) => ({ topic, accuracy: Math.round(((data.correct || 0) / (data.total || 1)) * 100) }))
+    // Priority 1: Critical Weakness with XAI reasoning
+    const weaknessAnalysis = topicEntries
+      .map(([topic, data]) => {
+        const userAcc = Math.round(((data.correct || 0) / (data.total || 1)) * 100);
+        const communityAvg = communityAverages[topic.toLowerCase()] || 65;
+        const delta = communityAvg - userAcc;
+        return { topic, accuracy: userAcc, communityAvg, delta, attempts: data.total || 0 };
+      })
       .filter(t => t.accuracy < 60)
-      .sort((a, b) => a.accuracy - b.accuracy)[0];
+      .sort((a, b) => b.delta - a.delta);
     
-    if (criticalWeakness) {
+    if (weaknessAnalysis.length > 0) {
+      const weakness = weaknessAnalysis[0];
+      const projectedGain = Math.min(25, Math.max(10, Math.round(weakness.delta * 0.5)));
       diagnosticResult = {
         type: 'critical',
-        topic: criticalWeakness.topic,
-        reason: `Critical gap detected: ${criticalWeakness.accuracy}% accuracy`,
-        accuracy: criticalWeakness.accuracy
+        topic: weakness.topic,
+        accuracy: weakness.accuracy,
+        communityAvg: weakness.communityAvg,
+        delta: weakness.delta,
+        xaiReasoning: `I selected **${weakness.topic}** because your accuracy (${weakness.accuracy}%) is **${weakness.delta}% below** the community average (${weakness.communityAvg}%). With ${weakness.attempts} attempts logged, targeted practice will yield the highest improvement.`,
+        projectedGain
       };
     } else {
       // Priority 2: Knowledge Expansion
@@ -2490,90 +2557,148 @@ async function handleDiagnosticQuiz(interaction) {
       const unexplored = allCurriculumTopics.filter(t => !exploredTopics.includes(t.toLowerCase()));
       
       if (unexplored.length > 0) {
+        const nextTopic = unexplored[0];
         diagnosticResult = {
           type: 'expansion',
-          topic: unexplored[0],
-          reason: `New territory: Expand into ${unexplored[0]}`,
-          accuracy: null
+          topic: nextTopic,
+          accuracy: null,
+          xaiReasoning: `You've mastered ${exploredTopics.length} topics. I recommend **${nextTopic}** to expand your skill tree. Community data shows ${communityAverages[nextTopic.toLowerCase()] || 65}% average mastery—you can exceed this.`,
+          projectedGain: 20
         };
       } else {
         // Priority 3: Mastery Maintenance
-        const oldestTopic = topicEntries
+        const lowestMastery = topicEntries
           .map(([topic, data]) => ({ topic, accuracy: Math.round(((data.correct || 0) / (data.total || 1)) * 100) }))
           .sort((a, b) => a.accuracy - b.accuracy)[0];
         
-        if (oldestTopic) {
+        if (lowestMastery) {
           diagnosticResult = {
             type: 'maintenance',
-            topic: oldestTopic.topic,
-            reason: `Review: Reinforce ${oldestTopic.topic} mastery`,
-            accuracy: oldestTopic.accuracy
+            topic: lowestMastery.topic,
+            accuracy: lowestMastery.accuracy,
+            xaiReasoning: `All topics explored! **${lowestMastery.topic}** has your lowest mastery at ${lowestMastery.accuracy}%. Reinforcement practice will push you toward full curriculum completion.`,
+            projectedGain: 10
           };
         }
       }
     }
   }
   
-  // Level-Aware Difficulty Scaling
-  let difficultyTier = 'Fundamentals';
-  let difficultyDesc = 'Conceptual basics and syntax';
-  if (userLevel >= 25) {
-    difficultyTier = 'Advanced';
-    difficultyDesc = 'Architecture, edge-cases, security';
-  } else if (userLevel >= 10) {
-    difficultyTier = 'Intermediate';
-    difficultyDesc = 'Logic flow, error handling';
-  }
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 3: Multiplier HUD + Unified XP Formula
+  // ═══════════════════════════════════════════════════════════════════
   
-  // Reward Projection
   const streakMultiplier = userStreak >= 30 ? 2.0 : userStreak >= 14 ? 1.5 : userStreak >= 7 ? 1.25 : userStreak >= 3 ? 1.1 : 1.0;
   const prestigeMultiplier = 1 + (userPrestige * 0.1);
   const totalMultiplier = streakMultiplier * prestigeMultiplier;
   const baseQuizXP = 50;
   const potentialXP = Math.floor(baseQuizXP * totalMultiplier);
   const xpNeeded = xpForLevel(userLevel + 1);
-  const xpToNext = xpNeeded - (user?.xp || 0);
+  const xpToNext = Math.max(0, xpNeeded - userXP);
+  
+  // Difficulty scaling
+  let difficultyTier = 'Fundamentals';
+  let difficultyDesc = 'Conceptual basics';
+  if (userLevel >= 25) { difficultyTier = 'Advanced'; difficultyDesc = 'Architecture & edge-cases'; }
+  else if (userLevel >= 10) { difficultyTier = 'Intermediate'; difficultyDesc = 'Logic & error handling'; }
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 4: Progress Projection Bars
+  // ═══════════════════════════════════════════════════════════════════
+  
+  const currentAcc = diagnosticResult.accuracy || 0;
+  const projectedAcc = Math.min(100, currentAcc + diagnosticResult.projectedGain);
+  const progressBar = (pct) => {
+    const filled = Math.round(pct / 10);
+    return '█'.repeat(filled) + '░'.repeat(10 - filled);
+  };
+  
+  const progressSection = diagnosticResult.accuracy !== null
+    ? `
+### 📊 Mastery Projection
+\`Current:   [${progressBar(currentAcc)}] ${currentAcc}%\`
+\`Projected: [${progressBar(projectedAcc)}] ${projectedAcc}%+\`
+*+${diagnosticResult.projectedGain}% estimated improvement*
+`
+    : `
+### 📊 New Territory
+\`Baseline:  [░░░░░░░░░░] 0%\`
+\`Projected: [${progressBar(diagnosticResult.projectedGain)}] ${diagnosticResult.projectedGain}%+\`
+*First assessment will establish your baseline*
+`;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 5: Sovereign UI Embed Assembly
+  // ═══════════════════════════════════════════════════════════════════
   
   const typeIcons = { critical: '🚨', expansion: '🌟', maintenance: '🔄' };
-  const typeColors = { critical: 0xED4245, expansion: 0x57F287, maintenance: 0x5865F2 };
+  const typeLabels = { critical: 'Critical Gap Detected', expansion: 'Knowledge Expansion', maintenance: 'Mastery Reinforcement' };
   
   const diagnosticEmbed = new EmbedBuilder()
-    .setColor(typeColors[diagnosticResult.type])
-    .setTitle(`${typeIcons[diagnosticResult.type]} Diagnostic Complete`)
+    .setColor(tier.color)
+    .setTitle(`${tier.emoji} ${tier.name} Tier • Diagnostic Complete`)
     .setDescription(`
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### 🔬 Scan Result
-**${diagnosticResult.reason}**
-
-📚 **Target:** ${diagnosticResult.topic}
-${diagnosticResult.accuracy !== null ? `📊 **Accuracy:** ${diagnosticResult.accuracy}%` : '🆕 **New territory**'}
-🎯 **Difficulty:** ${difficultyTier} - *${difficultyDesc}*
+### ${typeIcons[diagnosticResult.type]} ${typeLabels[diagnosticResult.type]}
+**Target:** ${diagnosticResult.topic}
+**Difficulty:** ${difficultyTier} — *${difficultyDesc}*
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-### 💰 Reward Projection
-⭐ **Base:** ${baseQuizXP} XP
-🔥 **Streak:** ${streakMultiplier}x (${userStreak} days)
-✨ **Prestige:** ${prestigeMultiplier.toFixed(1)}x (P${userPrestige})
-💎 **Total:** ${potentialXP} XP (${totalMultiplier.toFixed(2)}x)
+### 🧠 AI Reasoning (XAI)
+${diagnosticResult.xaiReasoning}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${progressSection}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 💰 Multiplier HUD
+\`\`\`
+XP = ⌊100 × 1.5^(L-1)⌋ × Multiplier
+
+🔥 Streak:   ${streakMultiplier.toFixed(2)}x (${userStreak} days)
+✨ Prestige: ${prestigeMultiplier.toFixed(2)}x (P${userPrestige})
+━━━━━━━━━━━━━━━━━━━━━━━━━
+💎 TOTAL:    ${totalMultiplier.toFixed(2)}x → ${potentialXP} XP/correct
+\`\`\`
 
 📈 **${xpToNext} XP** to Level ${userLevel + 1}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     `)
-    .setFooter({ text: `MentorAI Diagnostic • Level ${userLevel}`, iconURL: interaction.client.user.displayAvatarURL() })
+    .setFooter({ text: `MentorAI Sovereign Engine • ${tier.name} Tier • Level ${userLevel}`, iconURL: interaction.client.user.displayAvatarURL() })
     .setTimestamp();
+  
+  // ═══════════════════════════════════════════════════════════════════
+  // PHASE 6: Action Rows with Topic Override Select
+  // ═══════════════════════════════════════════════════════════════════
   
   const actionRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`diagnostic_start_${diagnosticResult.topic.toLowerCase().replace(/\s+/g, '-')}`)
-      .setLabel('🎯 Begin Assessment')
+      .setLabel('🚀 Initiate Assessment')
       .setStyle(ButtonStyle.Success),
     new ButtonBuilder()
       .setCustomId('quick_quiz')
       .setLabel('🔄 Rescan')
       .setStyle(ButtonStyle.Primary)
+  );
+  
+  // Topic Override Select Menu
+  const topicSelectRow = new ActionRowBuilder().addComponents(
+    new StringSelectMenuBuilder()
+      .setCustomId('diagnostic_override_topic')
+      .setPlaceholder('📚 Override AI Selection...')
+      .addOptions(
+        allCurriculumTopics.map(topic => ({
+          label: topic,
+          value: topic.toLowerCase().replace(/\s+/g, '-'),
+          description: topic === diagnosticResult.topic ? '✓ AI Recommended' : `Community avg: ${communityAverages[topic.toLowerCase()] || 65}%`,
+          emoji: topic === diagnosticResult.topic ? '🎯' : '📖',
+          default: topic === diagnosticResult.topic
+        }))
+      )
   );
   
   const navRow = new ActionRowBuilder().addComponents(
@@ -2584,7 +2709,55 @@ ${diagnosticResult.accuracy !== null ? `📊 **Accuracy:** ${diagnosticResult.ac
       .setStyle(ButtonStyle.Secondary)
   );
   
-  await interaction.editReply({ embeds: [diagnosticEmbed], components: [actionRow, navRow] });
+  await interaction.editReply({ embeds: [diagnosticEmbed], components: [actionRow, topicSelectRow, navRow] });
+}
+
+// Handle diagnostic topic override from select menu
+async function handleDiagnosticTopicOverride(interaction, selectedTopic) {
+  const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = await import('discord.js');
+  
+  await interaction.deferUpdate();
+  
+  const topicName = selectedTopic.replace(/-/g, ' ');
+  const topicDisplay = topicName.charAt(0).toUpperCase() + topicName.slice(1);
+  
+  const confirmEmbed = new EmbedBuilder()
+    .setColor(0x57F287)
+    .setTitle('✅ Topic Override Confirmed')
+    .setDescription(`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+### 📚 Manual Selection
+**Target:** ${topicDisplay}
+
+*You have overridden the AI recommendation.*
+*Click below to start your assessment.*
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `)
+    .setFooter({ text: 'MentorAI Sovereign Engine • Manual Override' })
+    .setTimestamp();
+  
+  const overrideActionRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`diagnostic_start_${selectedTopic}`)
+      .setLabel('🚀 Initiate Assessment')
+      .setStyle(ButtonStyle.Success),
+    new ButtonBuilder()
+      .setCustomId('quick_quiz')
+      .setLabel('🔄 Back to AI Scan')
+      .setStyle(ButtonStyle.Primary)
+  );
+  
+  const overrideNavRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('help_back_main')
+      .setLabel('Back to Hub')
+      .setEmoji('🏠')
+      .setStyle(ButtonStyle.Secondary)
+  );
+  
+  await interaction.editReply({ embeds: [confirmEmbed], components: [overrideActionRow, overrideNavRow] });
 }
 
 // Handle diagnostic start button (Begin Assessment)
