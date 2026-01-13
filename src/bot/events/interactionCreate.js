@@ -2979,8 +2979,15 @@ async function handleSovereignQuizButton(interaction, action, params) {
   
   // Parse session ID and answer index from params
   // Format: sovereign_answer_sessionId_answerIndex or sovereign_hint_sessionId
-  const sessionId = params[0];
-  const answerIndex = action === 'answer' ? parseInt(params[1]) : null;
+  // Note: sessionId may contain underscores (e.g., quiz_abc123_xyz789), so answer index is LAST element
+  let sessionId, answerIndex;
+  if (action === 'answer') {
+    answerIndex = parseInt(params[params.length - 1]);
+    sessionId = params.slice(0, -1).join('_');
+  } else {
+    sessionId = params.join('_');
+    answerIndex = null;
+  }
   
   // Fetch user and session
   const user = await User.findOne({ discordId: interaction.user.id });
